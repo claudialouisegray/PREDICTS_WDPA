@@ -21,9 +21,9 @@ library(rgl)
 
 
 #setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
+#setwd("N:/Documents/PREDICTS/WDPA analysis")
 
-
-setwd("N:/Documents/PREDICTS/WDPA analysis")
+setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 
 

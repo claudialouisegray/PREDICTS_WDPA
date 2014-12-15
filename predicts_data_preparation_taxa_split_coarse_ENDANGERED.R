@@ -30,7 +30,7 @@ validate <- function(x) {
 
 
 
-source("N:/Documents/PREDICTS/WDPA analysis/site_metrics_per_taxon.R")
+source("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA/site_metrics_per_taxon.R")
 
 
 
@@ -96,7 +96,11 @@ diversity <- CorrectSamplingEffort(diversity)
 # this must be done before any extra columns are added
 
 cat('Merging sites\n')
+#remove column that is not included in MergeSites column
+diversity <- diversity[, - which(names(diversity) == "Insightly_restrictions")]
 diversity <- MergeSites(diversity)
+
+
 
 
 
@@ -230,13 +234,12 @@ traits <- c('Adult_wet_mass_log10_g',
 
 
 
-
 # get taxon info
 
 unique(diversity$Kingdom)
 which(diversity$Kingdom == "Protozoa") 
 
-# drop protozoa, as not enough to work with as a taxonomic group of its own
+# drop protozoa, as not enough to work with
 diversity <- subset(diversity, Kingdom != "Protozoa")
 diversity$taxon_of_interest <- factor(diversity$Kingdom, levels = c("Animalia", "Fungi", "Plantae", "Plants and Fungi", "Invertebrates", "Vertebrates"))
 
@@ -245,8 +248,15 @@ index <- rep(1, length(diversity[,1]))
 index[which(diversity$Phylum == "" & diversity$Kingdom == "Animalia")]  <- 0
 diversity <- diversity[which(index == 1),]
 
+
+# drop Fungi, as not enough to work with after matching has been done
+diversity <- subset(diversity, Kingdom != "Fungi")
+diversity$taxon_of_interest <- factor(diversity$Kingdom, levels = c("Animalia", "Plantae", "Plants", "Invertebrates", "Vertebrates"))
+
+
+
+
 # split verts and inverts
-unique(diversity$Phylum)
 
 diversity$taxon_of_interest[which(diversity$Phylum == "Arthropoda")] <- "Invertebrates"
 diversity$taxon_of_interest[which(diversity$Phylum == "Mollusca")] <- "Invertebrates"
@@ -255,21 +265,18 @@ diversity$taxon_of_interest[which(diversity$Phylum == "Nematoda")] <- "Invertebr
 diversity$taxon_of_interest[which(diversity$Phylum == "Annelida")] <- "Invertebrates"
 diversity$taxon_of_interest[which(diversity$Phylum == "Onychophora")] <- "Invertebrates"
 diversity$taxon_of_interest[which(diversity$Phylum == "Chordata")] <- "Vertebrates"
-diversity$taxon_of_interest[which(diversity$Kingdom == "Plantae")] <- "Plants and Fungi"
-diversity$taxon_of_interest[which(diversity$Kingdom == "Fungi")] <- "Plants and Fungi"
+diversity$taxon_of_interest[which(diversity$Kingdom == "Plantae")] <- "Plants"
 
 
-# check
+
+# check that none have a blank kingdom or unassigned kingdom
 which(diversity$Kingdom == "")
 which(diversity$Kingdom == "Not assigned")
 
-unique(diversity$taxon_of_interest)
-table(diversity$taxon_of_interest)
+# check that all the cases where phylum is not known can be allocated based on kingdom
+unique(diversity$Kingdom[which(diversity$Phylum == "")]) # yes all are plants
 
-#
-diversity_mass <- subset(diversity, Adult_wet_mass_log10_g > 0)
-table(diversity_mass$taxon_of_interest)
-#only verts have mass data
+
 
 
 
@@ -279,12 +286,13 @@ table(diversity_mass$taxon_of_interest)
 study.data <- split(diversity, diversity$SS)
 numbers <- sapply(study.data, function(rows) length(unique(rows$taxon_of_interest)))
 more.than.one.taxon <- names(which(numbers >1))
+more.than.one.taxon
 #"AD1_2002__Vazquez 1"    "SC1_2005__Richardson 1" - only two studies
 
 
-View(subset(diversity, SS %in% more.than.one.taxon)) 
-#yes, reasonable, 5 studies if plants and fungi separate, 2 if p & f together
-#other pollinators inc hummingbirds, plants and fungi, reptiles and mammals, insects and other inverts together
+# look at these - sanity check
+#View(subset(diversity, SS %in% more.than.one.taxon)) 
+#yes, reasonable. e.g. pollinators inc hummingbirds
 
 
 # split studies into taxonomically unique studies based on these groups
@@ -327,31 +335,7 @@ which(climate.zone == 2)
 
 
 
-
-
-
-#####  get SiteMetrics
-
-
-ls("package:roquefort")
-ls("package:yarg")
-
-
-#make index vector showing which rows I want to include
-include <- is.na(diversity$Sampling_effort) == FALSE #i.e. where include is true, I want to keep the row
-length(include)
-
-
-#try subsetting to drop the rows where sampling_effort is NA
-length(diversity[,1])
-diversity.1 <- diversity
-diversity.1$include <- include
-diversity.no.na <- subset(diversity.1, include == TRUE)
-length(diversity.no.na[,1]) # makes no difference
-
-
-
-
+### this is where code starts being different from main taxa split code ###
 
 
 ### get CWM IUCN red list score for all birds, mammals, amphibs ###
@@ -403,7 +387,7 @@ d.metrics_all_amphib_mammal_bird <- SiteMetrics_taxa_split(Red.List.assessed,
 
 
 names(d.metrics_all_amphib_mammal_bird)
-length(d.metrics_all_amphib_mammal_bird [,1]) #5601 sites in total 
+length(d.metrics_all_amphib_mammal_bird [,1]) #5387 sites in total 
 
 
 # write d.metrics file to add back on to site level data after ArcMap processing
@@ -432,7 +416,7 @@ unique(diversity.no.na$IUCN_Red_List_Status)
 endangered.cats <- c("CR", "EN", "VU")
 endangered.sp <- subset(Red.List.assessed, IUCN_Red_List_Status %in% endangered.cats)
 
-length(unique(endangered.sp$SSS)) #1923
+length(unique(endangered.sp$SSS)) #1747
 
 
 #get site metrics for this data only
@@ -456,7 +440,7 @@ d.metrics_VU_EN_CR <- SiteMetrics_taxa_split(endangered.sp,
 # write this to file
 setwd("N:/Documents/PREDICTS/WDPA analysis")
 write.csv(d.metrics_VU_EN_CR, "d.metrics_11_14_VU_EN_CR.csv")
-nrow(d.metrics_VU_EN_CR) #1923
+nrow(d.metrics_VU_EN_CR) #1747
 
 
 

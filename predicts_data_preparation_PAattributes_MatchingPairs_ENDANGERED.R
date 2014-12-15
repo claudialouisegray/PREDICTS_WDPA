@@ -37,35 +37,14 @@ d.metrics.PA <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "predicts_wdpa_join_
 # get just the data not the spatial info
 all_PA_info <- d.metrics.PA@data
 
-# change file name to not have fungi in SSS after dropped that data
-all_PA_info$SSS <- gsub("Plants and Fungi", "Plants", all_PA_info$SSS)
-
-
 
 names(all_PA_info)
 head(all_PA_info)
-length(all_PA_info[,1]) #21237
+length(all_PA_info[,1]) #16533
 
-
-
-# get number of PAs per site:
-# take within_PA sites first
+# make binary in out variable
 all_PA_info$Within_PA[all_PA_info$WDPAID == 0] <- "no" 
 all_PA_info$Within_PA[all_PA_info$WDPAID > 0]<-"yes"
-unique(all_PA_info$Within_PA)
-
-in_PA <- subset(all_PA_info, Within_PA == "yes")
-out_PA <- subset(all_PA_info, Within_PA == "no")
-
-length(unique(in_PA$SSS))
-length(unique(out_PA$SSS))
-
-
-#get number of records per site (this is equal to the number of PAs it intercepts)
-PAs_per_site <- table(droplevels(in_PA$SSS))
-t = tabulate(PAs_per_site)
-hist(PAs_per_site)
-
 
 
 # rename fields concatenated by ARC
@@ -149,14 +128,14 @@ traits <- c("CWM_Adult_wet_mass_log10_g", "PropWithData_Adult_wet_mass_log10_g",
 
 site.data <- d.metrics[,c("SSS", "taxon_of_interest",
 	"Total_abundance", "Species_richness", "Simpson_diversity",  "Richness_rarefied", traits)]
-length(site.data[,1]) #5601
+length(site.data[,1]) #5387
 
 
 
 	
 # merge onto data for each site
 all_PA_info_merge <- merge(all_PA_info, site.data, "SSS", all.y = T)
-length(all_PA_info_merge[,1]) #6183
+length(all_PA_info_merge[,1]) #5949
 
 
 
@@ -280,18 +259,15 @@ for (s in 1:length(sites)){
 		PropWithData_Length_derived_volume_3log10_mm = PropWithData_Length_derived_volume_3log10_mm,
 		CWM_Mass_log10_g = CWM_Mass_log10_g,
 		PropWithData_Mass_log10_g = PropWithData_Mass_log10_g,
-		CWM_IUCN_Red_List_Score = CWM_IUCN_Red_List_Score,
 		CWM_endangered = CWM_endangered,
 		abundance_VU_EN_CR = abundance_VU_EN_CR,                 
 		abundance_LC_NT = abundance_LC_NT,
 
-		PropWithData_IUCN_Red_List_Score = PropWithData_IUCN_Red_List_Score,
 		IPR_Adult_wet_mass_log10_g = IPR_Adult_wet_mass_log10_g, 
 		IPR_Geographic_range_log10_square_km = IPR_Geographic_range_log10_square_km,
 		IPR_Maximum_wet_mass_log10_g = IPR_Maximum_wet_mass_log10_g,
 		IPR_Vegetative_height_log10_m = IPR_Vegetative_height_log10_m,
 		IPR_Length_derived_volume_3log10_mm = IPR_Length_derived_volume_3log10_mm,
-		IPR_IUCN_Red_List_Score = IPR_IUCN_Red_List_Score,
 		IUCN_CAT = IUCN_CAT, 
 		STATUS = STATUS, 
 		DESIG_TYPE  = DESIG_TYPE, 
@@ -327,7 +303,7 @@ unique(PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
 # can leave in the ones with intensity "Cannot decide"
 # View(PA.predicts_amph_mamm_bird.subset)
 
-length(PA.predicts_amph_mamm_bird.subset[,1]) # 5538
+length(PA.predicts_amph_mamm_bird.subset[,1]) # 5325
 
 
 
@@ -426,7 +402,7 @@ hist(as.numeric(results))
 nrow(PA.predicts_amph_mamm_bird.subset)
 PA.predicts_amph_mamm_bird.subset<- subset(PA.predicts_amph_mamm_bird.subset, SSS %in% too.far == F)
 
-nrow(PA.predicts_amph_mamm_bird.subset) #5397
+nrow(PA.predicts_amph_mamm_bird.subset) #5185
 
 
 
@@ -480,7 +456,7 @@ sites_total <-  aggregate(Within_PA ~  SS, PA.predicts_amph_mamm_bird.subset,len
 
 
 colnames(sites_total) <- c("SS", "sites_total")
-length(sites_total[,1]) #411
+length(sites_total[,1]) 
 
 sites_in <- aggregate(Within_PA ~  SS, within_PA,length)
 colnames(sites_in) <- c( "SS","sites_in")
@@ -488,7 +464,7 @@ colnames(sites_in) <- c( "SS","sites_in")
 
 #combine into dataframe
 sites_in_out <- merge(sites_total, sites_in, by = c("SS"), all.x = TRUE)
-length(sites_in_out[,1]) #still 411
+length(sites_in_out[,1]) 
 
 
 # replace NAs with 0 as there are no sites in PAs in these studies
@@ -503,7 +479,7 @@ sites_in_out$sites_out <- sites_in_out$sites_total - sites_in_out$sites_in
 #make index of which studies meet inclusion criteria (i.e. > 1 site in and out)
 include <- unique(sites_in_out$SS[which(sites_in_out$sites_in > 0 
 		& sites_in_out$sites_out > 0 )])
-length(include) # check = 187 studies that have sites in and out
+length(include) # check = 49 studies that have sites in and out
 
 
 
@@ -511,8 +487,8 @@ length(include) # check = 187 studies that have sites in and out
 #use this index to select site level data that matches inclusion criteria
 PA.predicts_amph_mamm_bird.subset1 <- subset(PA.predicts_amph_mamm_bird.subset, SS %in% include)
 
-length(PA.predicts_amph_mamm_bird.subset1[,1]) # check = 7142  sites should be included
-length(unique(PA.predicts_amph_mamm_bird.subset1$SS)) # = 187  studies
+length(PA.predicts_amph_mamm_bird.subset1[,1]) # check = 2695  sites should be included
+length(unique(PA.predicts_amph_mamm_bird.subset1$SS)) # = 49  studies
 
 
 
@@ -559,14 +535,10 @@ names(PA.predicts_amph_mamm_bird.subset1)
 
 
 matched.all <- PA.predicts_amph_mamm_bird.subset1
-length(matched.all[,1]) #2713
+length(matched.all[,1]) #2695
 
 #save for knitr # previously matched.all
 write.csv(matched.all, "PA_11_2014_amph_mamm_bird.csv")
-
-
-#PA_07_2014 <- read.csv("PA_07_2014.csv")
-
 
 
 
@@ -683,7 +655,7 @@ unique(PA.predicts_amph_mamm_bird.subset1$UseIntensity) #check no "Cannot decide
 
 matched.landuse <- PA.predicts_amph_mamm_bird.subset1 #incase overwriting during coding
 names(matched.landuse)
-length(matched.landuse[,1]) # 2024 
+length(matched.landuse[,1]) # 2020 
 
 #save
 write.csv(matched.landuse, "matched.landuse_amphib_mammal_bird_11_2014.csv")
@@ -748,14 +720,14 @@ traits <- c("CWM_Adult_wet_mass_log10_g", "PropWithData_Adult_wet_mass_log10_g",
 
 site.data <- d.metrics[,c("SSS",
 	"Total_abundance", "Species_richness", "Simpson_diversity",  "Richness_rarefied", traits)]
-length(site.data[,1]) #2376
+length(site.data[,1]) #1747
 
 
 
 	
 # merge onto data for each site
 all_PA_info_merge <- merge(all_PA_info, site.data, "SSS", all.y = T)
-length(all_PA_info_merge[,1]) #2688
+length(all_PA_info_merge[,1]) #1864
 
 
 
@@ -811,7 +783,6 @@ for (s in 1:length(sites)){
 	Sample_start_earliest <- unique(data.subset$Sample_start_earliest)
 	Realm <- unique(data.subset$Realm)
 	Zone <- unique(data.subset$Zone)
-	taxon_of_interest <- unique(data.subset$taxon_of_interest)
 	Total_abundance <- unique(data.subset$Total_abundance)
 	Species_richness <- unique(data.subset$Species_richness)
 	ChaoR <- unique(data.subset$ChaoR)
@@ -860,7 +831,6 @@ for (s in 1:length(sites)){
 		Sample_start_earliest = Sample_start_earliest, 
 		Realm = Realm, 
 		Zone = Zone, 
-		taxon_of_interest = taxon_of_interest, 
 		Total_abundance = Total_abundance, 
 		Species_richness = Species_richness, 
 		ChaoR = ChaoR, 
@@ -915,7 +885,7 @@ unique(PA.predicts_VU_EN_CR.subset$Predominant_habitat)
 # can leave in the ones with intensity "Cannot decide"
 # View(PA.predicts_VU_EN_CR.subset)
 
-length(PA.predicts_VU_EN_CR.subset[,1]) # 1923
+length(PA.predicts_VU_EN_CR.subset[,1]) # 1747
 
 
 
@@ -1133,7 +1103,7 @@ names(PA.predicts_VU_EN_CR.subset1)
 
 
 matched.all <- PA.predicts_VU_EN_CR.subset1
-length(matched.all[,1]) #1072
+length(matched.all[,1]) #1027
 
 #save for knitr # previously matched.all
 write.csv(matched.all, "PA_11_2014_VU_EN_CR.csv")
@@ -1256,7 +1226,7 @@ unique(PA.predicts_VU_EN_CR.subset1$UseIntensity) #check no "Cannot decide"
 
 matched.landuse <- PA.predicts_VU_EN_CR.subset1 #incase overwriting during coding
 names(matched.landuse)
-length(matched.landuse[,1]) # 796 
+length(matched.landuse[,1]) # 757 
 
 #save
 write.csv(matched.landuse, "matched.landuse_VU_EN_CR_11_2014.csv")

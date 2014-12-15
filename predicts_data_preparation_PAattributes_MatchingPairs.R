@@ -37,28 +37,20 @@ d.metrics.PA <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "predicts_wdpa_join_
 # get just the data not the spatial info
 all_PA_info <- d.metrics.PA@data
 
-# change file name to not have fungi in SSS after dropped that data
-all_PA_info$SSS <- gsub("Plants and Fungi", "Plants", all_PA_info$SSS)
-
-
-
 names(all_PA_info)
 head(all_PA_info)
-length(all_PA_info[,1]) #21237
+length(all_PA_info[,1]) #16533
 
+
+# make binary in out variable
+all_PA_info$Within_PA[all_PA_info$WDPAID == 0] <- "no" 
+all_PA_info$Within_PA[all_PA_info$WDPAID > 0]<-"yes"
 
 
 # get number of PAs per site:
 # take within_PA sites first
-all_PA_info$Within_PA[all_PA_info$WDPAID == 0] <- "no" 
-all_PA_info$Within_PA[all_PA_info$WDPAID > 0]<-"yes"
-unique(all_PA_info$Within_PA)
-
 in_PA <- subset(all_PA_info, Within_PA == "yes")
 out_PA <- subset(all_PA_info, Within_PA == "no")
-
-length(unique(in_PA$SSS))
-length(unique(out_PA$SSS))
 
 
 #get number of records per site (this is equal to the number of PAs it intercepts)

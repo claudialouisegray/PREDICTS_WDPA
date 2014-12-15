@@ -13,7 +13,7 @@ library(roquefort)
 
 
 PA_11_2014 <- read.csv("PA_11_2014.csv")
-nrow(PA_11_2014 )#7423
+nrow(PA_11_2014 )#7077
 
 
 
@@ -33,7 +33,7 @@ elevation <- read.table("bfer_1km_mn30_elevation_11_14.txt", header = T, sep = "
 slope <- read.table("bfer_1km_mn30_slope_11_14.txt", header = T, sep = ",")
 
 
-ag_suit <- read.csv("ag_suitability_11_2014_mollweide.csv") 
+ag_suit <- read.csv("ag_suitability_11_2014_moll.csv") 
 
 # this is taken from extract values to points function, saved as text file, then opened in excel
 # FID column deleted and -9999 values in RASTERVALU switched to NA
@@ -56,15 +56,15 @@ elevation.1 <- elevation[,c("SSS", "MEAN")]
 slope.1 <- slope[,c("SSS", "MEAN")]
 
 
-m <- merge(PA_11_2014 , access.1, "SSS")
+m <- merge(PA_11_2014 , access.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "access"
-m <- merge(m, hpd.1, "SSS")
+m <- merge(m, hpd.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
-m <- merge(m, elevation.1, "SSS")
+m <- merge(m, elevation.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
-m <- merge(m, slope.1, "SSS")
+m <- merge(m, slope.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
-m <- merge(m, ag.1, "SSS")
+m <- merge(m, ag.1, "SSS", all.x = T)
 
 
 nrow(m)
@@ -110,12 +110,12 @@ setwd("N:/Documents/PREDICTS/WDPA analysis")
 studies.taxa <- read.csv("Number of taxa per study split_taxa_coarse 11_2014.csv")
 
 which(studies.taxa$number.taxa == 1)
-length(which(studies.taxa$number.taxa == 1)) #29
+length(which(studies.taxa$number.taxa == 1)) #25
 
 more.than.one.taxa <- studies.taxa$SS[which(studies.taxa$number.taxa != 1)]
 
 multiple.taxa.PA_11_2014  <- subset(PA_11_2014 , SS %in% more.than.one.taxa)
-length(multiple.taxa.PA_11_2014 [,1]) #7515
+length(multiple.taxa.PA_11_2014 [,1]) #6874
 
 
 
@@ -126,7 +126,7 @@ multiple.taxa.PA_11_2014  <- droplevels(multiple.taxa.PA_11_2014)
 
 
 
-# model species richness
+### model species richness
 
 m1 <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSBS), 
@@ -139,15 +139,15 @@ anova(m1, m2)
 summary(m1)
 
 
-fixef(m1)[2] # within_Pa yes = 0.0833
-exp(fixef(m1)[2]) # 1.0869
+fixef(m1)[2] # within_Pa yes = 0.0852
+exp(fixef(m1)[2]) # 1.089
 
 
 x <- exp(fixef(m1)[2]) - 1
 
 
 # so if intercept is 100% (unprotected)
-# protected is +8.7%
+# protected is +8.9%
 
 
 
@@ -242,7 +242,7 @@ m4 <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
 anova(m3, m4)
 
 
-
+#no sig difference
 
 
 
@@ -265,7 +265,7 @@ anova(m1a, m2a)
 
 summary(m1a)
 
-exp(fixef(m1a)[2]) # 1.115622 
+exp(fixef(m1a)[2]) # 1.135
 
 
 
@@ -284,10 +284,10 @@ points <- c(1, est.protect)
 CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
 
 
-plot(points ~ c(1,2), ylim = c(0.8,1.2), xlim = c(0.5,2.5),
+plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
 	bty = "l", pch = 16, col = c(1,3), cex = 2,
 	yaxt = "n", xaxt = "n",
-	ylab = "Species richness difference (% ± 95%CI)",
+	ylab = "Abundance difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
 axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
@@ -353,6 +353,144 @@ validate(m2ai)
 
 
 
+### model range
+m1r <- lmer(range ~ Within_PA + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS), 
+	 data = PA_11_2014)
+m2r <- lmer(range ~ 1 + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS), 
+	 data = PA_11_2014)
+anova(m1r, m2r)
+
+summary(m1r)
+
+exp(fixef(m1r)[2]) # 0.976
+
+#convert to endemicity
+1 - exp(fixef(m1r)[2])
+
+
+
+# plot
+
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/simple model PA_11_2014 range.tif",
+	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+
+labels <- c("Unprotected", "Protected")
+est.protect <- 1 + as.numeric(fixef(m1r)[2])
+se.protect <- as.numeric(se.fixef(m1r)[2])
+points <- c(1, est.protect)
+CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+
+
+plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+	bty = "l", pch = 16, col = c(1,3), cex = 2,
+	yaxt = "n", xaxt = "n",
+	ylab = "Range difference (% ± 95%CI)",
+	xlab = "")
+axis(1, c(1,2), labels)
+axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
+arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
+abline(h = 1, lty = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+
+
+dev.off()
+
+
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/simple model PA_11_2014 endemicity.tif",
+	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+
+labels <- c("Unprotected", "Protected")
+est.protect <- 1 - as.numeric(fixef(m1r)[2]) #so that difference is actually above 1
+se.protect <- as.numeric(se.fixef(m1r)[2])
+points <- c(1, est.protect)
+CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+
+
+plot(points ~ c(1,2), ylim = c(0.95,1.08), xlim = c(0.5,2.5),
+	bty = "l", pch = 16, col = c(1,3), cex = 2,
+	yaxt = "n", xaxt = "n",
+	ylab = "Endemicity difference (% ± 95%CI)",
+	xlab = "")
+axis(1, c(1,2), labels)
+axis(2, c(0.96,0.98, 1, 1.02, 1.04, 1.06), c(96,98,100,102,104,106))
+arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
+abline(h = 1, lty = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+
+
+dev.off()
+
+
+
+
+
+
+
+
+### model proportion threatened ###
+
+PA_11_2014_a_m_b <- read.csv("PA_11_2014_amph_mamm_bird.csv")
+nrow(PA_11_2014_a_m_b) #2695
+names(PA_11_2014_a_m_b)
+
+
+
+m <- merge(PA_11_2014_a_m_b , access.1, "SSS", all.x = T)
+colnames(m)[which(colnames(m) == "MEAN")] <- "access"
+m <- merge(m, hpd.1, "SSS", all.x = T)
+colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
+m <- merge(m, elevation.1, "SSS", all.x = T)
+colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
+m <- merge(m, slope.1, "SSS", all.x = T)
+colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
+m <- merge(m, ag.1, "SSS", all.x = T)
+
+
+nrow(m)
+PA_11_2014_a_m_b  <- m
+
+
+
+
+
+# create explanatory variables
+
+PA_11_2014_a_m_b$IUCN_CAT_number <- factor(PA_11_2014_a_m_b$IUCN_CAT_number) # they arent really in an order
+PA_11_2014_a_m_b$log_slope <- log(PA_11_2014_a_m_b$slope +1)
+PA_11_2014_a_m_b$log_elevation <- log(PA_11_2014_a_m_b$elevation +1)
+PA_11_2014_a_m_b$log_hpd<- log(PA_11_2014_a_m_b$hpd +1)
+PA_11_2014_a_m_b$log_access <- log(PA_11_2014_a_m_b$access +1)
+PA_11_2014_a_m_b$log_GIS_AREA <- log(PA_11_2014_a_m_b$GIS_AREA+1)
+
+
+
+PA_11_2014_a_m_b$y <- cbind(PA_11_2014_a_m_b$abundance_VU_EN_CR, PA_11_2014_a_m_b$abundance_LC_NT)
+
+
+m3 <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSBS), 
+	family = "binomial", data = PA_11_2014_a_m_b)
+m4 <- glmer(y ~ 1 + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSBS), 
+	family = "binomial", data = PA_11_2014_a_m_b)
+anova(m3, m4)
+
+
+
+
+
+
+
+
+
+
+
+
+
 #PA effectiveness estimates
 
 # benefit for species richness
@@ -386,13 +524,14 @@ global.int <- 1-global.loss		# overall status of biodiversity relative to pristi
 
 # we want NPA.abs and PA.abs - where these are the biodiv metrics in unprotected and protected relative to pristine
 # simultaneous equations are
+
 # global.int = NPA.pct/100*NPA.abs + PA.pct/100*PA.abs #overall loss is loss in PAs and nonPAs relative to pristine
 # NPA.abs = PA.abs*NPA.rel			     
 
-
+VIew(iucn()
 # so
 #global.int = (NPA.pct/100)*PA.abs*NPA.rel + (PA.pct/100)*PA.abs
-# and 
+# which is the same as
 #global.int = PA.abs*(NPA.pct/100*(NPA.rel) + PA.pct/100)
 
 # then
@@ -404,6 +543,11 @@ NPA.abs <- PA.abs*NPA.rel
 #((1-NPA.abs)-(1-PA.abs))/(1-NPA.abs)
 
 est <- 1-(1-PA.abs)/(1-NPA.abs)
+
+# ie
+#est <- ((1-NPA.abs)-(1-PA.abs))/(1-NPA.abs)
+
+
 all.results <- c(all.results, est)
 }
 
@@ -417,7 +561,7 @@ write.csv(t(d), "simple.effectiveness.estimates.csv")
 
 
 
-# Getting andys numbers
+# Getting andys numbers - my approach written before I got Andys code. 
 
 
 # so, if PAs are 7.5% higher in species richness

@@ -308,7 +308,7 @@ d.metrics <- SiteMetrics_taxa_split(diversity, extra.cols = c("Realm", "Zone", "
 
 length(d.metrics[,1]) #14792
 
-# now that there are more sites, send to ARC to get WDPA data on each site. 
+#send to ARC to get WDPA data on each site. 
 
 long.lat <- d.metrics[,c("Longitude", "Latitude")]
 spatial <- SpatialPoints(long.lat)
