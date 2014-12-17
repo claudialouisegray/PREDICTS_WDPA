@@ -1,20 +1,21 @@
 # PLOTS
+# distance to boundary model
 
+load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData_files\\species.richness_boundary_distance.RData")
+
+#double check: species.richness.model$final.call should match that in excel file of all analyses
 
 
 model.data <- Species_richness.model$data
 
-data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_access", "access", "DoP.PA", "AREA.PA",
-	 "log_hpd", "hpd", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
+data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation", "DoP.PA", "AREA.PA",
+	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
 
 data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
 
-names(matched.landuse)
 
 nrow(data)
 length(unique(data$SS))
-
-
 
 nrow(model.data)
 length(unique(model.data$SS))
@@ -57,10 +58,10 @@ lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Species_richness vs taxon vs dist to boundary.tif",
-	width = 10, height = 25, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness vs taxon vs dist to boundary.tif",
+	width = 25, height = 10, units = "cm", pointsize = 12, res = 300)
 
-par(mfrow = c(3,1))
+par(mfrow = c(1,3))
 taxa <- levels(matched.landuse$taxon_of_interest)
 i <- 0
 t <- taxa[1]
@@ -92,7 +93,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   {
     log_bound_dist_km_PA_neg <- lbd[x]
     Species_richness <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -100,15 +101,13 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
     taxon_of_interest<- t
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
-    Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
-    newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat,  Within_PA))
+    log_elevation <- mean(model.data$log_elevation)
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
+    newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
     levels(newdat.f$ag_suit) <- levels(model.data$ag_suit)
-    levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
     newdat<-data.frame(newdat.f,newdat.n)
     mm<-model.matrix(terms(mam),newdat)
     pvar1 <- diag(mm %*% tcrossprod(vcov(mam),mm))
@@ -153,7 +152,29 @@ dev.off()
 
 
 
+#PLOTs
 
+#Within_PA
+
+load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\species.richness.RData")
+
+double check:  Species_richness.model2$final.call should match that in excel file of all analyses
+
+
+
+model.data <- Species_richness.model2$data
+
+data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation", "DoP.PA", "AREA.PA",
+	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
+
+data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
+
+
+nrow(data)
+length(unique(data$SS))
+
+nrow(model.data)
+length(unique(model.data$SS))
 
 
 
@@ -161,8 +182,8 @@ dev.off()
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Species_richness within pa vs  ag_suit.tif",
-	width = 12, height = 15, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness within pa vs  ag_suit.tif",
+	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,1))
 
@@ -179,31 +200,25 @@ par(mfrow = c(1,1))
   zl<-vector(mode="numeric",length=L)
   
 
-
-# it doesnt matter what the values for taxon and zone are, as there is no interaction with these
-
-
-
 model.data$Within_PA <- relevel(model.data$Within_PA, "no")
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
-mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
+mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
     ag_suit <- ag[x]
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Species_richness <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <-mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -224,7 +239,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(ag,z, ylim=c(5, 30), col = outside.col,
+  plot(ag,z, ylim=c(10,35), col = outside.col,
 		bty = "l", #log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Agricultural suitability (higher = more suitable)")
@@ -238,30 +253,29 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
 
-mam<- glmer(Species_richness.model$final.call, model.data,  family = "poisson", control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson", control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
   ag <-seq(from=min(model.data$ag_suit[which(model.data$Within_PA == "yes")]),
 		to=max(model.data$ag_suit[which(model.data$Within_PA == "yes")]),length=L)
-  y <-vector(mode="numeric",length=length(hpd))
-  yu <-vector(mode="numeric",length=length(hpd))
-  yl <-vector(mode="numeric",length=length(hpd))
+  y <-vector(mode="numeric",length=length(slope))
+  yu <-vector(mode="numeric",length=length(slope))
+  yl <-vector(mode="numeric",length=length(slope))
 
 
  for (x in 1:L)
   {
     ag_suit <- ag[x]
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Species_richness <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <-mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -288,49 +302,53 @@ mam<- glmer(Species_richness.model$final.call, model.data,  family = "poisson", 
 
 
 
-# add on distribution of ag_suit values for landuses
-ph <- coef(Species_richness.model$model)$Predominant_habitat[,1]
-exp(ph)
-
-#from data 
-
-lu.means <- aggregate(ag_suit ~ Predominant_habitat, model.data, mean)
-lu.sd <- aggregate(ag_suit ~ Predominant_habitat, model.data, sd)
-lu.n <- aggregate(ag_suit ~ Predominant_habitat, model.data, length)
-
-lu.se <- data.frame(Predominant_habitat = lu.sd$Predominant_habitat, 
-		ag_suit = lu.sd$ag_suit/sqrt(lu.n$ag_suit))
-
-for(y in 1:6){
-	ylim.min <- 5
-	xpoint <- lu.means$ag_suit[which(lu.means$Predominant_habitat == lu[y])]
-	xse <- lu.sd$ag_suit[which(lu.sd$Predominant_habitat == lu[y])]
-	points(y = ylim.min + y, x = xpoint, pch = 16, col = lu.cols[y])
-	xmax <- xpoint + xse
-	xmin <- xpoint - xse
-	arrows(xmax,ylim.min+y,xmin,ylim.min+y, 
-	cex = 0.7, code = 3, angle = 90, length = 0.04, col = lu.cols[y])
-}
-
-
 legend("topright", c("Protected", "Unprotected") , cex = 0.7,
 	col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,2))
-legend("topleft", rev(lu), cex = 0.7,
-	col = rev(lu.cols), pch = 16)
+
 
 
 dev.off()
 
 
+### extra stuff on ag suit values - replace with violin plot style
+
+
+# add on distribution of ag_suit values for landuses
+#ph <- coef(Species_richness.model$model)$Predominant_habitat[,1]
+#exp(ph)
+
+#from data 
+
+#lu.means <- aggregate(ag_suit ~ Predominant_habitat, model.data, mean)
+#lu.sd <- aggregate(ag_suit ~ Predominant_habitat, model.data, sd)
+#lu.n <- aggregate(ag_suit ~ Predominant_habitat, model.data, length)
+
+#lu.se <- data.frame(Predominant_habitat = lu.sd$Predominant_habitat, 
+		ag_suit = lu.sd$ag_suit/sqrt(lu.n$ag_suit))
+
+#for(y in 1:6){
+#	ylim.min <- 5
+#	xpoint <- lu.means$ag_suit[which(lu.means$Predominant_habitat == lu[y])]
+#	xse <- lu.sd$ag_suit[which(lu.sd$Predominant_habitat == lu[y])]
+#	points(y = ylim.min + y, x = xpoint, pch = 16, col = lu.cols[y])
+#	xmax <- xpoint + xse
+#	xmin <- xpoint - xse
+#	arrows(xmax,ylim.min+y,xmin,ylim.min+y, 
+#	cex = 0.7, code = 3, angle = 90, length = 0.04, col = lu.cols[y])
+#}
+
+#legend("topleft", rev(lu), cex = 0.7,
+#	col = rev(lu.cols), pch = 16)
 
 
 
 
-#### accessibility ##########
+
+#### elevation ##########
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Species_richness vs access.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness vs elevation.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -343,8 +361,8 @@ par(mfrow = c(1,1))
   
  L = 30
 
-  acc <-seq(from=min(model.data$log_access),
-		to=max(model.data$log_access),length=L)
+  elevation <-seq(from=min(model.data$log_elevation),
+		to=max(model.data$log_elevation),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
@@ -358,23 +376,22 @@ par(mfrow = c(1,1))
 model.data$Within_PA <- relevel(model.data$Within_PA, "no")
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
-mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
+mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
     ag_suit <- median(model.data$ag_suit)
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
-    Species_richness <-0
-    log_access <- acc[x]
+    Species_richness <- 0
+    log_elevation <- elevation[x]
     log_AREA.PA <-mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
-    taxon_of_interest<- t
+    taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -390,7 +407,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   }
   
 
-  acc_plot <- (exp(acc) -1)/60
+  elevation_plot <- exp(elevation)
 
   #backtransform from poisson log-link
   z <- exp(z)
@@ -398,13 +415,13 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(acc_plot,z, ylim=c(0, 30), col = 1,
+  plot(elevation_plot,z, ylim=c(0, 35), col = 1,
 		bty = "l", log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
-		xlab="Accessibility (hours to city >50000)")
-  points(acc_plot,zu,type="l",lty=2, col = 1)
-  points(acc_plot,zl,type="l",lty=2, col = 1)
-   rug((data$access)/60
+		xlab="Elevation (m)")
+  points(elevation_plot,zu,type="l",lty=2, col = 1)
+  points(elevation_plot,zl,type="l",lty=2, col = 1)
+   rug(data$elevation
 	, ticksize = 0.03, side = 1,   lwd = 0.2, col = 1) 
 
 
@@ -416,11 +433,11 @@ dev.off()
 
 
 
-#### within PA and hpd ##########
+#### within PA and slope ##########
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Species_richness within pa vs hpd.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness within pa vs slope.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,1))
@@ -431,8 +448,8 @@ par(mfrow = c(1,1))
   
  L = 30
 
-  hpd <-seq(from=min(model.data$log_hpd[which(model.data$Within_PA == "no")]),
-		to=max(model.data$log_hpd[which(model.data$Within_PA == "no")]),length=L)
+  slope <-seq(from=min(model.data$log_slope[which(model.data$Within_PA == "no")]),
+		to=max(model.data$log_slope[which(model.data$Within_PA == "no")]),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
@@ -446,28 +463,27 @@ par(mfrow = c(1,1))
 model.data$Within_PA <- relevel(model.data$Within_PA, "no")
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
-mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
+mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
     ag_suit <- median(model.data$ag_suit)
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Species_richness <-0
-    log_hpd <- hpd[x]
+    log_slope <- slope[x]
     log_AREA.PA <-mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
-    levels(newdat.f$hpd) <- levels(model.data$hpd)
+    levels(newdat.f$slope) <- levels(model.data$slope)
     levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
     newdat<-data.frame(newdat.f,newdat.n)
     mm<-model.matrix(terms(mam),newdat)
@@ -478,7 +494,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   }
   
 
-  hpd <- exp(hpd) -1
+  slope <- exp(slope) -1
 
 
   #backtransform from poisson log-link
@@ -487,13 +503,13 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(hpd,z, ylim=c(5, 30), col = outside.col,
+  plot(slope,z, ylim=c(10,45), col = outside.col,
 		bty = "l", log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
-		xlab="Human population density (per km2)")
-  points(hpd,zu,type="l",lty=2, col = outside.col)
-  points(hpd,zl,type="l",lty=2, col = outside.col)
-  rug(data$hpd[which(data$Within_PA == "no")],
+		xlab="Slope (degrees)")
+  points(slope,zu,type="l",lty=2, col = outside.col)
+  points(slope,zl,type="l",lty=2, col = outside.col)
+  rug(data$slope[which(data$Within_PA == "no")],
 	ticksize = 0.03, side = 1,   lwd = 1, col = outside.col) 
 
 
@@ -502,35 +518,34 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
 
-mam<- glmer(Species_richness.model$final.call, model.data,  family = "poisson", control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson", control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
-  hpd <-seq(from=min(model.data$log_hpd[which(model.data$Within_PA == "yes")]),
-		to=max(model.data$log_hpd[which(model.data$Within_PA == "yes")]),length=L)
-  y <-vector(mode="numeric",length=length(hpd))
-  yu <-vector(mode="numeric",length=length(hpd))
-  yl <-vector(mode="numeric",length=length(hpd))
+  slope <-seq(from=min(model.data$log_slope[which(model.data$Within_PA == "yes")]),
+		to=max(model.data$log_slope[which(model.data$Within_PA == "yes")]),length=L)
+  y <-vector(mode="numeric",length=length(slope))
+  yu <-vector(mode="numeric",length=length(slope))
+  yl <-vector(mode="numeric",length=length(slope))
 
 
  for (x in 1:L)
   {
     ag_suit <- median(model.data$ag_suit)
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Species_richness <-0
-    log_hpd <- hpd[x]
+    log_slope <- slope[x]
     log_AREA.PA <-mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
-    levels(newdat.f$hpd) <- levels(model.data$hpd)
+    levels(newdat.f$slope) <- levels(model.data$slope)
     levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
     newdat<-data.frame(newdat.f,newdat.n)
     mm<-model.matrix(terms(mam),newdat)
@@ -542,7 +557,7 @@ mam<- glmer(Species_richness.model$final.call, model.data,  family = "poisson", 
   }
 
 
-  hpd <- exp(hpd) -1
+  slope <- exp(slope) -1
 
 
   #backtransform from poisson log-link
@@ -551,13 +566,88 @@ mam<- glmer(Species_richness.model$final.call, model.data,  family = "poisson", 
   yl <- exp(yl)
 
   
-  points(hpd,y,type="l",lty=1 , col = inside.col, lwd = 2)
-  points(hpd,yu,type="l",lty=3, lwd = 2, col = inside.col)
-  points(hpd,yl,type="l",lty=3, lwd = 2, col = inside.col)
-  rug(data$hpd[which(data$Within_PA == "yes")],
-	ticksize = 0.03, side = 1,   lwd = 1, col = inside.col, pos = 5) 
+  points(slope,y,type="l",lty=1 , col = inside.col, lwd = 2)
+  points(slope,yu,type="l",lty=3, lwd = 2, col = inside.col)
+  points(slope,yl,type="l",lty=3, lwd = 2, col = inside.col)
+  rug(data$slope[which(data$Within_PA == "yes")],
+	ticksize = 0.03, side = 1,   lwd = 1, col = inside.col, pos = 10) 
 
 legend("topright", c("Protected", "Unprotected") , col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,2))
+
+
+dev.off()
+
+
+
+
+
+
+
+#### PA size #####
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species richness vs PA size.tif",
+	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
+
+
+
+  par(mar=c(4,4.5,4,1.5))
+  par(mgp=c(2.5,1,0))
+  
+ L = 30
+
+  gis <-seq(from=min(model.data$log_AREA.PA),
+		to=max(model.data$log_AREA.PA),length=L)
+  z<-vector(mode="numeric",length=L)
+  zu<-vector(mode="numeric",length=L)
+  zl<-vector(mode="numeric",length=L)
+  
+
+model.data$Zone<- relevel(model.data$Zone , "Tropical")
+model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
+mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
+
+ for (x in 1:L)
+  {
+    Species_richness <-0
+    log_slope <- mean(model.data$log_slope)
+    log_elevation <- mean(model.data$log_elevation)
+    log_AREA.PA <-gis[x]
+    DoP.PA <- mean(model.data$DoP.PA)
+    IUCN.PA <- "1.5"
+    Zone <-"Tropical"
+    taxon_of_interest<- "Vertebrates"
+    Predominant_habitat <-"Primary Vegetation"
+    ag_suit <- median(model.data$ag_suit)
+    Within_PA <- "no"
+    newdat.n<-data.frame(cbind(Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
+    newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
+    levels(newdat.f$Zone)<-levels(model.data$Zone)
+    levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
+    levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
+    levels(newdat.f$ag_suit) <- levels(model.data$ag_suit)
+    levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
+    newdat<-data.frame(newdat.f,newdat.n)
+    mm<-model.matrix(terms(mam),newdat)
+    pvar1 <- diag(mm %*% tcrossprod(vcov(mam),mm))
+    z[x]<-mm %*% fixef(mam)
+    zu[x]<-z[x]+sqrt(pvar1)
+    zl[x]<-z[x]-sqrt(pvar1) 
+  }
+  
+  z <- exp(z)
+  zu <- exp(zu)
+  zl <- exp(zl)
+
+ gis_plot <- exp(gis) -1
+
+
+  plot(gis_plot,z, ylim=c(0,35),  col = 1, lwd = 1,
+		bty = "l", log = "x", #yaxt = "n", 
+		type = "l",ylab = "Species richness per site ± s.e", xlab="PA size (km2)")
+  rug(data$AREA.PA, ticksize = 0.03, side = 1, lwd = 1, col = 1)
+  points(gis_plot,zu,type="l",lty=2,  lwd = 1, col = 1)
+  points(gis_plot,zl,type="l",lty=2,  lwd = 1, col =  1)
+
 
 
 dev.off()
@@ -610,7 +700,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Species_richness <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <-gis[x]
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -618,9 +708,9 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
     taxon_of_interest<- t
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -666,7 +756,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   {
     log_bound_dist_km_PA_neg <- lbd[x]
     Species_richness <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
     IUCN.PA <- "1.5"
@@ -674,9 +764,9 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
     taxon_of_interest<- t
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -714,11 +804,11 @@ dev.off()
 
 
 
-#### hpd ##########
+#### slope ##########
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/Species_richness vs hpd.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/Species_richness vs slope.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -731,8 +821,8 @@ par(mfrow = c(1,1))
   
  L = 30
 
-  hpd <-seq(from=min(model.data$log_hpd),
-		to=max(model.data$log_hpd),length=L)
+  slope <-seq(from=min(model.data$log_slope),
+		to=max(model.data$log_slope),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
@@ -753,16 +843,16 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
     ag_suit <- median(model.data$ag_suit)
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Species_richness <-0
-    log_hpd <- hpd[x]
+    log_slope <- slope[x]
     log_AREA.PA <-mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     taxon_of_interest<- t
     Predominant_habitat <-"Primary Vegetation"
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -778,7 +868,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   }
   
 
-  hpd <- exp(hpd) -1
+  slope <- exp(slope) -1
 
   #backtransform from poisson log-link
   z <- exp(z)
@@ -786,13 +876,13 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(hpd,z, ylim=c(0, 30), col = 1,
+  plot(slope,z, ylim=c(0, 30), col = 1,
 		bty = "l", log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Human population density (per km2)")
-  points(hpd,zu,type="l",lty=2, col = 1)
-  points(hpd,zl,type="l",lty=2, col = 1)
-  rug(data$hpd,
+  points(slope,zu,type="l",lty=2, col = 1)
+  points(slope,zl,type="l",lty=2, col = 1)
+  rug(data$slope,
 		col = 1, lwd = 0.8, pos = 0)
 
 
@@ -835,7 +925,7 @@ mam <- glmer(Species_richness.model.int$final.call, model.data, family = "poisso
   {
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Species_richness <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- dop[x]
     IUCN.PA <- "1.5"
@@ -843,9 +933,9 @@ mam <- glmer(Species_richness.model.int$final.call, model.data, family = "poisso
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, IUCN.PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -891,7 +981,7 @@ mam <- glmer(Species_richness.model.int$final.call, model.data, family = "poisso
   {
     log_bound_dist_km_PA_neg <- lbd[x]
     Species_richness <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
     IUCN.PA <- "1.5"
@@ -899,9 +989,9 @@ mam <- glmer(Species_richness.model.int$final.call, model.data, family = "poisso
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_hpd,log_AREA.PA,  DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Species_richness, log_slope,log_AREA.PA,  DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, IUCN.PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)

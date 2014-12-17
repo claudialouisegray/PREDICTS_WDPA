@@ -230,7 +230,6 @@ summary(m1i)
 
 
 
-
 # rarefied richness
 
 m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
@@ -243,6 +242,75 @@ anova(m3, m4)
 
 
 #no sig difference
+
+
+
+# rarefied richness with IUCN cat
+
+m3i <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014)
+m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014)
+
+# this is the same as
+#m4i <- glmer(Richness_rarefied ~ IUCN_CAT + Within_PA + log_slope + log_elevation + ag_suit
+#	+ (Within_PA|SS) + (1|SSBS), 
+#	family = "poisson", data = multiple.taxa.PA_11_2014)
+
+anova(m3i,m4i)
+
+summary(m4i)
+
+
+
+
+# plot 
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model rar rich IUCN.tif",
+	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+
+
+labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
+
+levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
+
+multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+
+m <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014)
+
+	
+est.protect <- 1 + as.numeric(fixef(m)[2:4])
+se.protect <- as.numeric(se.fixef(m)[2:4])
+points <- c(1, est.protect)
+CI <- cbind(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+
+plot(points ~ seq(1,length(points),1), ylim = c(0.9,1.3), #xlim = c(0.5,2.5),
+	bty = "l", pch = 16, col = c(1,3,3,3), cex = 2,
+	yaxt = "n", xaxt = "n",
+	ylab = "Rarefied species richness difference (% ± 95%CI)",
+	xlab = "")
+axis(1,seq(1,length(points),1), labels)
+axis(2, c(0.8,0.9, 1, 1.1, 1.2, 1.3), c(80,90,100,110,120,130))
+arrows(seq(2,length(points),1),CI[,1],
+	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
+abline(h = 1, lty = 2)
+oints(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -428,6 +496,24 @@ dev.off()
 
 
 
+### range and IUCN category
+
+m1ri <- lmer(range ~ Within_PA +log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS), 
+	 data = PA_11_2014)
+m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS), 
+	 data = PA_11_2014)
+
+anova(m1ri, m2ri)
+
+summary(m2ri)
+
+
+
+
+
+
 
 
 
@@ -471,19 +557,23 @@ PA_11_2014_a_m_b$log_GIS_AREA <- log(PA_11_2014_a_m_b$GIS_AREA+1)
 PA_11_2014_a_m_b$y <- cbind(PA_11_2014_a_m_b$abundance_VU_EN_CR, PA_11_2014_a_m_b$abundance_LC_NT)
 
 
-m3 <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
+m1t <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSBS), 
 	family = "binomial", data = PA_11_2014_a_m_b)
-m4 <- glmer(y ~ 1 + log_slope + log_elevation + ag_suit
+m2t <- glmer(y ~ 1 + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSBS), 
 	family = "binomial", data = PA_11_2014_a_m_b)
-anova(m3, m4)
+anova(m1t, m2t)
 
 
 
-
-
-
+m1ti <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSBS), 
+	family = "binomial", data = PA_11_2014_a_m_b)
+m2ti <- glmer(y ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSBS), 
+	family = "binomial", data = PA_11_2014_a_m_b)
+anova(m1ti, m2ti)
 
 
 

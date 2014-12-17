@@ -1,10 +1,12 @@
 # PLOTS
+# Within_PA
 
+load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\rarefied.richness")
 
-model.data <- Richness_rarefied.model.int$data
+model.data <- Richness_rarefied.model2$data
 
-data <- matched.landuse[,c("Richness_rarefied", "Zone", "taxon_of_interest", "ag_suit", "log_access", "access", "DoP.PA", "AREA.PA", "IUCN.PA",
-	 "log_hpd", "hpd", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
+data <- multiple.taxa.matched.landuse[,c("Richness_rarefied", "Zone", "taxon_of_interest", "ag_suit", "log_slope", "slope", "DoP.PA", "AREA.PA", "IUCN.PA",
+	 "log_elevation", "elevation", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
 
 data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
 
@@ -13,13 +15,11 @@ names(matched.landuse)
 nrow(data)
 length(unique(data$SS))
 
-
-
 nrow(model.data)
 length(unique(model.data$SS))
 
 
-table(data$IUCN.PA)
+
 
 
 display.brewer.all()
@@ -34,18 +34,13 @@ inside.col <- 1
 outside.col <- 8
 
 
+
+
+
 #### within PA  vs ag suit ###########
 
 
-
-### ag suit ####
-
-
-
-
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Richness_rarefied vs ag suit.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Richness_rarefied vs within_PA vs ag suit.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -69,13 +64,12 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Richness_rarefied vs ag s
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 model.data$Within_PA<- relevel(model.data$Within_PA , "yes")
 
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -83,9 +77,9 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- ag[x]
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -106,13 +100,13 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
   zl <- exp(zl)
 
 
-  plot(ag,z, ylim=c(0,10), col =inside.col, lwd = 1, 
+  plot(ag,z, ylim=c(0,20), col =inside.col, lwd = 2, 
 		bty = "l", 
 		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="Agricultural suitability (higher = more suitable)")
 #  rug(data$ag_suit[which(model.data$Within_PA == "yes")]
 #	, ticksize = 0.03, side = 1, lwd = 1.5, col = inside.col)
-  points(ag,zu,type="l",lty=2,  lwd = 1, col =  inside.col)
-  points(ag,zl,type="l",lty=2,  lwd = 1, col =  inside.col)
+  points(ag,zu,type="l",lty=2,  lwd = 2, col =  inside.col)
+  points(ag,zl,type="l",lty=2,  lwd = 2, col =  inside.col)
 
 
 
@@ -130,13 +124,12 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 model.data$Within_PA<- relevel(model.data$Within_PA , "no")
 
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -144,9 +137,9 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
     taxon_of_interest<- "Vertebrates"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- ag[x]
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -169,11 +162,11 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
 
 #  rug(data$ag_suit[which(model.data$Within_PA == "no")]
 #	, ticksize = 0.03, side = 1, lwd = 1.5, col = outside.col)
-  points(ag,y,type="l",lty=2,  lwd = 1, col =  outside.col)
-  points(ag,yu,type="l",lty=2,  lwd = 1, col =  outside.col)
-  points(ag,yl,type="l",lty=2,  lwd = 1, col =  outside.col)
+  points(ag,y,type="l",lty=2,  lwd = 2, col =  outside.col)
+  points(ag,yu,type="l",lty=2,  lwd = 2, col =  outside.col)
+  points(ag,yl,type="l",lty=2,  lwd = 2, col =  outside.col)
 
-legend("topleft", lty = 1,  c("Protected", "Unprotected"), col = c(inside.col, outside.col))
+legend("topleft", lty = 1, lwd = 2,  c("Protected", "Unprotected"), col = c(inside.col, outside.col))
 
 
 dev.off()
@@ -184,7 +177,7 @@ dev.off()
 
 ###### PA area ##########
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Richness_rarefied vs PA size.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Richness_rarefied vs PA size.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -202,13 +195,12 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/Richness_rarefied vs PA s
 
 
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
-#mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
+#mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
-    log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- gis[x]
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -216,9 +208,9 @@ model.data$Zone<- relevel(model.data$Zone , "Tropical")
     taxon_of_interest<- "Invertebrates"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -242,7 +234,7 @@ model.data$Zone<- relevel(model.data$Zone , "Tropical")
 
 
 
-  plot(gis,z, ylim=c(0,10), col = 1, lwd = 1,
+  plot(gis,z, ylim=c(0,20), col = 1, lwd = 1,
 		bty = "l",  log = "x",xaxt = "n",
 		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="PA size (km2)")
   rug(data$AREA.PA, ticksize = 0.03, side = 1, lwd = 1, col = 1)
@@ -256,6 +248,171 @@ dev.off()
 
 
 
+
+###### elevation ##########
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Richness_rarefied vs elevation.tif",
+	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+
+
+
+  par(mar=c(4,4.5,4,1.5))
+  par(mgp=c(2.5,1,0))
+  
+ L = 30
+
+  elevation <-seq(from=min(model.data$log_elevation),to=max(model.data$log_elevation),length=L)
+  z<-vector(mode="numeric",length=L)
+  zu<-vector(mode="numeric",length=L)
+  zl<-vector(mode="numeric",length=L)
+  
+
+
+model.data$Zone<- relevel(model.data$Zone , "Tropical")
+#mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+
+ for (x in 1:L)
+  {
+    Richness_rarefied <-0
+    log_AREA.PA <- mean(model.data$log_AREA.PA)
+    log_elevation <- elevation[x]
+    DoP.PA <- mean(model.data$DoP.PA)
+    IUCN.PA <- "1.5"
+    Zone <-"Tropical"
+    taxon_of_interest<- "Invertebrates"
+    Predominant_habitat <-"Primary Vegetation"
+    ag_suit <- median(model.data$ag_suit)
+    log_slope <- mean(model.data$log_slope)
+    Within_PA <- "no"
+    newdat.n<-data.frame(cbind(Richness_rarefied,log_AREA.PA,log_elevation, DoP.PA, log_slope, ag_suit))
+    newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
+    levels(newdat.f$Zone)<-levels(model.data$Zone)
+    levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
+    levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
+    levels(newdat.f$ag_suit) <- levels(model.data$ag_suit)
+   # levels(newdat.f$IUCN.PA) <- levels(model.data$IUCN.PA)
+    levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
+    newdat<-data.frame(newdat.f,newdat.n)
+    mm<-model.matrix(terms(mam),newdat)
+    pvar1 <- diag(mm %*% tcrossprod(vcov(mam),mm))
+    z[x]<-mm %*% fixef(mam)
+    zu[x]<-z[x]+sqrt(pvar1)
+    zl[x]<-z[x]-sqrt(pvar1) 
+  }
+  
+  elevation <- exp(elevation) - 1
+
+  z <- exp(z)
+  zu <- exp(zu)
+  zl <- exp(zl)
+
+
+
+  plot(elevation,z, ylim=c(0,40), col = 1, lwd = 1,
+		bty = "l",  log = "x",xaxt = "n",
+		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="Elevation (degrees)")
+  rug(data$elevation, ticksize = 0.03, side = 1, lwd = 1, col = 1)
+  axis(1, c(0.1, 1, 10, 100, 1000),  c(0.1, 1, 10, 100, 1000))
+  points(elevation,zu,type="l",lty=2,  lwd = 1, col =  1)
+  points(elevation,zl,type="l",lty=2,  lwd = 1, col =  1)
+
+
+
+dev.off()
+
+
+
+##### PA and non PA ######
+### different taxa #### 
+
+
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Richness_rarefied vs PA size.tif",
+	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+
+
+PA <- vector()
+taxon <- vector()
+estimate <- vector()
+se <- vector()
+
+model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
+model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+estimate[1] <- fixef(mam)[1]
+se[1] <- se.fixef(mam)[1]
+PA[1] <- "Protected"
+taxon[1] <- "Invertebrates"
+
+
+model.data$Within_PA <- relevel(model.data$Within_PA, "no")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+estimate[2] <- fixef(mam)[1]
+se[2] <- se.fixef(mam)[1]
+PA[2] <- "Unprotected"
+taxon[2] <- "Invertebrates"
+
+model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Vertebrates")
+model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+estimate[3] <- fixef(mam)[1]
+se[3] <- se.fixef(mam)[1]
+PA[3] <- "Protected"
+taxon[3] <- "Vertebrates"
+
+
+model.data$Within_PA <- relevel(model.data$Within_PA, "no")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+estimate[4] <- fixef(mam)[1]
+se[4] <- se.fixef(mam)[1]
+PA[4] <- "Unprotected"
+taxon[4] <- "Vertebrates"
+
+
+model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Plants")
+model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+estimate[5] <- fixef(mam)[1]
+se[5] <- se.fixef(mam)[1]
+PA[5] <- "Protected"
+taxon[5] <- "Plants and Fungi"
+
+
+multiple.taxa.matched.landuse$Within_PA <- relevel(multiple.taxa.matched.landuse$Within_PA, "no")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+estimate[6] <- fixef(mam)[1]
+se[6] <- se.fixef(mam)[1]
+PA[6] <- "Unprotected"
+taxon[6] <- "Plants and Fungi"
+
+
+
+plot.data <- data.frame(PA = PA, taxon = taxon, se = se, estimate = estimate)
+plot.data$upper <- plot.data$estimate + plot.data$se
+plot.data$lower <- plot.data$estimate - plot.data$se
+pos <- c(1:6)
+
+plot(plot.data$estimate ~ pos, pch = c(16,21,16,21), cex = 1.5,
+	ylim = c(0, 6), 
+	bty = "l", xaxt = "n", xlab = "", ylab = "Rarefied species richness per site ±se")
+arrows(pos, plot.data$lower, pos, plot.data$upper, angle = 90, code = 3, length = 0.05)
+axis(1, c(1.5, 3.5, 5.5), c("Invertebrates", "Vertebrates", "Plants"))
+legend("topleft", pch = c(16, 21), pt.cex = 1.5, c("Protected", "Unprotected"), bty = "n")
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+### older plots incase useful ###
 
 
 ###### DoP vs taxon of interest ##########
@@ -289,13 +446,13 @@ for(t in taxa){
 
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , t)
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- dop[x]
     IUCN.PA <- "1.5"
@@ -303,9 +460,9 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
     taxon_of_interest<- "Invertebrates"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -355,7 +512,6 @@ dev.off()
 
 
 
-####################### OLDER PLOTS ###################
 
 ###### DoP ##########
 
@@ -378,13 +534,13 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/Richness_rarefied vs DoP.tif",
 
 
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- dop[x]
     IUCN.PA <- "1.5"
@@ -392,9 +548,9 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
     taxon_of_interest<- "Invertebrates"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -439,92 +595,6 @@ dev.off()
 
 
 
-##### PA and non PA ######
-### different taxa #### 
-
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/Richness_rarefied vs PA size.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
-
-
-PA <- vector()
-taxon <- vector()
-estimate <- vector()
-se <- vector()
-
-model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
-model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
-estimate[1] <- fixef(mam)[1]
-se[1] <- se.fixef(mam)[1]
-PA[1] <- "Protected"
-taxon[1] <- "Invertebrates"
-
-
-model.data$Within_PA <- relevel(model.data$Within_PA, "no")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
-estimate[2] <- fixef(mam)[1]
-se[2] <- se.fixef(mam)[1]
-PA[2] <- "Unprotected"
-taxon[2] <- "Invertebrates"
-
-model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Vertebrates")
-model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
-estimate[3] <- fixef(mam)[1]
-se[3] <- se.fixef(mam)[1]
-PA[3] <- "Protected"
-taxon[3] <- "Vertebrates"
-
-
-model.data$Within_PA <- relevel(model.data$Within_PA, "no")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
-estimate[4] <- fixef(mam)[1]
-se[4] <- se.fixef(mam)[1]
-PA[4] <- "Unprotected"
-taxon[4] <- "Vertebrates"
-
-
-model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Plants and Fungi")
-model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
-estimate[5] <- fixef(mam)[1]
-se[5] <- se.fixef(mam)[1]
-PA[5] <- "Protected"
-taxon[5] <- "Plants and Fungi"
-
-
-multiple.taxa.matched.landuse$Within_PA <- relevel(multiple.taxa.matched.landuse$Within_PA, "no")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
-estimate[6] <- fixef(mam)[1]
-se[6] <- se.fixef(mam)[1]
-PA[6] <- "Unprotected"
-taxon[6] <- "Plants and Fungi"
-
-
-
-plot.data <- data.frame(PA = PA, taxon = taxon, se = se, estimate = estimate)
-plot.data$upper <- plot.data$estimate + 1.96*plot.data$se
-plot.data$lower <- plot.data$estimate - 1.96*plot.data$se
-pos <- c(1:6)
-
-plot(plot.data$estimate ~ pos, pch = c(16,21,16,21), cex = 2,
-	ylim = c(0, 6), 
-	bty = "l", xaxt = "n", xlab = "", ylab = "Log Species richness per site")
-arrows(pos, plot.data$lower, pos, plot.data$upper, angle = 90, code = 3, length = 0.05)
-axis(1, c(1.5, 3.5, 5.5), c("Invertebrates", "Vertebrates", "Plants and Fungi"))
-legend("topleft", pch = c(16, 21), pt.cex = 2, c("Protected", "Unprotected"), bty = "n")
-
-dev.off()
-
-
-
-
-
-
-
-
 
 ###### PA size in different zones  #############
 ###### for different taxa ##################
@@ -560,7 +630,7 @@ mam <- glmer(Richness_rarefied.model$final.call, model.data, family = "poisson")
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <-gis[x]
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -568,9 +638,9 @@ mam <- glmer(Richness_rarefied.model$final.call, model.data, family = "poisson")
     taxon_of_interest<- t
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, IUCN.PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -617,7 +687,7 @@ mam <- glmer(Richness_rarefied.model$final.call, model.data, family = "poisson")
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <-gis[x]
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -625,9 +695,9 @@ mam <- glmer(Richness_rarefied.model$final.call, model.data, family = "poisson")
     taxon_of_interest<- t
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, IUCN.PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -691,13 +761,13 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/Richness_rarefied vs ag suit.ti
 
 
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
-mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poisson")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     Richness_rarefied <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
@@ -705,9 +775,9 @@ mam <- glmer(Richness_rarefied.model.int$final.call, model.data, family = "poiss
     taxon_of_interest<- t
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- ag[x]
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, Richness_rarefied, log_elevation,log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)

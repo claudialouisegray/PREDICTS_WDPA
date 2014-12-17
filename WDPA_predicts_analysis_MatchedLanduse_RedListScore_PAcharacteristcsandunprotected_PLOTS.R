@@ -1,11 +1,12 @@
 
-# PLOTS
+# PLOTS - distance to boundary
 
+load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\prop threatened_boundary_distance.RData")
 
 model.data <- RLS.model$data
 
-data <- matched.landuse_amp_mam_bir[,c("RLS.y", "Zone", "taxon_of_interest", "ag_suit", "log_access", "access", "DoP.PA", "AREA.PA", "IUCN.PA",
-	 "log_hpd", "hpd", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
+data <- matched.landuse_amp_mam_bir[,c("RLS.y", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation", "DoP.PA", "AREA.PA", "IUCN.PA",
+	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
 
 data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
 
@@ -43,15 +44,122 @@ zone.cols <- cols[c(6,5)]
 
 
 
+### distance to boundary
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/prop threatened vs dist to boundary.tif",
+	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
 
-####  Within PA and hpd ##########
+
+  par(mar=c(4,4.5,4,1.5))
+  par(mgp=c(2.5,1,0))
+  
+ L = 30
+
+ lbd <-seq(from=min(model.data$log_bound_dist_km_PA_neg),
+		to=max(model.data$log_bound_dist_km_PA_neg),length=L)
+  z<-vector(mode="numeric",length=L)
+  zu<-vector(mode="numeric",length=L)
+  zl<-vector(mode="numeric",length=L)
+  
 
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/prop threatened within pa vs hpd.tif",
+
+model.data$Zone<- relevel(model.data$Zone , "Tropical")
+mam <- glmer(RLS.model$final.call, model.data, family = "binomial", control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+
+ for (x in 1:L)
+  {
+    log_bound_dist_km_PA_neg <- lbd[x]
+    RLS.y <-0
+    log_slope <- mean(model.data$log_slope)
+    log_elevation <- mean(model.data$log_elevation)
+    log_AREA.PA <- mean(model.data$log_AREA.PA)
+    DoP.PA <- mean(model.data$DoP.PA)
+    Zone <-"Tropical"
+    Predominant_habitat <-"Primary Vegetation"
+    ag_suit <- median(model.data$ag_suit)
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS.y, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
+    newdat.f<-data.frame(cbind( Zone, Predominant_habitat))
+    levels(newdat.f$Zone)<-levels(model.data$Zone)
+    levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
+    levels(newdat.f$ag_suit) <- levels(model.data$ag_suit)
+    newdat<-data.frame(newdat.f,newdat.n)
+    mm<-model.matrix(terms(mam),newdat)
+    pvar1 <- diag(mm %*% tcrossprod(vcov(mam),mm))
+    z[x]<-mm %*% fixef(mam)
+    zu[x]<-z[x]+sqrt(pvar1)
+    zl[x]<-z[x]-sqrt(pvar1) 
+  }
+  
+
+  z<-1/(1+exp(-(z)))
+  zu<-1/(1+exp(-(zu)))
+  zl<-1/(1+exp(-(zl)))
+
+
+ lbd1 <- exp(abs(lbd)) -1
+ inside <- which(lbd < 0)
+ lbd1[inside] <- lbd1[inside]*-1
+
+  plot(lbd1,z, ylim=c(-0.0001,0.0003), xlim = c(-50, 200), 
+		col = 1, lwd = 1,
+		bty = "l", yaxt = "n", 
+		type = "l",ylab = "Proportion species threatened ± s.e", xlab="Distance to PA boundary (km)")
+  rug(data$bound_dist_km_PA_neg, ticksize = 0.03, side = 1, lwd = 0.5, col = 1)
+  axis(2, c(0,0.0001, 0.0002, 0.0003), c(0,0.0001, 0.0002, 0.0003))
+  abline(v = 0, lty = 2, col = 8)
+  points(lbd1,zu,type="l",lty=2,  lwd = 1, col =  1)
+  points(lbd1,zl,type="l",lty=2,  lwd = 1, col =  1)
+
+
+dev.off() 
+
+
+
+
+
+
+
+
+
+# PLOTS - within_PA
+
+load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\prop threatened.RData")
+
+model.data <- RLS.model2$data
+
+data <- matched.landuse_amp_mam_bir[,c("RLS.y", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation", "DoP.PA", "AREA.PA", "IUCN.PA",
+	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
+
+data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
+
+
+
+nrow(data)
+length(unique(data$SS))
+
+
+
+nrow(model.data)
+length(unique(model.data$SS))
+
+
+
+
+
+
+
+
+####  Within PA and slope ##########
+
+
+
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/prop threatened within pa vs slope.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -62,37 +170,31 @@ par(mfrow = c(1,1))
   par(mar=c(4,4.5,1,1.5))
   par(mgp=c(2.5,1,0))
   
- L = 100
+ L = 200
 
-  hpd <-seq(from=min(model.data$log_hpd[which(model.data$Within_PA == "no")]),
-		to=max(model.data$log_hpd[which(model.data$Within_PA == "no")]),length=L)
+  slope <-seq(from=min(model.data$log_slope[which(model.data$Within_PA == "no")]),
+		to=max(model.data$log_slope[which(model.data$Within_PA == "no")]),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
   
 
-
-# it doesnt matter what the values for taxon and zone are, as there is no interaction with these
-
-
-
 model.data$Within_PA <- relevel(model.data$Within_PA, "no")
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
-mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
+mam <- glmer(RLS.model2$final.call, model.data, family = "binomial")
 
  for (x in 1:L)
   {
-    log_hpd <- hpd[x]
+    log_slope <- slope[x]
     RLS.y <- 0
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     ag_suit <- median(model.data$ag_suit)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
-    DoP.PA <- mean(model.data$DoP.PA )
+    DoP.PA <- mean(model.data$DoP.PA)
     Zone <-"Temperate"
     Predominant_habitat <-"Primary Vegetation"
-    log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, log_AREA.PA, DoP.PA, log_hpd, ag_suit, RLS.y))
+    newdat.n<-data.frame(cbind(log_elevation, log_AREA.PA, DoP.PA, log_slope, ag_suit, RLS.y))
     newdat.f<-data.frame(cbind(Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -105,22 +207,22 @@ mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
     zl[x]<-z[x]-sqrt(pvar1) 
   }
   
-  hpd_plot <- exp(hpd) -1
+  slope_plot <- exp(slope) -1
 
  # original backtransform, for binomial 
   z<-1/(1+exp(-(z)))
   zu<-1/(1+exp(-(zu)))
   zl<-1/(1+exp(-(zl)))
 
-  plot(hpd_plot,z, ylim=c(-0.002,0.01),  col = outside.col,
+  plot(slope_plot,z, ylim=c(-0.001,0.003),  col = outside.col,
 		bty = "l", log = "x", xaxt = "n",
 		type = "l",ylab = "Proportion threatened species ± s.e", 
-		xlab="Human population density (per km2)")
-   rug(data$hpd[which(data$Within_PA == "no")]
-	, ticksize = 0.03, side = 1,   lwd = 1, col = outside.col, pos = -0.002) 
+		xlab="Slope (degrees)")
+   rug(data$slope[which(data$Within_PA == "no")]
+	, ticksize = 0.03, side = 1,   lwd = 1, col = outside.col, pos = -0.001) 
   axis(1, c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50,500), c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50,500))
-  points(hpd_plot,zu,type="l",lty=2, col = outside.col)
-  points(hpd_plot,zl,type="l",lty=2, col = outside.col)
+  points(slope_plot,zu,type="l",lty=2, col = outside.col)
+  points(slope_plot,zl,type="l",lty=2, col = outside.col)
 
 
 
@@ -128,20 +230,20 @@ mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
 
-mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
+mam <- glmer(RLS.model2$final.call, model.data, family = "binomial")
 
-hpd.y <-seq(from=min(model.data$log_hpd[which(model.data$Within_PA == "yes")]),
-		to=max(model.data$log_hpd[which(model.data$Within_PA == "yes")]),length=L)
-  y<-vector(mode="numeric",length=length(hpd))
-  yu<-vector(mode="numeric",length=length(hpd))
-  yl<-vector(mode="numeric",length=length(hpd))
+slope.y <-seq(from=min(model.data$log_slope[which(model.data$Within_PA == "yes")]),
+		to=max(model.data$log_slope[which(model.data$Within_PA == "yes")]),length=L)
+  y<-vector(mode="numeric",length=length(slope))
+  yu<-vector(mode="numeric",length=length(slope))
+  yl<-vector(mode="numeric",length=length(slope))
 
 
  for (x in 1:L)
   {
-    log_hpd <- hpd[x]
+    log_slope <- slope[x]
     RLS.y <-0
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     ag_suit <- median(model.data$ag_suit)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
@@ -149,7 +251,7 @@ hpd.y <-seq(from=min(model.data$log_hpd[which(model.data$Within_PA == "yes")]),
     Predominant_habitat <-"Primary Vegetation"
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, log_AREA.PA, DoP.PA, RLS.y, log_hpd, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_elevation, log_AREA.PA, DoP.PA, RLS.y, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -162,23 +264,19 @@ hpd.y <-seq(from=min(model.data$log_hpd[which(model.data$Within_PA == "yes")]),
     yl[x]<-y[x]-sqrt(pvar1) 
   }
 
-  hpd.y_plot <- exp(hpd.y) -1
+  slope.y_plot <- exp(slope.y) -1
   y<-1/(1+exp(-(y)))
   yu<-1/(1+exp(-(yu)))
   yl<-1/(1+exp(-(yl)))
 
 
-  points(hpd.y_plot,y,type="l",lty=1 , col = inside.col, lwd = 1.5)
-  points(hpd.y_plot,yu,type="l",lty=3, lwd = 1.5, col = inside.col)
-  points(hpd.y_plot,yl,type="l",lty=3, lwd = 1.5, col = inside.col)
-   rug(data$hpd[which(data$Within_PA == "yes")]
+  points(slope.y_plot,y,type="l",lty=1 , col = inside.col, lwd = 1.5)
+  points(slope.y_plot,yu,type="l",lty=3, lwd = 1.5, col = inside.col)
+  points(slope.y_plot,yl,type="l",lty=3, lwd = 1.5, col = inside.col)
+   rug(data$slope[which(data$Within_PA == "yes")]
 	, ticksize = 0.03, side = 1,   lwd = 2, col = inside.col) 
 
-
-
-
-
-legend("topright", c("Protected", "Unprotected") , col = c(inside.col,outside.col), lty = c(1,1), lwd = c(2,1))
+legend("topleft", c("Protected", "Unprotected") , col = c(inside.col,outside.col), lty = c(1,1), lwd = c(2,1))
 
 
 dev.off()
@@ -186,10 +284,12 @@ dev.off()
 
 
 
-### Access 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/prop threatened vs access.tif",
+### Elevation ###
+
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/prop threatened vs elevation.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -200,16 +300,11 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/11_14/prop threatened vs access
   
  L = 100
 
-  acc <-seq(from=min(model.data$log_access),
-		to=max(model.data$log_access),length=L)
+  elevation <-seq(from=min(model.data$log_elevation),
+		to=max(model.data$log_elevation),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
-  
-
-
-# it doesnt matter what the values for taxon and zone are, as there is no interaction with these
-
 
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "no")
@@ -218,17 +313,16 @@ mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
 
  for (x in 1:L)
   {
-    log_access <- acc[x]
+    log_elevation <- elevation[x]
     RLS.y <- 0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     ag_suit <- median(model.data$ag_suit)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA )
     Zone <-"Temperate"
     Predominant_habitat <-"Primary Vegetation"
-    log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, log_AREA.PA, DoP.PA, log_hpd, ag_suit, RLS.y))
+    newdat.n<-data.frame(cbind(log_elevation, log_AREA.PA, DoP.PA, log_slope, ag_suit, RLS.y))
     newdat.f<-data.frame(cbind(Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -241,23 +335,22 @@ mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
     zl[x]<-z[x]-sqrt(pvar1) 
   }
   
-  acc_plot <- (exp(acc) -1)/60
+  elevation_plot <- exp(elevation) -1
 
  # original backtransform, for binomial 
   z<-1/(1+exp(-(z)))
   zu<-1/(1+exp(-(zu)))
   zl<-1/(1+exp(-(zl)))
 
-  plot(acc_plot,z, ylim=c(-0.0005,0.001),  col = 1,
+  plot(elevation_plot,z, ylim=c(-0.0001,0.001),  col = 1,
 		bty = "l", log = "x", xaxt = "n", #yaxt = "n",
 		type = "l",ylab = "Proportion threatened species ± s.e", 
-		xlab="Distance to city >50000 (hours)")
-   rug((data$acc)/60
-	, ticksize = 0.03, side = 1,   lwd = 1, col = 1) 
+		xlab="Elevation (m)")
+   rug(data$elevation	, ticksize = 0.03, side = 1,   lwd = 1, col = 1) 
  # axis(2, c(0, 0.0005, 0.001),  c(0, 0.0005, 0.001))
-  axis(1, c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50,500), c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50,500))
-  points(acc_plot,zu,type="l",lty=2, col = 1)
-  points(acc_plot,zl,type="l",lty=2, col = 1)
+  axis(1, c(10, 20, 50,500,1000), c(10, 20, 50,500,1000))
+  points(elevation_plot,zu,type="l",lty=2, col = 1)
+  points(elevation_plot,zl,type="l",lty=2, col = 1)
 
 
 
@@ -267,8 +360,76 @@ dev.off()
 
 
 
+#### within PA and ag suit ##########
 
-######################################### below here extra code just in case needed 
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/prop threatened vs  ag_suit.tif",
+	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+
+par(mfrow = c(1,1))
+
+
+  par(mar=c(4,4.5,4,1.5))
+  par(mgp=c(2.5,1,0))
+  
+ L = 30
+
+  ag <-seq(from=min(model.data$ag_suit[which(model.data$Within_PA == "no")]),
+		to=max(model.data$ag_suit[which(model.data$Within_PA == "no")]),length=L)
+  z<-vector(mode="numeric",length=L)
+  zu<-vector(mode="numeric",length=L)
+  zl<-vector(mode="numeric",length=L)
+  
+
+
+model.data$Within_PA <- relevel(model.data$Within_PA, "no")
+model.data$Zone<- relevel(model.data$Zone, "Tropical")
+mam <- glmer(RLS.model2$final.call, model.data, family = "binomial")
+
+ for (x in 1:L)
+  {
+    ag_suit <- ag[x]
+    RLS.y <-0
+    log_slope <- mean(model.data$log_slope)
+    log_elevation <- mean(model.data$log_elevation)
+    log_AREA.PA <- mean(model.data$log_AREA.PA )
+    DoP.PA <- mean(model.data$DoP.PA )
+    Zone <-"Temperate"
+    Predominant_habitat <-"Primary Vegetation"
+    Within_PA <- "no"
+    newdat.n<-data.frame(cbind(log_elevation, log_AREA.PA, DoP.PA, RLS.y, log_slope, ag_suit))
+    newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
+    levels(newdat.f$Zone)<-levels(model.data$Zone)
+    levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
+    levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
+    newdat<-data.frame(newdat.f,newdat.n)
+    mm<-model.matrix(terms(mam),newdat)
+    pvar1 <- diag(mm %*% tcrossprod(vcov(mam),mm))
+    z[x]<-mm %*% fixef(mam)
+    zu[x]<-z[x]+sqrt(pvar1)
+    zl[x]<-z[x]-sqrt(pvar1) 
+  }
+
+ # original backtransform, for binomial 
+  z<-1/(1+exp(-(z)))
+  zu<-1/(1+exp(-(zu)))
+  zl<-1/(1+exp(-(zl)))
+
+  plot(ag,z, ylim=c(-0.0001,0.001), col = 1,
+		bty = "l", #log = "x",
+		type = "l",ylab = "Proportion species threatened ± s.e", xlab="Agricultural suitability (higher = more suitable)")
+  points(ag,zu,type="l",lty=2, col = 1)
+  points(ag,zl,type="l",lty=2, col = 1)
+
+
+
+dev.off()
+
+
+
+
+
+
+###  below here extra code just in case needed 
 
 
 
@@ -307,16 +468,16 @@ mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
   {
     log_bound_dist_km_PA_neg <- lbd[x]
     RLS.y <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS.y, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS.y, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -381,16 +542,16 @@ mam <- glmer(RLS.model$final.call, model.data, family = "binomial")
   {
     log_bound_dist_km_PA_neg <- lbd[x]
     RLS.y <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS.y, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS.y, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -475,16 +636,16 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <-gis[x]
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -528,16 +689,16 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
   {
     log_bound_dist_km_PA_neg <-  mean(model.data$log_bound_dist_km_PA_neg)
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <-gis[x]
     DoP.PA <- mean(model.data$DoP.PA)
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -601,16 +762,16 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
   {
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- dop[x]
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -652,16 +813,16 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
   {
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- dop[x]
     IUCN.PA <- "1.5"
     Zone <-"Tropical"
     Predominant_habitat <-"Primary Vegetation"
     ag_suit <- median(model.data$ag_suit)
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_hpd,log_AREA.PA, DoP.PA, log_access, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, RLS, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
     newdat.f<-data.frame(cbind( Zone, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
@@ -692,12 +853,12 @@ dev.off()
 
 
 
-####  Within PA and access ##########
+####  Within PA and elevation ##########
 
 inside.col <- rgb(0.3,0.7,0.3)
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/endemicity within pa vs accessibility.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/endemicity within pa vs elevationibility.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -710,8 +871,8 @@ par(mfrow = c(1,1))
   
  L = 100
 
-  acc <-seq(from=min(model.data$log_access[which(model.data$Within_PA == "no")]),
-		to=max(model.data$log_access[which(model.data$Within_PA == "no")]),length=L)
+  elevation <-seq(from=min(model.data$log_elevation[which(model.data$Within_PA == "no")]),
+		to=max(model.data$log_elevation[which(model.data$Within_PA == "no")]),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
@@ -729,9 +890,9 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
 
  for (x in 1:L)
   {
-    log_access <- acc[x]
+    log_elevation <- elevation[x]
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     ag_suit <- median(model.data$ag_suit)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
@@ -740,7 +901,7 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
     Predominant_habitat <-"Primary Vegetation"
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, log_AREA.PA, DoP.PA, RLS, log_hpd, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_elevation, log_AREA.PA, DoP.PA, RLS, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -754,21 +915,21 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
     zl[x]<-z[x]-sqrt(pvar1) 
   }
   
-  acc_plot <- (exp(acc) -1)/60
+  elevation_plot <- (exp(elevation) -1)/60
 
   z <- 1/z
   zu <- 1/zu
   zl <- 1/zl
 
-  plot(acc_plot,z, #ylim=c(0.16,0.21), xlim = c(0.02,60), col = 1,
+  plot(elevation_plot,z, #ylim=c(0.16,0.21), xlim = c(0.02,60), col = 1,
 		bty = "l", log = "x", xaxt = "n",
 		type = "l",ylab = "Endemicity (1/CWM RLS) ± s.e", 
 		xlab="Accessibility (hours to city >50000)")
-   rug((data$access[which(data$Within_PA == "no")])/60
+   rug((data$elevation[which(data$Within_PA == "no")])/60
 	, ticksize = 0.03, side = 1,   lwd = 1, col = 1) 
   axis(1, c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50), c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50))
-  points(acc_plot,zu,type="l",lty=2, col = 1)
-  points(acc_plot,zl,type="l",lty=2, col = 1)
+  points(elevation_plot,zu,type="l",lty=2, col = 1)
+  points(elevation_plot,zl,type="l",lty=2, col = 1)
 
 
 
@@ -778,18 +939,18 @@ model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
 
 mam<- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
-acc <-seq(from=min(model.data$log_access[which(model.data$Within_PA == "yes")]),
-		to=max(model.data$log_access[which(model.data$Within_PA == "yes")]),length=L)
-  y<-vector(mode="numeric",length=length(hpd))
-  yu<-vector(mode="numeric",length=length(hpd))
-  yl<-vector(mode="numeric",length=length(hpd))
+elevation <-seq(from=min(model.data$log_elevation[which(model.data$Within_PA == "yes")]),
+		to=max(model.data$log_elevation[which(model.data$Within_PA == "yes")]),length=L)
+  y<-vector(mode="numeric",length=length(slope))
+  yu<-vector(mode="numeric",length=length(slope))
+  yl<-vector(mode="numeric",length=length(slope))
 
 
  for (x in 1:L)
   {
-    log_access <- acc[x]
+    log_elevation <- elevation[x]
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
+    log_slope <- mean(model.data$log_slope)
     ag_suit <- median(model.data$ag_suit)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
@@ -798,7 +959,7 @@ acc <-seq(from=min(model.data$log_access[which(model.data$Within_PA == "yes")]),
     Predominant_habitat <-"Primary Vegetation"
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, log_AREA.PA, DoP.PA, RLS, log_hpd, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_elevation, log_AREA.PA, DoP.PA, RLS, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -812,16 +973,16 @@ acc <-seq(from=min(model.data$log_access[which(model.data$Within_PA == "yes")]),
     yl[x]<-y[x]-sqrt(pvar1) 
   }
 
-  acc_plot <- (exp(acc) -1)/60
+  elevation_plot <- (exp(elevation) -1)/60
 
   y <- 1/y
   yu <- 1/yu
   yl <- 1/yl
 
-  points(acc_plot,y,type="l",lty=1 , col = inside.col, lwd = 3)
-  points(acc_plot,yu,type="l",lty=3, lwd = 3, col = inside.col)
-  points(acc_plot,yl,type="l",lty=3, lwd = 3, col = inside.col)
-   rug((data$access[which(data$Within_PA == "yes")])/60
+  points(elevation_plot,y,type="l",lty=1 , col = inside.col, lwd = 3)
+  points(elevation_plot,yu,type="l",lty=3, lwd = 3, col = inside.col)
+  points(elevation_plot,yl,type="l",lty=3, lwd = 3, col = inside.col)
+   rug((data$elevation[which(data$Within_PA == "yes")])/60
 	, ticksize = 0.03, side = 1,   lwd = 3, col = inside.col, pos = 0.16) 
 
 
@@ -874,8 +1035,8 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
   {
     ag_suit <- ag[x]
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
     Zone <-"Temperate"
@@ -883,7 +1044,7 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
     Predominant_habitat <-"Primary Vegetation"
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, log_AREA.PA, DoP.PA, RLS, log_hpd, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_elevation, log_AREA.PA, DoP.PA, RLS, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -916,17 +1077,17 @@ mam<- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bob
 
   ag <-seq(from=min(model.data$ag_suit[which(model.data$Within_PA == "yes")]),
 		to=max(model.data$ag_suit[which(model.data$Within_PA == "yes")]),length=L)
-  y<-vector(mode="numeric",length=length(hpd))
-  yu<-vector(mode="numeric",length=length(hpd))
-  yl<-vector(mode="numeric",length=length(hpd))
+  y<-vector(mode="numeric",length=length(slope))
+  yu<-vector(mode="numeric",length=length(slope))
+  yl<-vector(mode="numeric",length=length(slope))
 
 
  for (x in 1:L)
   {
     ag_suit <- ag[x]
     RLS <-0
-    log_hpd <- mean(model.data$log_hpd)
-    log_access <- mean(model.data$log_access)
+    log_slope <- mean(model.data$log_slope)
+    log_elevation <- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
     Zone <-"Temperate"
@@ -934,7 +1095,7 @@ mam<- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bob
     Predominant_habitat <-"Primary Vegetation"
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, log_AREA.PA, DoP.PA, RLS, log_hpd, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_elevation, log_AREA.PA, DoP.PA, RLS, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -969,11 +1130,11 @@ dev.off()
 
 
 
-#### hpd ##########
+#### slope ##########
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/endemicity vs hpd.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/endemicity vs slope.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,1))
@@ -984,7 +1145,7 @@ par(mfrow = c(1,1))
   
  L = 30
 
-  hpd <-seq(from=min(model.data$log_hpd),to=max(model.data$log_hpd),length=L)
+  slope <-seq(from=min(model.data$log_slope),to=max(model.data$log_slope),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
@@ -1002,9 +1163,9 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
 
  for (x in 1:L)
   {
-    log_hpd <- hpd[x]
+    log_slope <- slope[x]
     RLS <-0
-    log_access <- mean(model.data$log_access)
+    log_elevation <- mean(model.data$log_elevation)
     ag_suit <- median(model.data$ag_suit)
     log_AREA.PA <- mean(model.data$log_AREA.PA )
     DoP.PA <- mean(model.data$DoP.PA )
@@ -1013,7 +1174,7 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
     Predominant_habitat <-"Primary Vegetation"
     log_bound_dist_km_PA_neg <- mean(model.data$log_bound_dist_km_PA_neg)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_access, RLS, log_AREA.PA, DoP.PA, log_hpd, ag_suit))
+    newdat.n<-data.frame(cbind(log_bound_dist_km_PA_neg, log_elevation, RLS, log_AREA.PA, DoP.PA, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -1031,17 +1192,17 @@ mam <- lmer(RLS.model$final.call, model.data, control= lmerControl(optimizer="bo
   zu <- 1/zu
   zl <- 1/zl
 
-  hpd <- exp(hpd) - 1
+  slope <- exp(slope) - 1
 
 
-  plot(hpd,z, ylim=c(0.16,0.21), col = 1 ,
+  plot(slope,z, ylim=c(0.16,0.21), col = 1 ,
 		bty = "l", log = "x",
 		type = "l",ylab = "Endemicity (1/CWM RLS) ± s.e", xlab="Human population density (per km2)")
-   rug(data$hpd, ticksize = 0.03, side = 1,  lwd = 0.5, col = 1 ) #### change to be data used in model, poss slightly fewer points
+   rug(data$slope, ticksize = 0.03, side = 1,  lwd = 0.5, col = 1 ) #### change to be data used in model, poss slightly fewer points
 
 
-  points(hpd,zu,type="l",lty=2, col = 1 )
-  points(hpd,zl,type="l",lty=2, col = 1 )
+  points(slope,zu,type="l",lty=2, col = 1 )
+  points(slope,zl,type="l",lty=2, col = 1 )
 
 
 

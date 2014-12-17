@@ -114,84 +114,30 @@ plot(Species_richness ~ log(elevation+1), multiple.taxa.matched.landuse.s)
 
 
 
-# get only data that model runs on 
-
-data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_access",
-	 "log_hpd", "log_bound_dist_km", "log_bound_dist_km_PA_neg", "Within_PA", "DoP.PA", "IUCN.PA", "log_AREA.PA", "Predominant_habitat", "SS", "SSBS")]
-
-data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
 
 
 
+### log distance to boundary analysis
 
 
-
-### put in everything apart from IUCN_CAT
-
-
-
-fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "3", "log_hpd" = "3", "log_access" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
-fI <- character(0)
-RS <-  c("Within_PA")
-
-# 07_2014 Species_richness~poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_hpd,3)+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
-
-# 11_14 Species_richness~poly(log_access,1)+poly(log_bound_dist_km_PA_neg,2)+poly(log_hpd,3)+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
-
-
-#add interactions
-# problematic interactions:
-#"Zone:poly(log_bound_dist_km_PA_neg,2)"
-# "Zone:poly(log_AREA.PA,3)"
-#"taxon_of_interest:poly(log_AREA.PA,1)"
-
-
-
-# works
-fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "1", "log_hpd" = "3", "log_access" = "1", "log_bound_dist_km_PA_neg" = "2", "DoP.PA" = "1", "log_AREA.PA" = "1")
-fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_hpd,3)", "Within_PA:poly(log_access,1)",
-	"Within_PA:taxon_of_interest",
-	"taxon_of_interest:poly(log_bound_dist_km_PA_neg,2)","taxon_of_interest:poly(DoP.PA,1)",
-	"Zone:poly(DoP.PA,1)")
-RS <-  c("Within_PA")
-
-#Species_richness~poly(log_access,1)+poly(log_bound_dist_km_PA_neg,2)+poly(log_hpd,3)+taxon_of_interest+Zone+Within_PA:poly(ag_suit,1)+Within_PA:poly(log_hpd,3)+taxon_of_interest:poly(log_bound_dist_km_PA_neg,2)+Within_PA+poly(ag_suit,1)+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
-
-
-
-# TRIED THIS WITH both "Within_PA:taxon_of_interest", AND 	"Within_PA:Zone" - doesnt work
-
-
-
-
-#works 07_14
-fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "1", "log_hpd" = "3", "log_access" = "1", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "1", "log_AREA.PA" = "3")
-fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_hpd,3)", "Within_PA:poly(log_access,1)",
-	"Within_PA:taxon_of_interest",
-	"taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)", "taxon_of_interest:poly(DoP.PA,1)",
-	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,3)")
-RS <-  c("Within_PA")
-
-
-
-#Species_richness~poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_hpd,3)+taxon_of_interest+Zone
-#+Within_PA:poly(ag_suit,1)
-#+taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)
-#+Zone:poly(log_AREA.PA,3)
-#+Within_PA+poly(ag_suit,1)+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
-
-
-
-### model with just distance to boundary
-### no interactions
 
 fF <- c("Zone", "taxon_of_interest") 
-fT <- list("ag_suit" = "3", "log_hpd" = "3", "log_access" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
 fI <- character(0)
-RS <-  c("Within_PA")
+RS <-  c("log_bound_dist_km_PA_neg")
+
+#Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
+
+
+# add interactions
+
+fF <- c("Zone", "taxon_of_interest") 
+fT <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "2", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+fI <- c("Zone:poly(log_bound_dist_km_PA_neg,3)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)")
+RS <-  c("log_bound_dist_km_PA_neg")
+
+#Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone
+#+taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)
 
 
 Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
@@ -206,12 +152,12 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "
 				verbose=TRUE)
 
 
-Species_richness.best.random$best.random
+Species_richness.best.random$best.random #"(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+(1|Predominant_habitat)"
  
+best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+(1|Predominant_habitat)"
 
 
 # model select
-#Species_richness.model.int now has the model without interactions
 Species_richness.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
 			     responseVar = "Species_richness",
 			     fitFamily = "poisson",
@@ -220,15 +166,103 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.matched.landuse
                        fixedFactors= fF,
                        fixedTerms= fT,
                        fixedInteractions=fI,
-                       randomStruct = "(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)",
+                       randomStruct = best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
 
 validate(Species_richness.model$model) #ok
-Species_richness.model$warnings
-Species_richness.model$final.call
-Species_richness.model$stats
+
+write.csv(Species_richness.model$stats, "Species_richness.model.stats.16.12.2014.csv")
+
+
+
+
+
+
+
+
+
+
+
+### Within PA analysis
+
+
+#run with no interactions first to see which variables have nonlinear relationships
+
+
+fF <- c("Zone", "taxon_of_interest", "Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+fI <- character(0)
+RS <-  c("Within_PA")
+
+#Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
+
+
+
+
+# try all - doesnt work
+fF <- c("Zone", "taxon_of_interest", "Within_PA") 
+fT <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "2", "DoP.PA" = "1", "log_AREA.PA" = "3")
+fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,2)",
+	"Within_PA:taxon_of_interest", "Within_PA:Zone",
+	"taxon_of_interest:poly(DoP.PA,1)","taxon_of_interest:poly(log_AREA.PA,3)",
+	"Zone:poly(DoP.PA,1)","Zone:poly(log_AREA.PA,3)")
+RS <-  c("Within_PA")
+
+#remove 2 PA area interactions - problems before with these. now works. 
+fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,2)",
+	"Within_PA:taxon_of_interest", "Within_PA:Zone",
+	"taxon_of_interest:poly(DoP.PA,1)",
+	"Zone:poly(DoP.PA,1)")
+
+# Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone
+#+Within_PA:poly(ag_suit,3)
+#+Within_PA:poly(log_slope,2)
+#+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
+
+
+Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
+				fitFamily = "poisson",
+				siteRandom = TRUE,
+				fixedFactors=fF,
+                         fixedTerms=fT,
+                       fixedInteractions=fI,
+                         otherRandoms=c("Predominant_habitat"),
+				fixed_RandomSlopes = RS,
+                          fitInteractions=FALSE,
+				verbose=TRUE)
+
+
+Species_richness.best.random$best.random #
+ 
+best.random <- "(1+Within_PA|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+
+
+# model select
+
+Species_richness.model2 <- model_select(all.data  = multiple.taxa.matched.landuse, 
+			     responseVar = "Species_richness",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+                       fixedInteractions=fI,
+                       randomStruct = best.random,
+			     otherRandoms=c("Predominant_habitat"),
+                       verbose=TRUE)
+
+
+validate(Species_richness.model2$model) #ok
+
+write.csv(Species_richness.model2$stats, "Species_richness.model2.stats.16.12.2014.csv")
+
+
+
+Species_richness.model2$warnings
+Species_richness.model2$final.call
+Species_richness.model2$stats
 
 
 summary(Species_richness.model$model)
@@ -258,7 +292,7 @@ XVr <- CrossValidate(Species_richness.model$model,-1, divFactor = "Predominant_h
 
 
 
-write.csv(Species_richness.model$stats, "Species_richness.model.stats.18.11.2014.csv")
+
 
 
 
