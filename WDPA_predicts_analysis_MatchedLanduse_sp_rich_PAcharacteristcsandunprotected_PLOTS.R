@@ -3,8 +3,10 @@
 
 load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData_files\\species.richness_boundary_distance.RData")
 
-#double check: species.richness.model$final.call should match that in excel file of all analyses
+#double check: Species_richness.model$final.call should match that in excel file of all analyses
 
+library(RColorBrewer)
+library(lme4)
 
 model.data <- Species_richness.model$data
 
@@ -38,12 +40,12 @@ display.brewer.pal(8, "Paired")
 cols <- cols[c(2,4,8)]
 
 #green one
-#inside.col <- rgb(0.1,0.8,0.2)
+inside.col <- rgb(0.1,0.8,0.2)
+outside.col <- 1
 
 
-
-inside.col <- 1
-outside.col <- rgb(0.7,0.7,0.7)
+#inside.col <- 1
+#outside.col <- rgb(0.7,0.7,0.7)
 
 
 lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
@@ -239,13 +241,14 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(ag,z, ylim=c(10,35), col = outside.col,
+  plot(ag,z, ylim=c(0,50), col = outside.col,
 		bty = "l", #log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Agricultural suitability (higher = more suitable)")
-  points(ag,zu,type="l",lty=2, col = outside.col)
-  points(ag,zl,type="l",lty=2, col = outside.col)
+  #points(ag,zu,type="l",lty=2, col = outside.col)
+  #points(ag,zl,type="l",lty=2, col = outside.col)
 
+  polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.5))
 
 
 
@@ -415,7 +418,7 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(elevation_plot,z, ylim=c(0, 35), col = 1,
+  plot(elevation_plot,z, ylim=c(0, 50), col = 1,
 		bty = "l", log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Elevation (m)")
@@ -503,7 +506,7 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(slope,z, ylim=c(10,45), col = outside.col,
+  plot(slope,z, ylim=c(0,50), col = outside.col,
 		bty = "l", log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Slope (degrees)")
@@ -641,7 +644,7 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
  gis_plot <- exp(gis) -1
 
 
-  plot(gis_plot,z, ylim=c(0,35),  col = 1, lwd = 1,
+  plot(gis_plot,z, ylim=c(0,50),  col = 1, lwd = 1,
 		bty = "l", log = "x", #yaxt = "n", 
 		type = "l",ylab = "Species richness per site ± s.e", xlab="PA size (km2)")
   rug(data$AREA.PA, ticksize = 0.03, side = 1, lwd = 1, col = 1)

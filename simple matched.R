@@ -21,17 +21,12 @@ nrow(PA_11_2014 )#7077
 
 ### LOAD MATCHING DATA
 
-
-
-
 setwd("N:/Documents/PREDICTS/WDPA analysis/matching data")
-
 
 access <- read.table("bfer_1km_acc50k_11_14.txt", header = T, sep = ",")
 hpd <- read.table("bfer_1km_HPD_11_14.txt", header = T, sep = ",")
 elevation <- read.table("bfer_1km_mn30_elevation_11_14.txt", header = T, sep = ",")
 slope <- read.table("bfer_1km_mn30_slope_11_14.txt", header = T, sep = ",")
-
 
 ag_suit <- read.csv("ag_suitability_11_2014_moll.csv") 
 
@@ -41,20 +36,16 @@ ag_suit <- read.csv("ag_suitability_11_2014_moll.csv")
 ag.1 <- ag_suit[,c("SSS", "RASTERVALU")] 
 colnames(ag.1) <- c("SSS", "ag_suit")
 
-
 #these are water, must have fallen on the edge of lakes/rivers
 ag.1$ag_suit[which(ag.1$ag_suit==9)] <- NA
 
 # switch scale to be more intuitive - higher values more agriculturally suitable
 ag.1$ag_suit <- 9 - ag.1$ag_suit
 
-
-
 access.1 <- access[,c("SSS", "MEAN")]
 hpd.1 <- hpd[,c("SSS", "MEAN")]
 elevation.1 <- elevation[,c("SSS", "MEAN")]
 slope.1 <- slope[,c("SSS", "MEAN")]
-
 
 m <- merge(PA_11_2014 , access.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "access"
@@ -65,14 +56,8 @@ colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
 m <- merge(m, slope.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
 m <- merge(m, ag.1, "SSS", all.x = T)
-
-
 nrow(m)
 PA_11_2014  <- m
-
-
-
-
 
 # create explanatory variables
 
@@ -88,7 +73,6 @@ PA_11_2014$IUCN_CAT <- PA_11_2014$IUCN_CAT_number
 levels(PA_11_2014$IUCN_CAT) <- c(levels(PA_11_2014$IUCN_CAT), "0")
 PA_11_2014$IUCN_CAT[which(PA_11_2014$Within_PA == "no")] <- 0
 
-
 #make response variables
 
 PA_11_2014$range <- PA_11_2014$CWM_Geographic_range_log10_square_km
@@ -98,14 +82,10 @@ PA_11_2014$vol <- PA_11_2014$CWM_Length_derived_volume_3log10_mm
 PA_11_2014$log_abundance <- log(PA_11_2014$Total_abundance +1)
 
 
-
-
-
 ### CREATE MULTIPLE TAXA PER STUDY DATASET 
 # create dataset for species richness analysis that without all studies that are only on one taxon
 
 setwd("N:/Documents/PREDICTS/WDPA analysis")
-
 
 studies.taxa <- read.csv("Number of taxa per study split_taxa_coarse 11_2014.csv")
 
@@ -117,10 +97,9 @@ more.than.one.taxa <- studies.taxa$SS[which(studies.taxa$number.taxa != 1)]
 multiple.taxa.PA_11_2014  <- subset(PA_11_2014 , SS %in% more.than.one.taxa)
 length(multiple.taxa.PA_11_2014 [,1]) #6874
 
-
-
-
 multiple.taxa.PA_11_2014  <- droplevels(multiple.taxa.PA_11_2014)
+
+
 
 
 
@@ -128,11 +107,24 @@ multiple.taxa.PA_11_2014  <- droplevels(multiple.taxa.PA_11_2014)
 
 ### model species richness
 
+# check is block useful
+# yes definitely
+
 m1 <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
+m1b <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSB)+ (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014)
+anova(m1, m1b)
+
+
+
+m1 <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014)
 m2 <- glmer(Species_richness ~ 1 + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 anova(m1, m2)
 
@@ -154,8 +146,8 @@ x <- exp(fixef(m1)[2]) - 1
 # plot
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/simple model PA_11_2014 sp rich.tif",
-	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model sp rich.tif",
+	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
 labels <- c("Unprotected", "Protected")
@@ -165,8 +157,8 @@ points <- c(1, est.protect)
 CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
 
 
-plot(points ~ c(1,2), ylim = c(0.8,1.2), xlim = c(0.5,2.5),
-	bty = "l", pch = 16, col = c(1,3), cex = 2,
+plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Species richness difference (% ± 95%CI)",
 	xlab = "")
@@ -174,7 +166,7 @@ axis(1, c(1,2), labels)
 axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
-points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 dev.off()
 
@@ -186,11 +178,11 @@ dev.off()
 
 m0z <- glmer(Species_richness ~ Within_PA + Zone + Within_PA:Zone
 	+ log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 m1z <- glmer(Species_richness ~ Within_PA + Zone + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 anova(m0z,m1z)
@@ -213,11 +205,11 @@ summary(m1z)
 #simple species richness with IUCN cat 
 
 m0i <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 
@@ -233,10 +225,10 @@ summary(m1i)
 # rarefied richness
 
 m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 m4 <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 anova(m3, m4)
 
@@ -244,19 +236,46 @@ anova(m3, m4)
 #no sig difference
 
 
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model rar rich.tif",
+	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
+
+
+labels <- c("Unprotected", "Protected")
+est.protect <- 1 + as.numeric(fixef(m3)[2])
+se.protect <- as.numeric(se.fixef(m3)[2])
+points <- c(1, est.protect)
+CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+
+
+plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
+	yaxt = "n", xaxt = "n",
+	ylab = "Rarefied species richness difference (% ± 95%CI)",
+	xlab = "")
+axis(1, c(1,2), labels)
+axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
+arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
+abline(h = 1, lty = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
+
+dev.off()
+
+
+
+
 
 # rarefied richness with IUCN cat
 
 m3i <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB)+ (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB)+ (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 # this is the same as
 #m4i <- glmer(Richness_rarefied ~ IUCN_CAT + Within_PA + log_slope + log_elevation + ag_suit
-#	+ (Within_PA|SS) + (1|SSBS), 
+#	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 #	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 anova(m3i,m4i)
@@ -269,7 +288,7 @@ summary(m4i)
 # plot 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model rar rich IUCN.tif",
-	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
@@ -289,7 +308,7 @@ points <- c(1, est.protect)
 CI <- cbind(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
 
 plot(points ~ seq(1,length(points),1), ylim = c(0.9,1.3), #xlim = c(0.5,2.5),
-	bty = "l", pch = 16, col = c(1,3,3,3), cex = 2,
+	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Rarefied species richness difference (% ± 95%CI)",
 	xlab = "")
@@ -298,7 +317,7 @@ axis(2, c(0.8,0.9, 1, 1.1, 1.2, 1.3), c(80,90,100,110,120,130))
 arrows(seq(2,length(points),1),CI[,1],
 	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
-oints(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 dev.off()
 
@@ -323,17 +342,18 @@ dev.off()
 
 
 ### model abundance
+# block also very useful here
 m1a <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 m2a <- lmer(log_abundance ~ 1 + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 anova(m1a, m2a)
 
 summary(m1a)
 
-exp(fixef(m1a)[2]) # 1.135
+exp(fixef(m1a)[2]) # 1.127
 
 
 
@@ -342,8 +362,8 @@ exp(fixef(m1a)[2]) # 1.135
 # plot
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/simple model PA_11_2014 abundance.tif",
-	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model abundance.tif",
+	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
 est.protect <- 1 + as.numeric(fixef(m1a)[2])
@@ -353,7 +373,7 @@ CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
 
 
 plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
-	bty = "l", pch = 16, col = c(1,3), cex = 2,
+	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Abundance difference (% ± 95%CI)",
 	xlab = "")
@@ -361,7 +381,7 @@ axis(1, c(1,2), labels)
 axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
-points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 
 dev.off()
@@ -377,11 +397,11 @@ dev.off()
 
 m0az <- lmer(log_abundance ~ Within_PA + Zone + Within_PA:Zone
 	+log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB) , 
 	 data = PA_11_2014)
 
 m1az <- lmer(log_abundance ~ Within_PA + Zone +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 
 anova(m0az, m1az)
@@ -401,10 +421,10 @@ summary(m1az)
 
 # model abundance and IUCN_category
 m1ai <- lmer(log_abundance ~ Within_PA +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 m2ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 
 anova(m1ai, m2ai)
@@ -423,10 +443,10 @@ validate(m2ai)
 
 ### model range
 m1r <- lmer(range ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 m2r <- lmer(range ~ 1 + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 anova(m1r, m2r)
 
@@ -440,10 +460,10 @@ exp(fixef(m1r)[2]) # 0.976
 
 
 # plot
-
+#RANGE
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/simple model PA_11_2014 range.tif",
-	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
 est.protect <- 1 + as.numeric(fixef(m1r)[2])
@@ -453,7 +473,7 @@ CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
 
 
 plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
-	bty = "l", pch = 16, col = c(1,3), cex = 2,
+	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Range difference (% ± 95%CI)",
 	xlab = "")
@@ -461,15 +481,16 @@ axis(1, c(1,2), labels)
 axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
-points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 
 dev.off()
 
 
+#ENDEMICITY
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/simple model PA_11_2014 endemicity.tif",
-	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model endemicity.tif",
+	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
 est.protect <- 1 - as.numeric(fixef(m1r)[2]) #so that difference is actually above 1
@@ -478,16 +499,16 @@ points <- c(1, est.protect)
 CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
 
 
-plot(points ~ c(1,2), ylim = c(0.95,1.08), xlim = c(0.5,2.5),
-	bty = "l", pch = 16, col = c(1,3), cex = 2,
+plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Endemicity difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.96,0.98, 1, 1.02, 1.04, 1.06), c(96,98,100,102,104,106))
+axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
-points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 
 dev.off()
@@ -499,10 +520,10 @@ dev.off()
 ### range and IUCN category
 
 m1ri <- lmer(range ~ Within_PA +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS), 
+	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 
 anova(m1ri, m2ri)
@@ -558,22 +579,60 @@ PA_11_2014_a_m_b$y <- cbind(PA_11_2014_a_m_b$abundance_VU_EN_CR, PA_11_2014_a_m_
 
 
 m1t <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "binomial", data = PA_11_2014_a_m_b)
 m2t <- glmer(y ~ 1 + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "binomial", data = PA_11_2014_a_m_b)
 anova(m1t, m2t)
 
 
+#PLOT
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model prop threat.tif",
+	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
+labels <- c("Unprotected", "Protected")
+est.protect <- 1 - as.numeric(fixef(m1t)[2]) #so that difference is actually above 1
+se.protect <- as.numeric(se.fixef(m1t)[2])
+points <- c(1, est.protect)
+CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+
+
+plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
+	yaxt = "n", xaxt = "n",
+	ylab = "Proportion threatened species difference (% ± 95%CI)",
+	xlab = "")
+axis(1, c(1,2), labels)
+axis(2, c(0.9, 1, 1.1, 1.2, 1.3), c(90, 100, 110, 120, 130))
+arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
+abline(h = 1, lty = 2)
+points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
+
+
+dev.off()
+
+
+
+
+
+
+
+# IUCN CAT
 m1ti <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "binomial", data = PA_11_2014_a_m_b)
 m2ti <- glmer(y ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "binomial", data = PA_11_2014_a_m_b)
 anova(m1ti, m2ti)
+
+
+
+
+
+
+
 
 
 
@@ -618,7 +677,7 @@ global.int <- 1-global.loss		# overall status of biodiversity relative to pristi
 # global.int = NPA.pct/100*NPA.abs + PA.pct/100*PA.abs #overall loss is loss in PAs and nonPAs relative to pristine
 # NPA.abs = PA.abs*NPA.rel			     
 
-VIew(iucn()
+
 # so
 #global.int = (NPA.pct/100)*PA.abs*NPA.rel + (PA.pct/100)*PA.abs
 # which is the same as
