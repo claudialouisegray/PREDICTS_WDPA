@@ -42,7 +42,8 @@ cols <- cols[c(2,4,8)]
 #green one
 inside.col <- rgb(0.1,0.8,0.2)
 outside.col <- 1
-
+inside.col.ci <- rgb(0.1, 0.8, 0.2, 0.3)
+outside.col.ci <- rgb(0.5, 0.5, 0.5, 0.3)
 
 #inside.col <- 1
 #outside.col <- rgb(0.7,0.7,0.7)
@@ -248,7 +249,7 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
   #points(ag,zu,type="l",lty=2, col = outside.col)
   #points(ag,zl,type="l",lty=2, col = outside.col)
 
-  polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.5))
+  polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
 
 
 
@@ -300,9 +301,9 @@ mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson",
 
   
   points(ag,y,type="l",lty=1 , col = inside.col, lwd = 2)
-  points(ag,yu,type="l",lty=3, lwd = 2, col = inside.col)
-  points(ag,yl,type="l",lty=3, lwd = 2, col = inside.col)
-
+ # points(ag,yu,type="l",lty=3, lwd = 2, col = inside.col)
+ # points(ag,yl,type="l",lty=3, lwd = 2, col = inside.col)
+  polygon(c(ag,rev(ag)),c(yu, rev(yl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
 
 
 legend("topright", c("Protected", "Unprotected") , cex = 0.7,
@@ -422,8 +423,9 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
 		bty = "l", log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Elevation (m)")
-  points(elevation_plot,zu,type="l",lty=2, col = 1)
-  points(elevation_plot,zl,type="l",lty=2, col = 1)
+#  points(elevation_plot,zu,type="l",lty=2, col = 1)
+#  points(elevation_plot,zl,type="l",lty=2, col = 1)
+  polygon(c(elevation_plot,rev(elevation_plot)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
    rug(data$elevation
 	, ticksize = 0.03, side = 1,   lwd = 0.2, col = 1) 
 
@@ -510,8 +512,9 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
 		bty = "l", log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Slope (degrees)")
-  points(slope,zu,type="l",lty=2, col = outside.col)
-  points(slope,zl,type="l",lty=2, col = outside.col)
+  polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
+ # points(slope,zu,type="l",lty=2, col = outside.col)
+ # points(slope,zl,type="l",lty=2, col = outside.col)
   rug(data$slope[which(data$Within_PA == "no")],
 	ticksize = 0.03, side = 1,   lwd = 1, col = outside.col) 
 
@@ -570,8 +573,9 @@ mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson",
 
   
   points(slope,y,type="l",lty=1 , col = inside.col, lwd = 2)
-  points(slope,yu,type="l",lty=3, lwd = 2, col = inside.col)
-  points(slope,yl,type="l",lty=3, lwd = 2, col = inside.col)
+  polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = inside.col.ci)
+#  points(slope,yu,type="l",lty=3, lwd = 2, col = inside.col)
+#  points(slope,yl,type="l",lty=3, lwd = 2, col = inside.col)
   rug(data$slope[which(data$Within_PA == "yes")],
 	ticksize = 0.03, side = 1,   lwd = 1, col = inside.col, pos = 10) 
 

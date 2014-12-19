@@ -1,6 +1,6 @@
 #setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
 
-#rm(list=ls())
+rm(list=ls())
 
 setwd("N:/Documents/PREDICTS/WDPA analysis")
 
@@ -110,15 +110,6 @@ multiple.taxa.PA_11_2014  <- droplevels(multiple.taxa.PA_11_2014)
 # check is block useful
 # yes definitely
 
-m1 <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
-m1b <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
-anova(m1, m1b)
-
-
 
 m1 <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
@@ -129,43 +120,82 @@ m2 <- glmer(Species_richness ~ 1 + log_slope + log_elevation + ag_suit
 anova(m1, m2)
 
 summary(m1)
+# significant difference - now to plot the difference
+
+# Tims plots for landuse - the y axis is % difference
+# this is obtained by
+# getting estimates and lower and upper CI values
+y <- fixef(m1)[2]
+se <- se.fixef(m1)[2]  
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+
+# then backtransform and turn into percentage in one step
+y <-(exp(y)*100)-100 
+yplus<-(exp(yplus)*100)-100
+yminus<-(exp(yminus)*100)-100
+
+### need to understand this step ###
+# this approach indicates that the exp backtransformed coefficient for inside PA 
+# is actually a proportion of the outside PA value
+#(when the to the intercept is outside PA) 
+# rather than a number of species units that should be added on to the backtransformed value for the intercept
+# I thought that where outside PA is the reference value,
+# the coefficient for inside PA is added on to get the absolute value for inside PA
+# i.e. the absolute value of species richness outside a PA would be
+intercept <-fixef(m1)[1]
+exp(intercept)
+# in a PA it would be 
+y <- fixef(m1)[2]
+exp(intercept+y)
+
+# Then, the percentage difference would be
+exp(intercept+y)/exp(intercept)*100 - 100
+
+#upper and lower would be
+exp(fixef(m1)[1] + fixef(m1)[2]+1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
+exp(fixef(m1)[1] + fixef(m1)[2]-1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
+
+# ! its the same as the approach above. Excellent.
+
+# but then, when the binomial family is used, the intercept + y as a percentage of intercept has to be used:
+# this is from plot_lu_effects
+# intercept<-fixef(model)['(Intercept)']
+#   y<-(((1/(1+exp(-(intercept+y))))/(1/(1+exp(-(intercept)))))*100)-100
+#   yplus<-(((1/(1+exp(-(intercept+yplus))))/(1/(1+exp(-(intercept)))))*100)-100
+#   yminus<-(((1/(1+exp(-(intercept+yminus))))/(1/(1+exp(-(intercept)))))*100)-100
 
 
-fixef(m1)[2] # within_Pa yes = 0.0852
-exp(fixef(m1)[2]) # 1.089
 
-
-x <- exp(fixef(m1)[2]) - 1
-
-
-# so if intercept is 100% (unprotected)
-# protected is +8.9%
-
-
+# what I had before dec 14 - following Andys instructions in Cambridge oct 2014
+#x <- exp(fixef(m1)[2]) - 1
 
 # plot
-
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model sp rich.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
-
 labels <- c("Unprotected", "Protected")
-est.protect <- 1 + as.numeric(fixef(m1)[2])
-se.protect <- as.numeric(se.fixef(m1)[2])
-points <- c(1, est.protect)
-CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+y <- as.numeric(fixef(m1)[2])
+se <- as.numeric(se.fixef(m1)[2])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(exp(y)*100)
+yplus<-(exp(yplus)*100)
+yminus<-(exp(yminus)*100)
 
+points <- c(100, y)
+CI <- c(yplus, yminus)
 
-plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Species richness difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
+axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
-abline(h = 1, lty = 2)
+abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 dev.off()
@@ -220,6 +250,52 @@ summary(m1i)
 
 
 
+# plot 
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model sp rich IUCN.tif",
+	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
+
+
+labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
+
+levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
+
+multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+
+m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014)
+
+
+y <- as.numeric(fixef(m1i)[2:4])
+se <- as.numeric(se.fixef(m1i)[2:4])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(exp(y)*100)
+yplus<-(exp(yplus)*100)
+yminus<-(exp(yminus)*100)
+
+points <- c(100, y)
+CI <- cbind(yplus, yminus)
+
+plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
+	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
+	yaxt = "n", xaxt = "n",
+	ylab = "Species richness difference (% ± 95%CI)",
+	xlab = "")
+axis(1,seq(1,length(points),1), labels)
+axis(2, c(80,100,120,140), c(80,100,120,140))
+
+arrows(seq(2,length(points),1),CI[,1],
+	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
+abline(h = 100, lty = 2)
+points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
+
+dev.off()
+
+
+
+
 
 
 # rarefied richness
@@ -241,21 +317,26 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model rar rich.tif
 
 
 labels <- c("Unprotected", "Protected")
-est.protect <- 1 + as.numeric(fixef(m3)[2])
-se.protect <- as.numeric(se.fixef(m3)[2])
-points <- c(1, est.protect)
-CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+y <- as.numeric(fixef(m3)[2])
+se <- as.numeric(se.fixef(m3)[2])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(exp(y)*100)
+yplus<-(exp(yplus)*100)
+yminus<-(exp(yminus)*100)
 
+points <- c(100, y)
+CI <- c(yplus, yminus)
 
-plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5),
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
-	ylab = "Rarefied species richness difference (% ± 95%CI)",
+	ylab = "Rarefied richness difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
+axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
-abline(h = 1, lty = 2)
+abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 dev.off()
@@ -288,7 +369,7 @@ summary(m4i)
 # plot 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model rar rich IUCN.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
@@ -297,42 +378,39 @@ levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
 
 multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
 
-m <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSBS), 
+m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
-	
-est.protect <- 1 + as.numeric(fixef(m)[2:4])
-se.protect <- as.numeric(se.fixef(m)[2:4])
-points <- c(1, est.protect)
-CI <- cbind(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
 
-plot(points ~ seq(1,length(points),1), ylim = c(0.9,1.3), #xlim = c(0.5,2.5),
+y <- as.numeric(fixef(m4i)[2:4])
+se <- as.numeric(se.fixef(m4i)[2:4])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(exp(y)*100)
+yplus<-(exp(yplus)*100)
+yminus<-(exp(yminus)*100)
+
+points <- c(100, y)
+CI <- cbind(yplus, yminus)
+
+plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Rarefied species richness difference (% ± 95%CI)",
 	xlab = "")
 axis(1,seq(1,length(points),1), labels)
-axis(2, c(0.8,0.9, 1, 1.1, 1.2, 1.3), c(80,90,100,110,120,130))
+axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(seq(2,length(points),1),CI[,1],
 	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
-abline(h = 1, lty = 2)
-points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
+abline(h = 100, lty = 2)
+points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
 dev.off()
 
 
-
-
-
-
-
-
-
-
-
-
-
+# use points to see percentages
+points
 
 
 
@@ -365,23 +443,30 @@ exp(fixef(m1a)[2]) # 1.127
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model abundance.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
+
 labels <- c("Unprotected", "Protected")
-est.protect <- 1 + as.numeric(fixef(m1a)[2])
-se.protect <- as.numeric(se.fixef(m1a)[2])
-points <- c(1, est.protect)
-CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+y <- as.numeric(fixef(m1a)[2])
+se <- as.numeric(se.fixef(m1a)[2])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(exp(y)*100)
+yplus<-(exp(yplus)*100)
+yminus<-(exp(yminus)*100)
 
+points <- c(100, y)
+CI <- c(yplus, yminus)
 
-plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Abundance difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
+axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
-abline(h = 1, lty = 2)
+abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
+
 
 
 dev.off()
@@ -433,6 +518,47 @@ summary(m2ai)
 validate(m2ai)
 
 
+# plot 
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model abundance IUCN.tif",
+	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
+
+
+labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
+
+levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
+
+multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+
+m2ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSB), 
+	 data = multiple.taxa.PA_11_2014)
+
+
+y <- as.numeric(fixef(m2ai)[2:4])
+se <- as.numeric(se.fixef(m2ai)[2:4])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(exp(y)*100)
+yplus<-(exp(yplus)*100)
+yminus<-(exp(yminus)*100)
+
+points <- c(100, y)
+CI <- cbind(yplus, yminus)
+
+plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
+	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
+	yaxt = "n", xaxt = "n",
+	ylab = "Abundance difference (% ± 95%CI)",
+	xlab = "")
+axis(1,seq(1,length(points),1), labels)
+axis(2, c(80,100,120,140), c(80,100,120,140))
+arrows(seq(2,length(points),1),CI[,1],
+	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
+abline(h = 100, lty = 2)
+points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
+
+dev.off()
 
 
 
@@ -455,36 +581,51 @@ summary(m1r)
 exp(fixef(m1r)[2]) # 0.976
 
 #convert to endemicity
-1 - exp(fixef(m1r)[2])
+# not this 1 - exp(fixef(m1r)[2])
+#instead need difference between 1/range in protected and unprotected
 
 
 
 # plot
+
+
+
 #RANGE
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/simple model PA_11_2014 range.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model range.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
+# no link function so plot as relative, not percentage
+
 labels <- c("Unprotected", "Protected")
-est.protect <- 1 + as.numeric(fixef(m1r)[2])
-se.protect <- as.numeric(se.fixef(m1r)[2])
-points <- c(1, est.protect)
-CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+y <- as.numeric(fixef(m1r)[2])
+se <- as.numeric(se.fixef(m1r)[2])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(y + 1) # plot as relative to 1
+yplus<-(yplus + 1)
+yminus<-(yminus + 1)
 
+points <- c(1, y)
+CI <- c(yplus, yminus)
 
-plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+plot(points ~ c(1,2), ylim = c(0.8,1.5), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
-	ylab = "Range difference (% ± 95%CI)",
+	ylab = "Relative CWM range difference (± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
+axis(2, c(0.8,1,1.2,1.4), c(0.8,1,1.2,1.4))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 
+
 dev.off()
+
+
+
 
 
 #ENDEMICITY
@@ -492,20 +633,42 @@ dev.off()
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model endemicity.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
+
 labels <- c("Unprotected", "Protected")
-est.protect <- 1 - as.numeric(fixef(m1r)[2]) #so that difference is actually above 1
-se.protect <- as.numeric(se.fixef(m1r)[2])
-points <- c(1, est.protect)
-CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+y0 <-as.numeric(fixef(m1r)[1])
+e.y1 <- 1/y0
+y <- as.numeric(fixef(m1r)[2])
+y2 <- y0+y
+e.y2 <- 1/y2
+#so relative difference in endemicity between unprotected and protected is
+e.relative <- e.y2- e.y1
+
+#as a percentage of outside (for results section)
+ x <- e.relative/e.y1
+
+se <- as.numeric(se.fixef(m1r)[2])
+y2plus <- y0 + y + se*1.96
+e.y2plus <- 1/y2plus
+e.relative.plus <- e.y2plus - e.y1
+
+se <- as.numeric(se.fixef(m1r)[2])
+y2minus <- y0 + y - se*1.96
+e.y2minus <- 1/y2minus
+e.relative.minus <- e.y2minus - e.y1
 
 
-plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+
+
+points <- c(1, 1+e.relative)
+CI <- c(1+e.relative.plus, 1+e.relative.minus)
+
+plot(points ~ c(1,2), ylim = c(0.999,1.005), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
-	ylab = "Endemicity difference (% ± 95%CI)",
+	ylab = "Relative CWM range difference (± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.8,0.9, 1, 1.1, 1.2), c(80,90,100,110,120))
+axis(2, c(0.999,1,1.001,1.003), c(0.999,1,1.001, 1.003))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
@@ -531,10 +694,59 @@ anova(m1ri, m2ri)
 summary(m2ri)
 
 
+#PLOT
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model endemicity IUCN.tif",
+	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
+
+labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
+
+PA_11_2014$IUCN_CAT <- relevel( PA_11_2014$IUCN_CAT, "0")
+
+m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS)+ (1|SSB), 
+	 data = PA_11_2014)
+
+y0 <-as.numeric(fixef(m2ri)[1])
+e.y1 <- 1/y0
+y <- as.numeric(fixef(m2ri)[2:4])
+y2 <- y0+y
+e.y2 <- 1/y2
+#so relative difference in endemicity between unprotected and protected is
+e.relative <- e.y2- e.y1
+
+#as a percentage of outside (for results section)
+ x <- e.relative/e.y1
+
+se <- as.numeric(se.fixef(m2ri)[2:4])
+y2plus <- y0 + y + se*1.96
+e.y2plus <- 1/y2plus
+e.relative.plus <- e.y2plus - e.y1
+
+y2minus <- y0 + y - se*1.96
+e.y2minus <- 1/y2minus
+e.relative.minus <- e.y2minus - e.y1
 
 
 
 
+points <- c(1, 1+e.relative)
+CI <- cbind(1+e.relative.plus, 1+e.relative.minus)
+
+plot(points ~ c(1,2,3,4), ylim = c(0.999,1.005), xlim = c(0.5,4.5), 
+	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
+	yaxt = "n", xaxt = "n",
+	ylab = "Relative CWM range difference (± 95%CI)",
+	xlab = "")
+axis(1, c(1,2,3,4), labels)
+axis(2, c(0.999,1,1.001,1.003), c(0.999,1,1.001, 1.003))
+arrows(c(2,3,4),CI[,1],c(2,3,4),CI[,2], code = 3, length = 0.03, angle = 90)
+abline(h = 1, lty = 2)
+points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
+
+
+
+dev.off()
 
 
 
@@ -586,36 +798,49 @@ m2t <- glmer(y ~ 1 + log_slope + log_elevation + ag_suit
 	family = "binomial", data = PA_11_2014_a_m_b)
 anova(m1t, m2t)
 
+summary(m1t)
+
 
 #PLOT
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model prop threat.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
-est.protect <- 1 - as.numeric(fixef(m1t)[2]) #so that difference is actually above 1
-se.protect <- as.numeric(se.fixef(m1t)[2])
-points <- c(1, est.protect)
-CI <- c(est.protect - 1.96*se.protect, est.protect + 1.96*se.protect)
+y <- as.numeric(fixef(m1t)[2])
+se <- as.numeric(se.fixef(m1t)[2])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
 
+intercept<-fixef(m1t)[1]
+true.intercept <- 1/(1+exp(-(intercept)))
+true.y <- 1/(1+exp(-(intercept+y)))
+true.yplus <- 1/(1+exp(-(intercept+yplus)))
+true.yminus <- 1/(1+exp(-(intercept+yminus)))
 
-plot(points ~ c(1,2), ylim = c(0.8,1.3), xlim = c(0.5,2.5),
+# this is code from plot_lu_effects -
+# why is it backtranformed absolute value of non-ref level/back transformed value of ref variable?
+# because!!!
+# dont want the percentage of the difference, want it as 100+x percent. (Tims code then -100 at the end to get difference). 
+
+y<-((true.y/true.intercept)*100)
+yplus<-((true.yplus/true.intercept)*100)
+yminus<-((true.yminus/true.intercept)*100)
+
+points <- c(100, y)
+CI <- c(yplus, yminus)
+
+plot(points ~ c(1,2), ylim = c(0,500), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
-	yaxt = "n", xaxt = "n",
+	xaxt = "n", #yaxt = "n", 
 	ylab = "Proportion threatened species difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.9, 1, 1.1, 1.2, 1.3), c(90, 100, 110, 120, 130))
+#axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
-abline(h = 1, lty = 2)
+abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-
 dev.off()
-
-
-
-
-
 
 
 # IUCN CAT
