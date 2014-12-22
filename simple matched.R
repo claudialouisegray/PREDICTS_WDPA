@@ -172,7 +172,7 @@ exp(fixef(m1)[1] + fixef(m1)[2]-1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
 
 # plot
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model sp rich.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model sp rich.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
@@ -192,6 +192,13 @@ plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5),
 	yaxt = "n", xaxt = "n",
 	ylab = "Species richness difference (% ± 95%CI)",
 	xlab = "")
+
+data <- multiple.taxa.PA_11_2014[,c("Within_PA", "SSS", "Species_richness")]
+data <- na.omit(data)
+text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+
+
 axis(1, c(1,2), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
@@ -252,7 +259,7 @@ summary(m1i)
 
 # plot 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model sp rich IUCN.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model sp rich IUCN.tif",
 	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
@@ -286,6 +293,14 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
+
+data <- multiple.taxa.PA_11_2014[,c("IUCN_CAT", "SSS", "Species_richness")]
+data <- na.omit(data)
+text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
+text(3, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(4, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
+
 arrows(seq(2,length(points),1),CI[,1],
 	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
@@ -312,7 +327,7 @@ anova(m3, m4)
 #no sig difference
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model rar rich.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model rar rich.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -333,6 +348,10 @@ plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5),
 	yaxt = "n", xaxt = "n",
 	ylab = "Rarefied richness difference (% ± 95%CI)",
 	xlab = "")
+data <- multiple.taxa.PA_11_2014[,c("Within_PA", "SSS", "Richness_rarefied")]
+data <- na.omit(data)
+text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
 axis(1, c(1,2), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
@@ -368,7 +387,7 @@ summary(m4i)
 
 # plot 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model rar rich IUCN.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model rar rich IUCN.tif",
 	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
@@ -401,6 +420,14 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 	xlab = "")
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
+
+data <- multiple.taxa.PA_11_2014[,c("IUCN_CAT", "SSS", "Richness_rarefied")]
+data <- na.omit(data)
+text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
+text(3, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(4, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
+
 arrows(seq(2,length(points),1),CI[,1],
 	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
@@ -440,7 +467,7 @@ exp(fixef(m1a)[2]) # 1.127
 # plot
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model abundance.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -467,7 +494,10 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-
+data <- PA_11_2014[,c("Within_PA", "SSS", "log_abundance")]
+data <- na.omit(data)
+text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
 
 dev.off()
 
@@ -520,19 +550,19 @@ validate(m2ai)
 
 # plot 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model abundance IUCN.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance IUCN.tif",
 	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
-levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
+levels.IUCN <- levels(PA_11_2014$IUCN_CAT)
 
-multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
 
 m2ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB), 
-	 data = multiple.taxa.PA_11_2014)
+	 data = PA_11_2014)
 
 
 y <- as.numeric(fixef(m2ai)[2:4])
@@ -558,6 +588,13 @@ arrows(seq(2,length(points),1),CI[,1],
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
+data <- PA_11_2014[,c("IUCN_CAT", "SSS", "log_abundance")]
+data <- na.omit(data)
+text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
+text(3, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(4, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
+
 dev.off()
 
 
@@ -578,7 +615,7 @@ anova(m1r, m2r)
 
 summary(m1r)
 
-exp(fixef(m1r)[2]) # 0.976
+exp(fixef(m1r)[2]) # 0.978
 
 #convert to endemicity
 # not this 1 - exp(fixef(m1r)[2])
@@ -622,6 +659,7 @@ points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 
 
+
 dev.off()
 
 
@@ -630,7 +668,7 @@ dev.off()
 
 #ENDEMICITY
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model endemicity.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model endemicity.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -670,6 +708,10 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
+data <- PA_11_2014[,c("Within_PA", "SSS", "range")]
+data <- na.omit(data)
+text(2,99, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,99, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
 
 dev.off()
 
@@ -693,7 +735,7 @@ summary(m2ri)
 
 #PLOT
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model endemicity IUCN.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model endemicity IUCN.tif",
 	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
@@ -739,6 +781,13 @@ arrows(c(2,3,4),CI[,1],c(2,3,4),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
+
+data <- PA_11_2014[,c("IUCN_CAT", "SSS", "range")]
+data <- na.omit(data)
+text(1, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
+text(3, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(4, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
 
 
 dev.off()
@@ -797,7 +846,7 @@ summary(m1t)
 
 
 #PLOT
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/simple model prop threat.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model prop threat.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
@@ -834,6 +883,12 @@ axis(1, c(1,2), labels)
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
+
+data <- PA_11_2014_a_m_b[,c("Within_PA", "SSS", "y")]
+data <- na.omit(data)
+text(2,0, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,0, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+
 
 dev.off()
 
