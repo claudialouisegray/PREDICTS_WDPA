@@ -2,17 +2,20 @@ model_select<-function(all.data,responseVar,
 				alpha = 0.05,
                         fitFamily = "gaussian",
                         fixedFactors= character(0),
-                        fixedTerms=character(0),
+                        fixedTerms=list(),
                        fixedInteractions=character(0),
                        randomStruct,
                        siteRandom=FALSE,
                        fitInteractions=FALSE,verbose=FALSE,
-                       otherRandoms=character(0)){
+                       otherRandoms=character(0),
+			     optimizer="bobyqa",
+			     keepVars = list()){
+#alternative for optimizer is "Nelder_Mead"
   
   contEffectNames<-names(fixedTerms)
   
   model.data<-subset(all.data,select=c("SS", "SS_PH","SSB","SSBS",fixedFactors,
-                                    names(fixedTerms),responseVar,otherRandoms))
+                                    names(fixedTerms),responseVar,otherRandoms,names(keepVars)))
     
   model.data<-na.omit(model.data)
   cat<-sapply(model.data,is.factor)
@@ -27,6 +30,7 @@ model_select<-function(all.data,responseVar,
   all.warnings <- list()
   
   allTerms<-character(0)
+  keepTerms <- character(0)
   fixedStruct<-""
   for (i in 1:length(fixedFactors)){
     fixedStruct<-paste(fixedStruct,fixedFactors[i],sep="")
@@ -49,6 +53,19 @@ model_select<-function(all.data,responseVar,
     }
   }
   
+  if (length(keepVars)>0){
+    for (i in 1:length(keepVars)){
+      term<-paste("poly(",names(keepVars)[i],
+                  ",",keepVars[i],")",sep="")
+      fixedStruct<-paste(fixedStruct,term,sep="")
+      allTerms<-c(allTerms,term)
+	keepTerms <- c(keepTerms, term)
+      if ((i != length(keepVars)) | (length(fixedInteractions)>0)){
+        fixedStruct<-paste(fixedStruct,"+",sep="")
+      }
+    }
+  }
+
   if (fitInteractions){
     fixedStruct<-paste(fixedStruct,"+")
     
@@ -61,7 +78,6 @@ model_select<-function(all.data,responseVar,
         allTerms<-c(allTerms,term)
       }
     }
-    
   }
   
   if (length(fixedInteractions)>0){
@@ -118,9 +134,9 @@ model_select<-function(all.data,responseVar,
     if (verbose) print(call.old)
       
     if(fitFamily == "gaussian"){
-      mOld<-lmer(call.old,data=model.data, REML = F, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mOld<-lmer(call.old,data=model.data, REML = F, control= lmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }else{
-      mOld<-glmer(call.old,data=model.data, family = fitFamily, control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mOld<-glmer(call.old,data=model.data, family = fitFamily, control= glmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }
     
     # add warnings to list 
@@ -148,9 +164,9 @@ model_select<-function(all.data,responseVar,
         call.new<-gsub(t3,"",call.old)
       
         if(fitFamily == "gaussian"){
-          mNew <-lmer(call.new,data=model.data, REML = F, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+          mNew <-lmer(call.new,data=model.data, REML = F, control= lmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
         }else{
-          mNew<-glmer(call.new,data=model.data, family = fitFamily, control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+          mNew<-glmer(call.new,data=model.data, family = fitFamily, control= glmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
         }
         
         # add warnings to list 
@@ -229,9 +245,9 @@ model_select<-function(all.data,responseVar,
     
     
     if(fitFamily == "gaussian"){
-      mOld<-lmer(call.old,data=model.data, REML = F, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mOld<-lmer(call.old,data=model.data, REML = F, control= lmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }else{
-      mOld<-glmer(call.old,data=model.data, family = fitFamily, control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mOld<-glmer(call.old,data=model.data, family = fitFamily, control= glmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }
     
     # add warnings to list 
@@ -239,7 +255,7 @@ model_select<-function(all.data,responseVar,
     all.warnings[[paste(iter, "old.main")]] <- list(call = paste(call.old), warnings = mOld@optinfo$conv$lme4$messages)
     print(mOld@optinfo$conv$lme4$messages)}
     
-    mTerms<-allTerms
+    mTerms<-allTerms[which(allTerms %in% keepTerms == F)]
     
     mTerms<-gsub(" ","",mTerms)
     
@@ -287,9 +303,9 @@ model_select<-function(all.data,responseVar,
 
     # fit the new model
       if(fitFamily == "gaussian"){
-        mNew <-lmer(call.new,data=model.data, REML = F, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+        mNew <-lmer(call.new,data=model.data, REML = F, control= lmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
       }else{
-        mNew<-glmer(call.new,data=model.data, family = fitFamily, control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+        mNew<-glmer(call.new,data=model.data, family = fitFamily, control= glmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
       }
       
       # add warnings to list 
@@ -381,7 +397,7 @@ model_select<-function(all.data,responseVar,
   
   fixedStruct<-""
   
-  sig.terms<-stats[stats$P<alpha,]
+  sig.terms<-stats[which(stats$P<alpha),]
   
   
   sig.terms<-na.omit(sig.terms)
@@ -393,7 +409,7 @@ model_select<-function(all.data,responseVar,
 
 	# add main terms that are in an interaction but not otherwise present
     	inter.mains<-unique(unlist(strsplit(sig.inter,":")))
-    	sig.terms<-c(sig.terms,inter.mains[!(inter.mains %in% sig.terms)]) 
+    	sig.terms<-c(sig.terms,inter.mains[!(inter.mains %in% sig.terms | inter.mains %in% keepTerms)]) 
 
 	#take out any lower order polynomials that are in the main terms...
     for (t in names(fixedTerms)){
@@ -408,15 +424,23 @@ model_select<-function(all.data,responseVar,
 
     for (i in 1:length(sig.terms)){
       fixedStruct<-paste(fixedStruct,sig.terms[i],sep="")
-      if (i != length(sig.terms)) fixedStruct<-paste(fixedStruct,"+",sep="")
+      if (i != length(sig.terms)|length(keepTerms >0)) fixedStruct<-paste(fixedStruct,"+",sep="")
     }
+
+   if(length(keepTerms) >0){
+    for (i in 1:length(keepTerms)){
+      fixedStruct<-paste(fixedStruct,keepTerms[i],sep="")
+      if (i != length(keepTerms)) fixedStruct<-paste(fixedStruct,"+",sep="")
+    }
+   }
+
     call.best<-construct_call(responseVar,fixedStruct,randomStruct)
     if (verbose) print(call.best)
     
     if(fitFamily == "gaussian"){
-      mBest<-lmer(call.best,data=model.data, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mBest<-lmer(call.best,data=model.data, control= lmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }else{
-      mBest<-glmer(call.best,data=model.data, family = fitFamily, control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mBest<-glmer(call.best,data=model.data, family = fitFamily, control= glmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }
     
     # cat("Estimating the influence of different studies in the model\n")
@@ -428,13 +452,18 @@ model_select<-function(all.data,responseVar,
   } else {
 
     print("Warning: all terms were dropped from the model")
-    call.best<-construct_call(responseVar,"1",randomStruct)
+    fixed.struct = "1"
+    for (i in 1:length(keepTerms)){
+      fixedStruct<-paste(fixedStruct,keepTerms[i],sep="")
+      if (i != length(keepTerms)) fixedStruct<-paste(fixedStruct,"+",sep="")
+    }
+    call.best<-construct_call(responseVar,fixed.struct,randomStruct)
     if (verbose) print(call.best)
     
     if(fitFamily == "gaussian"){
-      mBest<-lmer(call.best,data=model.data, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mBest<-lmer(call.best,data=model.data, control= lmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }else{
-      mBest<-glmer(call.best,data=model.data, family = fitFamily, control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+      mBest<-glmer(call.best,data=model.data, family = fitFamily, control= glmerControl(optimizer=optimizer,optCtrl=list(maxfun=100000)))
     }
     
     return(list(model=mBest,data=model.data,stats=stats,final.call=call.best, warnings = all.warnings))  

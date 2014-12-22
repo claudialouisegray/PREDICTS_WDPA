@@ -136,25 +136,32 @@ hist(low.protection$slope)
 
 
 ### distance to boundary analysis
-
+# check polynomials
 fF <- c("Zone", "taxon_of_interest") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
-#log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
+# without block:log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
+# with block: log_abundance~poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)"
+ 
  
 
 
 
 
 # add interactions
+# and now keep confounding variables
 fF <- c("Zone", "taxon_of_interest") 
-fT <- list("ag_suit" = "1", "log_slope" = "2", "log_elevation" = "2", "log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "3")
-fI <- c("Zone:poly(log_bound_dist_km_PA_neg,1)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,1)")
+fT <- list("log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- c("ag_suit" = "1", "log_slope" = "2", "log_elevation" = "2")
+fI <- c("Zone:poly(log_bound_dist_km_PA_neg,3)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)")
 RS <-  c("log_bound_dist_km_PA_neg")
 
-#log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)"
-
+#without block:
+log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)"
+# with block : "log_abundance~poly(log_bound_dist_km_PA_neg,3)+taxon_of_interest
+# taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)+poly(ag_suit,1)+poly(log_slope,2)+poly(log_elevation,2)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
 
 
 
@@ -168,7 +175,7 @@ log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
 				verbose=TRUE)
 
 
-log_abundance.best.random$best.random
+log_abundance.best.random$best.random #has block
  
 
 
@@ -178,13 +185,14 @@ log_abundance.model <- model_select(all.data  = matched.landuse,
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
-                       randomStruct = log_abundance.best.random$best.random,
+                       randomStruct = "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB) +(1|Predominant_habitat)",
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
 
-write.csv(log_abundance.model$stats, "ab.model.stats.16.12.2014.csv")
+write.csv(log_abundance.model$stats, "ab.model.stats.22.12.2014.csv")
 
 
 
@@ -202,13 +210,16 @@ fI <- character(0)
 RS <-  c("Within_PA")
 
 
-#log_abundance~poly(ag_suit,1)+poly(log_AREA.PA,3)+poly(log_elevation,3)+taxon_of_interest+(1+Within_PA|SS)+(1|Predominant_habitat)"
+#without block: log_abundance~poly(ag_suit,1)+poly(log_AREA.PA,3)+poly(log_elevation,3)+taxon_of_interest+(1+Within_PA|SS)+(1|Predominant_habitat)"
+#with block: log_abundance~poly(ag_suit,1)+poly(log_AREA.PA,3)+poly(log_elevation,1)+taxon_of_interest+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
+ 
 
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "3", "DoP.PA" = "1", "log_AREA.PA" = "3")
-fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_slope,1)", "Within_PA:poly(log_elevation,3)",
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3")
+keepVars <- c("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
+fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_slope,1)", "Within_PA:poly(log_elevation,1)",
 	"Within_PA:taxon_of_interest", 
 	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,3)",
 	"Within_PA:Zone",
@@ -218,14 +229,21 @@ RS <-  c("Within_PA")
 #log_abundance~poly(ag_suit,1)+poly(log_AREA.PA,3)+poly(log_elevation,3)+taxon_of_interest
 #+Within_PA:poly(ag_suit,1)
 #+Within_PA:poly(log_slope,1)
-+Within_PA+poly(log_slope,1)+(1+Within_PA|SS)+(1|Predominant_habitat)"
+#+Within_PA+poly(log_slope,1)+(1+Within_PA|SS)+(1|Predominant_habitat)"
+
+#with block and keeping in confounding variables
+#log_abundance~poly(log_AREA.PA,3)+taxon_of_interest
+#+Within_PA:poly(ag_suit,1)
+#+Within_PA:poly(log_slope,1)
+#+Zone:poly(DoP.PA,1)
+#+Zone:poly(log_AREA.PA,3)+Within_PA+Zone+poly(DoP.PA,1)+poly(ag_suit,1)+poly(log_slope,1)+poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
 
 
 
 
-
-
-log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
+log_abundance.best.random <- compare_randoms(dataset = matched.landuse, 
+				responseVar = "log_abundance",
+				keepVars = keepVars,
 				fixedFactors=fF,
                          fixedTerms=fT,
                        fixedInteractions=fI,
@@ -236,17 +254,18 @@ log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
 
 
 log_abundance.best.random$best.random
- 
+#(1+Within_PA|SS)+ (1|SSB)
 
 
 # model select
 log_abundance.model2 <- model_select(all.data  = matched.landuse, 
 			     responseVar = "log_abundance", 
+			     keepVars = keepVars,
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
                        fixedInteractions=fI,
-                       randomStruct = "(1+Within_PA|SS)+(1|Predominant_habitat)",
+                       randomStruct = "(1+Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat)",
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 

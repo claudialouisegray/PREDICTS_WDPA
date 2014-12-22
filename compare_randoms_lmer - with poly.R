@@ -23,7 +23,8 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
                           otherRandoms=character(0),
 				  siteRandom = FALSE,
 				  fixed_RandomSlopes = character(0),
-                          fitInteractions=FALSE,verbose=FALSE){
+                          fitInteractions=FALSE,verbose=FALSE,
+				  keepVars = list()){
   
   if ((length(fixedInteractions)>0) & (fitInteractions)){
     stop("Error: specifying particular interactions and all two-way interactions will not work!")
@@ -38,7 +39,7 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
   # Subset the data frame, retaining just the relevant columns
   # include Source_ID and remove blocks as not relevant
   model.data<-subset(dataset,select=c("Source_ID","SS","SS_PH","SSB","SSBS",fixedFactors,
-							names(fixedTerms),responseVar,otherRandoms))
+							names(fixedTerms),responseVar,otherRandoms, names(keepVars)))
 
   model.data<-na.omit(model.data)
   cat<-sapply(model.data,is.factor)
@@ -68,7 +69,20 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
       }
     }
   }
-  
+ 
+ if (length(keepVars)>0){
+    for (i in 1:length(keepVars)){
+      term<-paste("poly(",names(keepVars)[i],
+                  ",",keepVars[i],")",sep="")
+      fixedStruct<-paste(fixedStruct,term,sep="")
+      allTerms<-c(allTerms,term)
+	keepTerms <- c(keepTerms, term)
+      if ((i != length(keepVars)) | (length(fixedInteractions)>0)){
+        fixedStruct<-paste(fixedStruct,"+",sep="")
+      }
+    }
+  }
+
   if (fitInteractions) fixedStruct<-paste("(",fixedStruct,")^2",sep="")
   
   if (length(fixedInteractions)>0){
