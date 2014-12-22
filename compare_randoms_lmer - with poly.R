@@ -90,7 +90,7 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
   # First, try fitting just landuse group within study as a random effect
   print(paste("Comparing random structure 1 of ",length(fixed_RandomSlopes)+
                 length(otherRandoms)+
-                2,sep=""))
+                3,sep=""))
   
   new.random<-"(1|SS)" #switched back from SS_PH
   best.random<-new.random
@@ -198,43 +198,10 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
 #  }
 #  
 
-
-#   # Try adding block to the random structure
-#  print(paste("Comparing random structure 4 of ",length(fixedFactors)+
-#                length(fixedTerms)+length(otherRandoms)+
-#                4,sep=""))
-#
-#  new.random <- gsub("SS_PH","SS_PH/SSB",best.random)
-#    
-#  # Construct the complete model call
-#  new.call<-construct_call(responseVar,fixedStruct,new.random)
-#  if (verbose) print(new.call)
-#  
-#  # Run the model
-#  mod<-try(lmer(new.call,data=model.data, control= lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000))))
-#
-#  # add warnings to the list
-#  all.warnings[[4]] <- list(call = paste(new.call), warnings = mod@optinfo$conv$lme4$messages)
-# 
-#
-#  # Check whether this model has the best AIC value and update the results
-#  if ((class(mod)!="try-error")){
-#    if (!is.na(AIC(mod)) & !is.null(AIC(mod))){
-#      results$ranef<-c(results$ranef,new.random)
-#      results$AIC<-c(results$AIC,AIC(mod))
-#      
-#      if(AIC(mod)<best.aic){
-#        best.aic<-AIC(mod)
-#        best.random<-new.random
-#      }
-#    }
-#  }
-#
-
     
   if(siteRandom){
     print(paste("Comparing random structure 2 of " ,length(fixed_RandomSlopes)+
-                length(otherRandoms) + 2,sep=""))
+                length(otherRandoms) + 3,sep=""))
     
     new.random <- paste(best.random, "+ (1|SSBS)",sep="")
    
@@ -279,7 +246,7 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
   i<-1
   for (f in fixed_RandomSlopes){
     print(paste("Comparing random structure ",2+i," of ",
-                length(fixed_RandomSlopes)+length(otherRandoms)+2,sep=""))
+                length(fixed_RandomSlopes)+length(otherRandoms)+3,sep=""))
 
     
    
@@ -329,13 +296,50 @@ if(siteRandom){
 
 
 
+   # Try adding block to the random structure
+  print(paste("Comparing random structure ", 2 + length(fixed_RandomSlopes) + 1, " of ",length(fixed_RandomSlopes)+
+                length(otherRandoms)+
+                3,sep=""))
+
+    new.random <- paste(best.random, "+ (1|SSB)",sep="")
+    
+  # Construct the complete model call
+  new.call<-construct_call(responseVar,fixedStruct,new.random)
+  if (verbose) print(new.call)
+  
+  # Run the model
+  mod<-try(lmer(new.call,data=model.data, control= lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000))))
+
+  # add warnings to the list
+  all.warnings[[4]] <- list(call = paste(new.call), warnings = mod@optinfo$conv$lme4$messages)
+ 
+
+  # Check whether this model has the best AIC value and update the results
+  if ((class(mod)!="try-error")){
+    if (!is.na(AIC(mod)) & !is.null(AIC(mod))){
+      results$ranef<-c(results$ranef,new.random)
+      results$AIC<-c(results$AIC,AIC(mod))
+      
+      if(AIC(mod)<best.aic){
+        best.aic<-AIC(mod)
+        best.random<-new.random
+      }
+    }
+  }
+
+
+
+
 
   # Try adding any other specified randoms
 
+  i <- 1
+
   for (re in otherRandoms){
-    print(paste("Comparing random structure ",2+i," of ",
+
+    print(paste("Comparing random structure ",3+ length(fixed_RandomSlopes)+i," of ",
                 length(fixed_RandomSlopes)+
-                  length(otherRandoms)+2,sep=""))
+                  length(otherRandoms)+3,sep=""))
 
 
     new.random<-paste(best.random,"+(1|",re,")",sep="")

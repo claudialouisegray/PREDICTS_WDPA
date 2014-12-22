@@ -644,7 +644,7 @@ e.y2 <- 1/y2
 #as a percentage of outside 
 e.relative <- e.y2/e.y1*100
 
-se <- as.numeric(se.fixef(m2ri)[2])
+se <- as.numeric(se.fixef(m2r)[2])
 y2plus <- y0 + y + se*1.96
 e.y2plus <- 1/y2plus
 e.relative.plus <- e.y2plus/e.y1*100
@@ -662,7 +662,7 @@ CI <- c(e.relative.plus, e.relative.minus)
 plot(points ~ c(1,2), ylim = c(99,102), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
-	ylab = "Relative CWM range difference (± 95%CI)",
+	ylab = "Endemicity difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
 axis(2, c(99,100,101,102), c(99,100,101,102))
