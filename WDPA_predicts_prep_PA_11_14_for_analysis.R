@@ -67,7 +67,7 @@ PA_11_14$log_slope <- log(PA_11_14$slope +1)
 PA_11_14$log_elevation <- log(PA_11_14$elevation +1)
 PA_11_14$log_hpd<- log(PA_11_14$hpd +1)
 PA_11_14$log_access <- log(PA_11_14$access +1)
-PA_11_14$log_GIS_AREA <- log(PA_11_14$GIS_AREA+1)
+PA_11_14$log_AREA.PA <- log(PA_11_14$GIS_AREA+1)
 
 
 #make response variables

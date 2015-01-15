@@ -29,9 +29,7 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
 
-#source("compare_randoms.R")
 source("compare_randoms_lmer - with poly.R")
-source("bray_curtis_dissimilarity.R")
 source("model_select.R")
 
 
@@ -119,42 +117,46 @@ plot(Species_richness ~ log(elevation+1), multiple.taxa.matched.landuse.s)
 
 ### log distance to boundary analysis
 
-
-
 fF <- c("Zone", "taxon_of_interest") 
 fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
 
-#Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
+# without block: Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
+# with block: Species_richness~poly(log_AREA.PA,3)+poly(log_elevation,1)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
+
+
+
 
 
 # add interactions
-
+# and now keep confounding variables
 fF <- c("Zone", "taxon_of_interest") 
-fT <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "2", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
-fI <- c("Zone:poly(log_bound_dist_km_PA_neg,3)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)")
+fT <- list("log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "3")
+keepVars <- c("ag_suit" = "1", "log_elevation" = "1", "log_slope" = "1")
+fI <- c("Zone:poly(log_bound_dist_km_PA_neg,1)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,1)")
 RS <-  c("log_bound_dist_km_PA_neg")
 
-#Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone
-#+taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)
+# without block: Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone+taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)
 
 
 Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                         fixedTerms=fT,
-                       fixedInteractions=fI,
-                         otherRandoms=c("Predominant_habitat"),
+                       	fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=c("Predominant_habitat"),
 				fixed_RandomSlopes = RS,
-                          fitInteractions=FALSE,
+                        fitInteractions=FALSE,
 				verbose=TRUE)
 
 
-Species_richness.best.random$best.random #"(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+Species_richness.best.random$best.random # block is better
  
-best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
 
 # model select
@@ -165,6 +167,7 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.matched.landuse
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = best.random,
 			     otherRandoms=c("Predominant_habitat"),
@@ -173,7 +176,7 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.matched.landuse
 
 validate(Species_richness.model$model) #ok
 
-write.csv(Species_richness.model$stats, "Species_richness.model.stats.16.12.2014.csv")
+write.csv(Species_richness.model$stats, "Species_richness.model.stats.05.01.2015.csv")
 
 
 
@@ -193,11 +196,12 @@ write.csv(Species_richness.model$stats, "Species_richness.model.stats.16.12.2014
 
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
-#Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
-
+# without block: Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
+# with block: Species_richness~poly(log_AREA.PA,3)+poly(log_elevation,2)+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 
 
@@ -211,32 +215,41 @@ fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_elevation,2)", "Within_
 RS <-  c("Within_PA")
 
 #remove 2 PA area interactions - problems before with these. now works. 
-fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,2)",
+fF <- c("Zone", "taxon_of_interest", "Within_PA") 
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3")
+keepVars <-list("ag_suit" = "1", "log_elevation" = "2", "log_slope" = "1")
+fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,1)",
 	"Within_PA:taxon_of_interest", "Within_PA:Zone",
 	"taxon_of_interest:poly(DoP.PA,1)",
 	"Zone:poly(DoP.PA,1)")
+RS <-  c("Within_PA")
 
-# Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone
+
+# without block: Species_richness~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+Zone
 #+Within_PA:poly(ag_suit,3)
 #+Within_PA:poly(log_slope,2)
 #+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
 
+#with block: 
+#Species_richness~poly(log_AREA.PA,3)+taxon_of_interest+Zone+Within_PA:poly(ag_suit,1)+Within_PA:poly(log_slope,1)+Within_PA+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
+#+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                         fixedTerms=fT,
-                       fixedInteractions=fI,
-                         otherRandoms=c("Predominant_habitat"),
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=c("Predominant_habitat"),
 				fixed_RandomSlopes = RS,
-                          fitInteractions=FALSE,
+                        fitInteractions=FALSE,
 				verbose=TRUE)
 
 
 Species_richness.best.random$best.random #
  
-best.random <- "(1+Within_PA|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+best.random <- "(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB) + (1|Predominant_habitat)"
 
 
 # model select
@@ -248,6 +261,7 @@ Species_richness.model2 <- model_select(all.data  = multiple.taxa.matched.landus
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = best.random,
 			     otherRandoms=c("Predominant_habitat"),
@@ -256,7 +270,7 @@ Species_richness.model2 <- model_select(all.data  = multiple.taxa.matched.landus
 
 validate(Species_richness.model2$model) #ok
 
-write.csv(Species_richness.model2$stats, "Species_richness.model2.stats.16.12.2014.csv")
+write.csv(Species_richness.model2$stats, "Species_richness.model2.stats.05.01.2015.csv")
 
 
 

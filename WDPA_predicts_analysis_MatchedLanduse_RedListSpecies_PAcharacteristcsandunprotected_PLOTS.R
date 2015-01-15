@@ -23,22 +23,41 @@ length(unique(model.data$SS))
 
 L = 100
 
-#green one
-#inside.col <- rgb(0.1,0.8,0.2)
 
 
-inside.col <- 1
-outside.col <- rgb(0.7,0.7,0.7)
-
-
-
+#make colours
 
 display.brewer.all()
 cols <- brewer.pal(8, "Paired")
 display.brewer.pal(8, "Paired")
 #drop the red to avoid red-green colorblindness issues
 
-zone.cols <- cols[c(6,5)]
+taxa.cols <- cols[c(4,2,8)]
+taxa.cols.ci <- c("#33A02C44", "#1F78B444", "#FF7F0044")
+
+
+cols <- brewer.pal(8, "Paired")
+#drop the red to avoid red-green colorblindness issues
+
+zone.cols <- cols[c(6,2)]
+zone.cols.ci <- c("#E31A1C44", "#1F78B444")
+
+inside.col <- cols[4]
+inside.col.ci <- "#33A02C44"
+outside.col <- 1
+outside.col.ci <- "#33333344"
+
+
+lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
+lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+
+
+ylims <- c(-0.0001,0.0005)
+slope.lim <- log(c(0,25)+1)
+elev.lim <- c()
+size.lim <- log(c(0,10000)+1)
+age.lim <- c(0,85)
+
 
 
 
@@ -105,7 +124,7 @@ mam <- glmer(RLS.model$final.call, model.data, family = "binomial", control= glm
  inside <- which(lbd < 0)
  lbd1[inside] <- lbd1[inside]*-1
 
-  plot(lbd1,z, ylim=c(-0.0001,0.0003), xlim = c(-50, 200), 
+  plot(lbd1,z, ylim=ylims, xlim = c(-50, 200), 
 		col = 1, lwd = 1,
 		bty = "l", yaxt = "n", 
 		type = "l",ylab = "Proportion species threatened ± s.e", xlab="Distance to PA boundary (km)")
@@ -128,7 +147,7 @@ dev.off()
 
 # PLOTS - within_PA
 
-load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\prop threatened.RData")
+load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\prop.threatened_with_block_and_keeping_confounding_vars.RData")
 
 model.data <- RLS.model2$data
 
@@ -159,7 +178,7 @@ length(unique(model.data$SS))
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/prop threatened within pa vs slope.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/prop threatened within pa vs slope.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -207,22 +226,25 @@ mam <- glmer(RLS.model2$final.call, model.data, family = "binomial")
     zl[x]<-z[x]-sqrt(pvar1) 
   }
   
-  slope_plot <- exp(slope) -1
+ # slope_plot <- exp(slope) -1
+ slope_plot <- slope
 
  # original backtransform, for binomial 
   z<-1/(1+exp(-(z)))
   zu<-1/(1+exp(-(zu)))
   zl<-1/(1+exp(-(zl)))
 
-  plot(slope_plot,z, ylim=c(-0.001,0.003),  col = outside.col,
-		bty = "l", log = "x", xaxt = "n",
+  plot(slope_plot,z, ylim=ylims, xlim = slope.lim, col = outside.col,
+		bty = "l",  xaxt = "n", yaxt = "n", #log = "x",
 		type = "l",ylab = "Proportion threatened species ± s.e", 
 		xlab="Slope (degrees)")
-   rug(data$slope[which(data$Within_PA == "no")]
-	, ticksize = 0.03, side = 1,   lwd = 1, col = outside.col, pos = -0.001) 
-  axis(1, c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50,500), c(0.05, 0.1, 0.2, 0.5, 1, 2, 5, 20, 50,500))
-  points(slope_plot,zu,type="l",lty=2, col = outside.col)
-  points(slope_plot,zl,type="l",lty=2, col = outside.col)
+   rug(data$log_slope[which(data$Within_PA == "no")]
+	, ticksize = 0.03, side = 1,   lwd = 1, col = 8, pos = min(ylims)) 
+  axis(1, log(c(0,2.5,5,10, 20)+1), c(0,2.5,5,10, 20))
+  axis(2, c(0,0.0001, 0.0002, 0.0003, 0.0004), c(0,0.0001, 0.0002, 0.0003, 0.0004))
+#  points(slope_plot,zu,type="l",lty=2, col = outside.col)
+#  points(slope_plot,zl,type="l",lty=2, col = outside.col)
+  polygon(c(slope_plot,rev(slope_plot)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
 
 
 
@@ -264,19 +286,22 @@ slope.y <-seq(from=min(model.data$log_slope[which(model.data$Within_PA == "yes")
     yl[x]<-y[x]-sqrt(pvar1) 
   }
 
-  slope.y_plot <- exp(slope.y) -1
+#  slope.y_plot <- exp(slope.y) -1
+ slope.y_plot <- slope.y
   y<-1/(1+exp(-(y)))
   yu<-1/(1+exp(-(yu)))
   yl<-1/(1+exp(-(yl)))
 
 
   points(slope.y_plot,y,type="l",lty=1 , col = inside.col, lwd = 1.5)
-  points(slope.y_plot,yu,type="l",lty=3, lwd = 1.5, col = inside.col)
-  points(slope.y_plot,yl,type="l",lty=3, lwd = 1.5, col = inside.col)
-   rug(data$slope[which(data$Within_PA == "yes")]
+  polygon(c(slope.y_plot,rev(slope.y_plot)),c(yu, rev(yl)),lty=0, col = inside.col.ci)
+#  points(slope.y_plot,yu,type="l",lty=3, lwd = 1.5, col = inside.col)
+#  points(slope.y_plot,yl,type="l",lty=3, lwd = 1.5, col = inside.col)
+   rug(data$log_slope[which(data$Within_PA == "yes")]
 	, ticksize = 0.03, side = 1,   lwd = 2, col = inside.col) 
 
-legend("topleft", c("Protected", "Unprotected") , col = c(inside.col,outside.col), lty = c(1,1), lwd = c(2,1))
+legend("topleft", c("Protected", "Unprotected") , cex = 0.5,
+	col = c(inside.col,outside.col), lty = c(1,1), lwd = c(1,1))
 
 
 dev.off()

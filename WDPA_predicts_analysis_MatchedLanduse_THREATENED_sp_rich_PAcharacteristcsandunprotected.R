@@ -21,18 +21,13 @@ library(rgl)
 
 
 #setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
-
-
-setwd("N:/Documents/PREDICTS/WDPA analysis")
+#setwd("N:/Documents/PREDICTS/WDPA analysis")
+setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 
 
 # load functions
-
-#source("compare_randoms.R")
 source("compare_randoms_lmer - with poly.R")
-source("multiplot_pairwise_all.R")
-source("bray_curtis_dissimilarity.R")
 source("model_select.R")
 
 

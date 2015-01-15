@@ -28,8 +28,6 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 
 # load functions
-
-#source("compare_randoms.R")
 source("compare_randoms_lmer - with poly.R")
 source("model_select.R")
 
@@ -106,15 +104,11 @@ plot3d( matched.landuse_amp_mam_bir$log_bound_dist_km_PA_neg, matched.landuse_am
 
 xyplot(RLS ~ hpd|Within_PA, matched.landuse_amp_mam_bir)
 
-
 xyplot(RLS ~ elevation|Zone, matched.landuse_amp_mam_bir)
 xyplot(RLS ~ access|Zone, matched.landuse_amp_mam_bir)
 xyplot(RLS ~ ag_suit|Zone, matched.landuse_amp_mam_bir)
 xyplot(RLS ~ hpd|Zone, matched.landuse_amp_mam_bir)
 xyplot(RLS ~ slope|Zone, matched.landuse_amp_mam_bir)
-
-
-
 
 hist(matched.landuse_amp_mam_bir$elevation)
 hist(matched.landuse_amp_mam_bir$ag_suit)
@@ -132,59 +126,61 @@ plot(RLS ~ log(elevation+1), matched.landuse_amp_mam_bir.s)
 
 ### distance to boundary model
 
-
 fF <- c("Zone") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
 
-#RLS.y~poly(ag_suit,2)+poly(DoP.PA,1)+poly(log_AREA.PA,1)+poly(log_bound_dist_km_PA_neg,2)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)
-
+# without block: RLS.y~poly(ag_suit,2)+poly(DoP.PA,1)+poly(log_AREA.PA,1)+poly(log_bound_dist_km_PA_neg,2)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)
+# with block: "RLS.y~poly(ag_suit,1)+poly(DoP.PA,1)+poly(log_AREA.PA,1)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 #add interactions
 fF <- c("Zone") 
-fT <- list("ag_suit" = "2", "log_slope" = "1", "log_elevation" = "3", "log_bound_dist_km_PA_neg" = "2", "DoP.PA" = "1", "log_AREA.PA" = "1")
-fI <- c("Zone:poly(log_bound_dist_km_PA_neg,2)")
+fT <- list( "log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "3")
+fI <- c("Zone:poly(log_bound_dist_km_PA_neg,1)")
 RS <-  c("log_bound_dist_km_PA_neg")
 
-#RLS.y~poly(ag_suit,2)+poly(DoP.PA,1)+poly(log_AREA.PA,1)+poly(log_bound_dist_km_PA_neg,2)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)
-
+#without block: RLS.y~poly(ag_suit,2)+poly(DoP.PA,1)+poly(log_AREA.PA,1)+poly(log_bound_dist_km_PA_neg,2)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)
+# with block: "RLS.y~poly(DoP.PA,1)+poly(log_AREA.PA,1)+poly(ag_suit,1)+poly(log_slope,1)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 
 RLS.best.random <- compare_randoms(matched.landuse_amp_mam_bir, "RLS.y",
 				fitFamily = "binomial",
 				siteRandom = T,
 				fixedFactors=fF,
-                         fixedTerms=fT,
-                       fixedInteractions=fI,
-                         otherRandoms=c("Predominant_habitat"),
+                         	fixedTerms=fT,
+                       	fixedInteractions=fI,
+                        	otherRandoms=c("Predominant_habitat"),
 				fixed_RandomSlopes = RS,
-                          fitInteractions=FALSE,
+                          	fitInteractions=FALSE,
 				verbose=TRUE)
 
 
-RLS.best.random$best.random #"(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)"
+RLS.best.random$best.random #"(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+ (1|SSB)"
  
-best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
 
 
 # model select
 RLS.model <- model_select(all.data  = matched.landuse_amp_mam_bir, 
-				fitFamily = "binomial",
-				siteRandom = T,
-			     responseVar = "RLS.y", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-                       fixedInteractions=fI,
-                       randomStruct = best.random,
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
+			     	fitFamily = "binomial",
+			     	siteRandom = T,
+			     	responseVar = "RLS.y", 
+			     	alpha = 0.05,
+                       	fixedFactors= fF,
+                       	fixedTerms= fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                       	randomStruct = best.random,
+			     	otherRandoms=c("Predominant_habitat"),
+                       	verbose=TRUE)
 
 
 validate(RLS.model$model)
-write.csv(RLS.model$stats, "RLS.model.stats.16.12.2014.csv")
+write.csv(RLS.model$stats, "RLS.model.stats.05.01.2015.csv")
 
 
 
@@ -193,16 +189,18 @@ write.csv(RLS.model$stats, "RLS.model.stats.16.12.2014.csv")
 
 
 fF <- c("Zone", "Within_PA") 
-fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1", "DoP.PA" = "3", "log_AREA.PA" = "3")
+fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1", "DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
 ### first round doesnt converge with all terms having cubic polynomials
 # hence try just with PA variables cubic - most interested in whether non linear effects of these
-# this cant estimate impact of dropping ag suit until DoP is reduced to cubic, but subsequently estimated successfully.
+# doesnt work - all linear
+# (previously this couldn't estimate impact of dropping ag suit until DoP is reduced, but subsequently estimated successfully.
 
-#RLS.y~poly(ag_suit,1)+poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
-
+# without block: RLS.y~poly(ag_suit,1)+poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
+# with block: RLS.y~poly(ag_suit,1)+poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 
 # add interactions
@@ -224,15 +222,18 @@ RS <-  c("Within_PA")
 
 #works
 fF <- c("Zone","Within_PA") 
-fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1", "DoP.PA" = "1", "log_AREA.PA" = "1")
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
 fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_slope,1)", "Within_PA:poly(log_elevation,1)",
 	"Zone:poly(DoP.PA,1)")
 RS <-  c("Within_PA")
-# RLS.y~poly(ag_suit,1)+poly(log_elevation,1)
-# +Within_PA:poly(log_slope,1)+Within_PA+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
+# without block: RLS.y~poly(ag_suit,1)+poly(log_elevation,1)+Within_PA:poly(log_slope,1)+Within_PA+poly(log_slope,1)
+#+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
 
+#with block: RLS.y~Within_PA:poly(log_slope,1)+Within_PA+poly(ag_suit,1)+poly(log_slope,1)+poly(log_elevation,1)
+#+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
-# problem interactions to add
+# problem interactions
 #"Within_PA:Zone"
 #"Zone:poly(log_AREA.PA,1)"
 
@@ -253,18 +254,19 @@ RLS.best.random <- compare_randoms(matched.landuse_amp_mam_bir, "RLS.y",
 
 RLS.best.random$best.random #"(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)"
  
-best.random <- "(1+Within_PA|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+best.random <- "(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
 
 
 # model select
 RLS.model2 <- model_select(all.data  = matched.landuse_amp_mam_bir, 
-				fitFamily = "binomial",
-				siteRandom = T,
+			     fitFamily = "binomial",
+			     siteRandom = T,
 			     responseVar = "RLS.y", 
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = best.random,
 			     otherRandoms=c("Predominant_habitat"),
@@ -272,7 +274,7 @@ RLS.model2 <- model_select(all.data  = matched.landuse_amp_mam_bir,
 
 
 validate(RLS.model2$model) 
-write.csv(RLS.model2$stats, "RLS.model2.stats.16.12.2014.csv")
+write.csv(RLS.model2$stats, "RLS.model2.stats.05.01.2015.csv")
 
 
 

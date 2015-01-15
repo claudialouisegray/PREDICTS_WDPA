@@ -10,8 +10,10 @@ library(lme4)
 
 model.data <- Species_richness.model$data
 
-data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation", "DoP.PA", "AREA.PA",
-	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
+data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation",
+	 "log_AREA.PA", "DoP.PA", "AREA.PA",
+	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", 
+	 "SS", "SSBS", "SSB")]
 
 data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
 
@@ -23,35 +25,43 @@ nrow(model.data)
 length(unique(model.data$SS))
 
 
-display.brewer.all()
-cols <- brewer.pal(8, "Paired")
-display.brewer.pal(8, "Paired")
-#drop the red to avoid red-green colorblindness issues
 
-zone.cols <- cols[c(6,5)]
+L = 100
 
-
+#make colours
 
 display.brewer.all()
 cols <- brewer.pal(8, "Paired")
 display.brewer.pal(8, "Paired")
 #drop the red to avoid red-green colorblindness issues
 
-cols <- cols[c(2,4,8)]
+taxa.cols <- cols[c(4,2,8)]
+taxa.cols.ci <- c("#33A02C44", "#1F78B444", "#FF7F0044")
 
-#green one
-inside.col <- rgb(0.1,0.8,0.2)
+
+cols <- brewer.pal(8, "Paired")
+#drop the red to avoid red-green colorblindness issues
+
+zone.cols <- cols[c(6,2)]
+zone.cols.ci <- c("#E31A1C44", "#1F78B444")
+
+inside.col <- cols[4]
+inside.col.ci <- "#33A02C44"
 outside.col <- 1
-inside.col.ci <- rgb(0.1, 0.8, 0.2, 0.3)
-outside.col.ci <- rgb(0.5, 0.5, 0.5, 0.3)
-
-#inside.col <- 1
-#outside.col <- rgb(0.7,0.7,0.7)
+outside.col.ci <- "#33333344"
 
 
 lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
-
 lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+
+
+ylims <- c(0,50)
+slope.lim <- log(c(0,25)+1)
+elev.lim <- c()
+size.lim <- log(c(0,10000)+1)
+age.lim <- c(0,85)
+
+
 
 
 
@@ -127,7 +137,7 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
  inside <- which(lbd < 0)
  lbd1[inside] <- lbd1[inside]*-1
 
-  plot(lbd1,z, ylim=c(0,50), xlim = c(-80, 200), col = cols[i],
+  plot(lbd1,z, ylim=ylims, xlim = c(-80, 200), col = cols[i],
 		bty = "l", #log = "x", #yaxt = "n", 
 		type = "l",ylab = "Species richness per site ± s.e", xlab="Distance to PA boundary (km)", main = t)
   rug(data$bound_dist_km_PA_neg[which(data$taxon_of_interest == t)]
@@ -167,7 +177,7 @@ double check:  Species_richness.model2$final.call should match that in excel fil
 
 model.data <- Species_richness.model2$data
 
-data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation", "DoP.PA", "AREA.PA",
+data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation", "DoP.PA", "AREA.PA", "log_AREA.PA",
 	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
 
 data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
@@ -185,7 +195,7 @@ length(unique(model.data$SS))
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness within pa vs  ag_suit.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Species_richness within pa vs  ag_suit.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,1))
@@ -243,20 +253,21 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
 
 
   plot(ag,z, ylim=c(0,50), col = outside.col,
-		bty = "l", #log = "x",
+		bty = "l", 
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Agricultural suitability (higher = more suitable)")
   #points(ag,zu,type="l",lty=2, col = outside.col)
   #points(ag,zl,type="l",lty=2, col = outside.col)
 
-  polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
+  polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
 
 
 
 
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
-
+model.data$Zone<- relevel(model.data$Zone , "Tropical")
+model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest, "Invertebrates")
 mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson", control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
   ag <-seq(from=min(model.data$ag_suit[which(model.data$Within_PA == "yes")]),
@@ -300,14 +311,14 @@ mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson",
   yl <- exp(yl)
 
   
-  points(ag,y,type="l",lty=1 , col = inside.col, lwd = 2)
+  points(ag,y,type="l",lty=1 , col = inside.col, lwd = 1)
  # points(ag,yu,type="l",lty=3, lwd = 2, col = inside.col)
  # points(ag,yl,type="l",lty=3, lwd = 2, col = inside.col)
-  polygon(c(ag,rev(ag)),c(yu, rev(yl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
+  polygon(c(ag,rev(ag)),c(yu, rev(yl)),lty=0, col = inside.col.ci)
 
 
-legend("topright", c("Protected", "Unprotected") , cex = 0.7,
-	col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,2))
+legend("topright", c("Protected", "Unprotected") , cex = 1,
+	col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,1))
 
 
 
@@ -348,101 +359,13 @@ dev.off()
 
 
 
-#### elevation ##########
-
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness vs elevation.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
-
-
-
-par(mfrow = c(1,1))
-
-
-  par(mar=c(4,4.5,4,1.5))
-  par(mgp=c(2.5,1,0))
-  
- L = 30
-
-  elevation <-seq(from=min(model.data$log_elevation),
-		to=max(model.data$log_elevation),length=L)
-  z<-vector(mode="numeric",length=L)
-  zu<-vector(mode="numeric",length=L)
-  zl<-vector(mode="numeric",length=L)
-  
-
-
-# it doesnt matter what the values for taxon and zone are, as there is no interaction with these
-
-
-
-model.data$Within_PA <- relevel(model.data$Within_PA, "no")
-model.data$Zone<- relevel(model.data$Zone , "Tropical")
-model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
-mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
-
- for (x in 1:L)
-  {
-    ag_suit <- median(model.data$ag_suit)
-    Species_richness <- 0
-    log_elevation <- elevation[x]
-    log_AREA.PA <-mean(model.data$log_AREA.PA)
-    DoP.PA <- mean(model.data$DoP.PA)
-    IUCN.PA <- "1.5"
-    Zone <-"Tropical"
-    taxon_of_interest<- "Vertebrates"
-    Predominant_habitat <-"Primary Vegetation"
-    log_slope <- mean(model.data$log_slope)
-    Within_PA <- "no"
-    newdat.n<-data.frame(cbind(Species_richness, log_slope,log_AREA.PA, DoP.PA, log_elevation, ag_suit))
-    newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
-    levels(newdat.f$Zone)<-levels(model.data$Zone)
-    levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
-    levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
-    levels(newdat.f$ag_suit) <- levels(model.data$ag_suit)
-    levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
-    newdat<-data.frame(newdat.f,newdat.n)
-    mm<-model.matrix(terms(mam),newdat)
-    pvar1 <- diag(mm %*% tcrossprod(vcov(mam),mm))
-    z[x]<-mm %*% fixef(mam)
-    zu[x]<-z[x]+sqrt(pvar1)
-    zl[x]<-z[x]-sqrt(pvar1) 
-  }
-  
-
-  elevation_plot <- exp(elevation)
-
-  #backtransform from poisson log-link
-  z <- exp(z)
-  zu <- exp(zu)
-  zl <- exp(zl)
-
-
-  plot(elevation_plot,z, ylim=c(0, 50), col = 1,
-		bty = "l", log = "x",
-		type = "l",ylab = "Species richness per site ± s.e", 
-		xlab="Elevation (m)")
-#  points(elevation_plot,zu,type="l",lty=2, col = 1)
-#  points(elevation_plot,zl,type="l",lty=2, col = 1)
-  polygon(c(elevation_plot,rev(elevation_plot)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
-   rug(data$elevation
-	, ticksize = 0.03, side = 1,   lwd = 0.2, col = 1) 
-
-
-dev.off()
-
-
-
-
-
 
 
 #### within PA and slope ##########
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness within pa vs slope.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Species_richness within pa vs slope.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,1))
@@ -499,7 +422,7 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
   }
   
 
-  slope <- exp(slope) -1
+ # slope <- exp(slope) -1
 
 
   #backtransform from poisson log-link
@@ -508,15 +431,16 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
   zl <- exp(zl)
 
 
-  plot(slope,z, ylim=c(0,50), col = outside.col,
-		bty = "l", log = "x",
+  plot(slope,z, ylim=ylims, xlim = slope.lim, col = outside.col,
+		bty = "l", xaxt = "n", #log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", 
 		xlab="Slope (degrees)")
-  polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = rgb(0.5, 0.5, 0.5, 0.3))
+  axis(1, log(c(0,2.5,5,10,20)+1), c(0,2.5,5,10,20))
+  polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
  # points(slope,zu,type="l",lty=2, col = outside.col)
  # points(slope,zl,type="l",lty=2, col = outside.col)
-  rug(data$slope[which(data$Within_PA == "no")],
-	ticksize = 0.03, side = 1,   lwd = 1, col = outside.col) 
+  rug(data$log_slope[which(data$Within_PA == "no")],
+	ticksize = 0.03, side = 1,   lwd = 1, col = 8, pos = min(ylims)) 
 
 
 
@@ -563,7 +487,7 @@ mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson",
   }
 
 
-  slope <- exp(slope) -1
+ # slope <- exp(slope) -1
 
 
   #backtransform from poisson log-link
@@ -572,14 +496,14 @@ mam<- glmer(Species_richness.model2$final.call, model.data,  family = "poisson",
   yl <- exp(yl)
 
   
-  points(slope,y,type="l",lty=1 , col = inside.col, lwd = 2)
-  polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = inside.col.ci)
+  points(slope,y,type="l",lty=1 , col = inside.col, lwd = 1)
+  polygon(c(slope,rev(slope)),c(yu, rev(yl)),lty=0, col = inside.col.ci)
 #  points(slope,yu,type="l",lty=3, lwd = 2, col = inside.col)
 #  points(slope,yl,type="l",lty=3, lwd = 2, col = inside.col)
-  rug(data$slope[which(data$Within_PA == "yes")],
-	ticksize = 0.03, side = 1,   lwd = 1, col = inside.col, pos = 10) 
+  rug(data$log_slope[which(data$Within_PA == "yes")],
+	ticksize = 0.03, side = 1,   lwd = 1, col = inside.col) 
 
-legend("topright", c("Protected", "Unprotected") , col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,2))
+legend("topright", c("Protected", "Unprotected") , col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,1))
 
 
 dev.off()
@@ -592,7 +516,7 @@ dev.off()
 
 #### PA size #####
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species richness vs PA size.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Species richness vs PA size.tif",
 	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
@@ -645,23 +569,21 @@ mam <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
   zu <- exp(zu)
   zl <- exp(zl)
 
- gis_plot <- exp(gis) -1
+# gis_plot <- exp(gis) -1
+  gis_plot <- gis
 
-
-  plot(gis_plot,z, ylim=c(0,50),  col = 1, lwd = 1,
-		bty = "l", log = "x", #yaxt = "n", 
+  plot(gis_plot,z, ylim=ylims, xlim = size.lim,  col = 1, lwd = 1,
+		bty = "l",  xaxt = "n", #log = "x",
 		type = "l",ylab = "Species richness per site ± s.e", xlab="PA size (km2)")
-  rug(data$AREA.PA, ticksize = 0.03, side = 1, lwd = 1, col = 1)
-  points(gis_plot,zu,type="l",lty=2,  lwd = 1, col = 1)
-  points(gis_plot,zl,type="l",lty=2,  lwd = 1, col =  1)
+  rug(data$log_AREA.PA, ticksize = 0.03, side = 1, lwd = 1, col = 1)
+  axis(1,at = log(c(0,10,100,1000,10000)+1), c(0,10,100,1000,10000))
+  polygon(c(gis_plot,rev(gis_plot)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
+#  points(gis_plot,zu,type="l",lty=2,  lwd = 1, col = 1)
+#  points(gis_plot,zl,type="l",lty=2,  lwd = 1, col =  1)
 
 
 
 dev.off()
-
-
-
-
 
 
 

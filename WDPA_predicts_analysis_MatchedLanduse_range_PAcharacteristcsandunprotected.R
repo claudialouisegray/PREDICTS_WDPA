@@ -50,14 +50,6 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 }
 
 
-
-#min(data$bound_dist_km_PA_neg)
-
-#data$Source_ID[which(data$bound_dist_km_PA_neg < -50)]
-
-#matched.landuse <- subset(matched.landuse, Source_ID != "SE2_2010__McCarthy")
-
-
 nrow(matched.landuse) #5491
 
 
@@ -127,21 +119,24 @@ plot(range ~ log(elevation+1), matched.landuse.s)
 
 fF <- c("Zone", "taxon_of_interest") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
 
-#range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
+#without block: range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
+#with block:  range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
+
 
 #add interactions
 
 fF <- c("Zone", "taxon_of_interest") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "2", "log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "1")
+fT <- list("log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- c("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "2")
 fI <- c("Zone:poly(log_bound_dist_km_PA_neg,1)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,1)") 
 RS <-  c("log_bound_dist_km_PA_neg")
 
-#range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
-
-
+#without block: range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
+# with block: "range~taxon_of_interest+Zone+poly(ag_suit,3)+poly(log_slope,3)+poly(log_elevation,2)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
 
 
 range.best.random <- compare_randoms(matched.landuse, "range",
@@ -154,7 +149,7 @@ range.best.random <- compare_randoms(matched.landuse, "range",
 				verbose=TRUE)
 
 
-range.best.random$best.random
+range.best.random$best.random #block is better
  
 
 
@@ -164,13 +159,14 @@ range.model <- model_select(all.data  = matched.landuse,
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = range.best.random$best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
 
-write.csv(range.model$stats, "range.model.stats.18.11.2014.csv")
+write.csv(range.model$stats, "range.model.stats.05.01.2015.csv")
 
 
 
@@ -190,31 +186,49 @@ RS <-  c("IUCN.PA")
 ### Within_PA analysis
 
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
 
-# range~poly(ag_suit,3)+poly(DoP.PA,3)+poly(log_AREA.PA,3)+poly(log_elevation,3)+poly(log_slope,3)+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|Predominant_habitat)"
- 
+# without block: range~poly(ag_suit,3)+poly(DoP.PA,3)+poly(log_AREA.PA,3)+poly(log_elevation,3)+poly(log_slope,3)+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|Predominant_habitat)"
+# with block: range~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)
+
+# compare to gamm
+
+gamm.model <- gamm4(range ~ Within_PA + Zone + taxon_of_interest + ag_suit + s(log_elevation) + s(log_slope)+ s(DoP.PA) + s(log_AREA.PA), 
+	random = ~(1+ Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat), data =  matched.landuse)
+plot(gamm.model$gam)
+summary(gamm.model$gam)
 
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
-fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_slope,3)", "Within_PA:poly(log_elevation,3)",
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "2")
+fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_slope,3)", "Within_PA:poly(log_elevation,2)",
 	"Within_PA:taxon_of_interest", 
-	"taxon_of_interest:poly(DoP.PA,3)", "taxon_of_interest:poly(log_AREA.PA,3)",
+	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,1)",
 	"Within_PA:Zone",
-	"Zone:poly(DoP.PA,3)", "Zone:poly(log_AREA.PA,3)")
+	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,1)")
 RS <-  c("Within_PA")
 
+#without block
 #range~poly(ag_suit,3)+poly(DoP.PA,3)+poly(log_AREA.PA,3)+poly(log_elevation,3)+poly(log_slope,3)+taxon_of_interest+Within_PA+Zone
 #+Within_PA:poly(ag_suit,3)
 #+Within_PA:poly(log_elevation,3)
 #+Zone:poly(log_AREA.PA,3)
 #+(1+Within_PA|SS)+(1|Predominant_habitat)"
  
+#with block:
+#range~poly(log_AREA.PA,3)+taxon_of_interest+Within_PA+Zone
+#+Within_PA:poly(ag_suit,3)
+#+Within_PA:poly(log_slope,3)
+#+Zone:poly(DoP.PA,1)
+#+Zone:poly(log_AREA.PA,3)
+#+poly(DoP.PA,1)+poly(ag_suit,3)+poly(log_slope,3)+poly(log_elevation,2)
+#+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
 
 
 
@@ -231,7 +245,7 @@ range.best.random <- compare_randoms(matched.landuse, "range",
 				verbose=TRUE)
 
 
-range.best.random$best.random
+range.best.random$best.random #block is better
  
 
 
@@ -241,6 +255,7 @@ range.model2 <- model_select(all.data  = matched.landuse,
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = range.best.random$best.random,
 			     otherRandoms=c("Predominant_habitat"),
@@ -252,7 +267,7 @@ range.model2 <- model_select(all.data  = matched.landuse,
 
 
 validate(range.model2$model) #ok
-write.csv(range.model2$stats, "range.model2.stats.18.11.2014.csv")
+write.csv(range.model2$stats, "range.model2.stats.05.01.2015.csv")
 
 
 
@@ -264,11 +279,11 @@ range.model$stats
 summary(range.model$model)
 
 
-XV.10 <- CrossValidate(range.model$model,10, divFactor = "SS", fitFamily = "gaussian", data= range.model$data, 
+XV.10 <- CrossValidate(range.model2$model,10, divFactor = "SS", fitFamily = "gaussian", data= range.model2$data, 
 	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = range.best.random$best.random)
 # all significant estimates seem acceptably similar
 
-XV.20 <- CrossValidate(range.model$model,20, divFactor = "SS", fitFamily = "gaussian", data= range.model$data, 
+XV.20 <- CrossValidate(range.model2$model,20, divFactor = "SS", fitFamily = "gaussian", data= range.model2$data, 
 	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = range.best.random$best.random)
 # all significant estimates seem acceptably similar
 

@@ -28,9 +28,7 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
 
-#source("compare_randoms.R")
 source("compare_randoms_lmer - with poly.R")
-source("bray_curtis_dissimilarity.R")
 source("model_select.R")
 
 
@@ -124,42 +122,45 @@ plot(Richness_rarefied ~ log(elevation+1), multiple.taxa.matched.landuse.s)
 
 fF <- c("Zone", "taxon_of_interest") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
-#"Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
-
+# without block "Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
+# with block: "Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 
 
 # add interactions
 
 fF <- c("Zone", "taxon_of_interest") 
-fT <- list("ag_suit" = "3", "log_slope" = "1", "log_elevation" = "1", "log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "2")
+fT <- list("log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "2")
+keepVars <- list("ag_suit" = "3", "log_slope" = "1", "log_elevation" = "3")
 fI <- c("Zone:poly(log_bound_dist_km_PA_neg,1)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,1)")
 RS <-  c("log_bound_dist_km_PA_neg")
 
 
-#Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,1)+Zone
+#without block - but elevation is wrong here, should have been cubic. Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,1)+Zone
 #+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
+# with block: "Richness_rarefied~Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
 
 Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                         fixedTerms=fT,
-                       fixedInteractions=fI,
-                         otherRandoms=c("Predominant_habitat"),
+                      	fixedTerms=fT,
+                       	fixedInteractions=fI,
+                        otherRandoms=c("Predominant_habitat"),
 				fixed_RandomSlopes = RS,
-                          fitInteractions=FALSE,
+                        fitInteractions=FALSE,
 				verbose=TRUE)
 
 
-Richness_rarefied.best.random$best.random #"(1|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+Richness_rarefied.best.random$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 # but this isnt comparable with the other models
 # also conversation with Luca about specifing random factor structure first
 
-best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS) + (1|SSB) + (1|Predominant_habitat)"
  
 
 
@@ -172,6 +173,7 @@ Richness_rarefied.model <- model_select(all.data  = multiple.taxa.matched.landus
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = best.random,
 			     otherRandoms=c("Predominant_habitat"),
@@ -179,7 +181,7 @@ Richness_rarefied.model <- model_select(all.data  = multiple.taxa.matched.landus
 
 
 validate(Richness_rarefied.model$model) #ok
-write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.stats.16.12.2014.csv")
+write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.stats.05.01.2015.csv")
 
 
 
@@ -191,15 +193,18 @@ write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.stats.16.12.20
 
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
-#Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
+#without block: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
+# with block: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "3", "log_slope" = "1", "log_elevation" = "3", "DoP.PA" = "1", "log_AREA.PA" = "2")
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "2")
+keepVars <- list("ag_suit" = "3", "log_slope" = "1", "log_elevation" = "3")
 fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_slope,1)", "Within_PA:poly(log_elevation,3)",
 	"Within_PA:taxon_of_interest", 
 	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,2)",
@@ -207,13 +212,14 @@ fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_slope,1)", "Within_PA:p
 	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,2)")
 RS <-  c("Within_PA")
 
-#Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone
+#without block: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone
 #+Within_PA:poly(ag_suit,3)
 #+Within_PA:taxon_of_interest
 #+Within_PA+taxon_of_interest
 #+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)
 
-
+# with block: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone
+#+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 
 
@@ -221,18 +227,18 @@ Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, 
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                         fixedTerms=fT,
-                       fixedInteractions=fI,
-                         otherRandoms=c("Predominant_habitat"),
+                        fixedTerms=fT,
+                       	fixedInteractions=fI,
+                        otherRandoms=c("Predominant_habitat"),
 				fixed_RandomSlopes = RS,
-                          fitInteractions=FALSE,
+                        fitInteractions=FALSE,
 				verbose=TRUE)
 
 
 Richness_rarefied.best.random$best.random #
 
 
-best.random <- "(1+Within_PA|SS)+ (1|SSBS)+(1|Predominant_habitat)"
+best.random <- "(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB) + (1|Predominant_habitat)"
  
 
 
@@ -244,6 +250,7 @@ Richness_rarefied.model2 <- model_select(all.data  = multiple.taxa.matched.landu
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
+			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = best.random,
 			     otherRandoms=c("Predominant_habitat"),
@@ -251,8 +258,9 @@ Richness_rarefied.model2 <- model_select(all.data  = multiple.taxa.matched.landu
 
 
 validate(Richness_rarefied.model2$model) #ok
-write.csv(Richness_rarefied.model2$stats, "Richness_rarefied.model2.stats.16.12.2014.csv")
+write.csv(Richness_rarefied.model2$stats, "Richness_rarefied.model2.stats.05.01.2015.csv")
 
+save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\rarefied.richness_with_block_and_keeping_confounding_vars.RData")
 
 
 Richness_rarefied.model$warnings

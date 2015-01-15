@@ -5,10 +5,11 @@ load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\rarefied.richness")
 
 model.data <- Richness_rarefied.model2$data
 
-data <- multiple.taxa.matched.landuse[,c("Richness_rarefied", "Zone", "taxon_of_interest", "ag_suit", "log_slope", "slope", "DoP.PA", "AREA.PA", "IUCN.PA",
+data <- multiple.taxa.matched.landuse[,c("Richness_rarefied", "Zone", "taxon_of_interest", "ag_suit", "log_slope", "slope", 
+	"DoP.PA", "AREA.PA", "log_AREA.PA", "IUCN.PA",
 	 "log_elevation", "elevation", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", "SS", "SSBS")]
 
-data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
+data <- na.omit(data) 
 
 names(matched.landuse)
 
@@ -21,17 +22,41 @@ length(unique(model.data$SS))
 
 
 
+L = 100
+
+#make colours
 
 display.brewer.all()
 cols <- brewer.pal(8, "Paired")
 display.brewer.pal(8, "Paired")
 #drop the red to avoid red-green colorblindness issues
 
-zone.cols <- cols[c(6,5)]
-taxa.cols <- cols[c(2,4,8)]
+taxa.cols <- cols[c(4,2,8)]
+taxa.cols.ci <- c("#33A02C44", "#1F78B444", "#FF7F0044")
 
-inside.col <- 1
-outside.col <- 8
+
+cols <- brewer.pal(8, "Paired")
+#drop the red to avoid red-green colorblindness issues
+
+zone.cols <- cols[c(6,2)]
+zone.cols.ci <- c("#E31A1C44", "#1F78B444")
+
+inside.col <- cols[4]
+inside.col.ci <- "#33A02C44"
+outside.col <- 1
+outside.col.ci <- "#33333344"
+
+
+lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
+lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+
+
+ylims <- c(0,20)
+slope.lim <- log(c(0,25)+1)
+elev.lim <- c()
+size.lim <- log(c(0,10000)+1)
+age.lim <- c(0,85)
+
 
 
 
@@ -177,7 +202,7 @@ dev.off()
 
 ###### PA area ##########
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Richness_rarefied vs PA size.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Richness_rarefied vs PA size.tif",
 	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
@@ -195,7 +220,7 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Richness_rarefied vs PA s
 
 
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
-#mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
+mam <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
  for (x in 1:L)
   {
@@ -226,7 +251,7 @@ model.data$Zone<- relevel(model.data$Zone , "Tropical")
     zl[x]<-z[x]-sqrt(pvar1) 
   }
   
-  gis <- exp(gis) - 1
+#  gis <- exp(gis) - 1
 
   z <- exp(z)
   zu <- exp(zu)
@@ -234,14 +259,14 @@ model.data$Zone<- relevel(model.data$Zone , "Tropical")
 
 
 
-  plot(gis,z, ylim=c(0,20), col = 1, lwd = 1,
-		bty = "l",  log = "x",xaxt = "n",
+  plot(gis,z, ylim=ylims, xlim = size.lim, col = 1, lwd = 1,
+		bty = "l", xaxt = "n", #log = "x",
 		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="PA size (km2)")
-  rug(data$AREA.PA, ticksize = 0.03, side = 1, lwd = 1, col = 1)
-  axis(1, c(0.1, 1, 10, 100, 1000),  c(0.1, 1, 10, 100, 1000))
-  points(gis,zu,type="l",lty=2,  lwd = 1, col =  1)
-  points(gis,zl,type="l",lty=2,  lwd = 1, col =  1)
-
+  rug(data$log_AREA.PA, ticksize = 0.03, side = 1, lwd = 1, col = 1)
+  axis(1,at = log(c(0,10,100,1000,10000)+1), c(0,10,100,1000,10000))
+#  points(gis,zu,type="l",lty=2,  lwd = 1, col =  1)
+#  points(gis,zl,type="l",lty=2,  lwd = 1, col =  1)
+  polygon(c(gis,rev(gis)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
 
 
 dev.off()

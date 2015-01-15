@@ -142,11 +142,33 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "log_bound
 keepVars <- character(0)
 fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
+
 # without block:log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
 # with block: log_abundance~poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)"
  
- 
 
+# look at gamm
+
+#doesnt run well
+gamm.model <- gamm4(log_abundance ~ Zone + taxon_of_interest + ag_suit + s(log_elevation) + s(log_slope)+ s(log_bound_dist_km_PA_neg) + s(DoP.PA) + s(log_AREA.PA), 
+	random = ~(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB) + (1|Predominant_habitat), data =  matched.landuse)
+
+gamm.model.dist <- gamm4(log_abundance ~ s(log_bound_dist_km_PA_neg), 
+	random = ~(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB) + (1|Predominant_habitat), data =  matched.landuse)
+
+# the output of this is the same as the linear model below. 
+gamm.model.dist.conf <- gamm4(log_abundance ~ s(log_bound_dist_km_PA_neg)+ ag_suit + s(log_elevation) + s(log_slope), 
+	random = ~(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB) + (1|Predominant_habitat), data =  matched.landuse)
+
+#doesnt test for this properly
+gamm.model.dist.conf.int <- gamm4(log_abundance ~ s(log_bound_dist_km_PA_neg)+ ag_suit + s(log_elevation) + s(log_slope)
+	+ s(log_bound_dist_km_PA_neg, by = taxon_of_interest), 
+	random = ~(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB) + (1|Predominant_habitat), data =  matched.landuse)
+
+
+# distance to boundary looks linear
+anova(gamm.model.dist$gam)
+plot(gamm.model.dist.conf$gam)
 
 
 
@@ -159,10 +181,28 @@ fI <- c("Zone:poly(log_bound_dist_km_PA_neg,3)", "taxon_of_interest:poly(log_bou
 RS <-  c("log_bound_dist_km_PA_neg")
 
 #without block:
-#log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)"
+# log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)"
 # with block : "log_abundance~poly(log_bound_dist_km_PA_neg,3)+taxon_of_interest
 # taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)+poly(ag_suit,1)+poly(log_slope,2)+poly(log_elevation,2)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
+# log_abundance~poly(log_bound_dist_km_PA_neg,3)+taxon_of_interest+taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)+poly(ag_suit,1)+poly(log_elevation,1)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
 
+
+
+#### without slope
+# check polynomials
+fF <- c("Zone", "taxon_of_interest") 
+fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
+fI <- character(0)
+RS <-  c("log_bound_dist_km_PA_neg")
+# log_abundance~poly(log_bound_dist_km_PA_neg,3)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)"
+
+fF <- c("Zone", "taxon_of_interest") 
+fT <- list("log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- c("ag_suit" = "1", "log_elevation" = "1")
+fI <- c("Zone:poly(log_bound_dist_km_PA_neg,3)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)")
+RS <-  c("log_bound_dist_km_PA_neg")
+#
 
 
 log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
@@ -175,7 +215,7 @@ log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
 				verbose=TRUE)
 
 
-log_abundance.best.random$best.random #has block
+log_abundance.best.random$best.random #has block but not landuse
  
 
 
@@ -206,6 +246,7 @@ write.csv(log_abundance.model$stats, "ab.model.stats.22.12.2014.csv")
 
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
@@ -226,7 +267,7 @@ fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_slope,1)", "Within_PA:p
 	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,3)")
 RS <-  c("Within_PA")
 
-#log_abundance~poly(ag_suit,1)+poly(log_AREA.PA,3)+poly(log_elevation,3)+taxon_of_interest
+#without block: log_abundance~poly(ag_suit,1)+poly(log_AREA.PA,3)+poly(log_elevation,3)+taxon_of_interest
 #+Within_PA:poly(ag_suit,1)
 #+Within_PA:poly(log_slope,1)
 #+Within_PA+poly(log_slope,1)+(1+Within_PA|SS)+(1|Predominant_habitat)"
@@ -236,8 +277,32 @@ RS <-  c("Within_PA")
 #+Within_PA:poly(ag_suit,1)
 #+Within_PA:poly(log_slope,1)
 #+Zone:poly(DoP.PA,1)
-#+Zone:poly(log_AREA.PA,3)+Within_PA+Zone+poly(DoP.PA,1)+poly(ag_suit,1)+poly(log_slope,1)+poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
+#+Zone:poly(log_AREA.PA,3)+Within_PA+Zone+poly(DoP.PA,1)+poly(ag_suit,1)+poly(log_slope,1)+poly(log_elevation,1)
+#+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
 
+
+
+### without slope
+fF <- c("Zone", "taxon_of_interest", "Within_PA") 
+fT <- list("ag_suit" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+keepVars <- character(0)
+fI <- character(0)
+RS <-  c("Within_PA")
+
+
+fF <- c("Zone", "taxon_of_interest", "Within_PA") 
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3")
+keepVars <- c("ag_suit" = "1", "log_elevation" = "1")
+fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_elevation,1)",
+	"Within_PA:taxon_of_interest", 
+	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,3)",
+	"Within_PA:Zone",
+	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,3)")
+RS <-  c("Within_PA")
+# log_abundance~poly(log_AREA.PA,3)+taxon_of_interest
+# +Within_PA:poly(ag_suit,1)+Within_PA+poly(ag_suit,1)+poly(log_elevation,1)
+# +(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
+ 
 
 
 
@@ -269,23 +334,25 @@ log_abundance.model2 <- model_select(all.data  = matched.landuse,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
-write.csv(log_abundance.model2$stats, "ab.model2.stats.16.12.2014.csv")
+write.csv(log_abundance.model2$stats, "ab.model2.stats.05.01.2014.csv")
 
 
 validate(log_abundance.model$model) #ok
-log_abundance.model$warnings
-log_abundance.model$final.call
-log_abundance.model$stats
+log_abundance.model2$warnings
+log_abundance.model2$final.call
+log_abundance.model2$stats
 
 
-summary(log_abundance.model$model)
-XV <- CrossValidate(log_abundance.model$model,50, divFactor = "SS", fitFamily = "gaussian", data= log_abundance.model$data, 
-	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = log_abundance.best.random$best.random)
+summary(log_abundance.model2$model)
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3", "ag_suit" = "1", log_elevation = "1")
+
+XV <- CrossValidate(log_abundance.model2$model,10, divFactor = "SS", fitFamily = "gaussian", data= log_abundance.model2$data, 
+	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = "(1+Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat)")
 # all significant estimates seem acceptably similar
 
 
 XVr <- CrossValidate(log_abundance.model$model,-1, divFactor = "Predominant_habitat", fitFamily = "gaussian", data= log_abundance.model$data, 
-	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = log_abundance.best.random$best.random)
+	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = "(1+Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat)")
 # but if you dropped a whole land use it wouldnt be that surprising if the results changed? 
 
 #glmmR.wikidot/faq

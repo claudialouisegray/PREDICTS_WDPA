@@ -322,7 +322,11 @@ if(siteRandom){
   if (verbose) print(new.call)
   
   # Run the model
-  mod<-try(lmer(new.call,data=model.data, control= lmerControl(optimizer="bobyqa", optCtrl=list(maxfun=100000))))
+     if(fitFamily == "gaussian"){
+    mod<-try(lmer(new.call,data=model.data, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1000000))))
+	}else{
+    mod<-try(glmer(new.call,data=model.data, family = fitFamily, control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=1000000))))
+  }
 
   # add warnings to the list
   all.warnings[[4]] <- list(call = paste(new.call), warnings = mod@optinfo$conv$lme4$messages)
