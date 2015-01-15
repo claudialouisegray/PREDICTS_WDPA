@@ -51,26 +51,33 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
   # Create a list to store warnings
   all.warnings <- list()
   
-  # Construct the fixed-effects part of the original model call
+
+  # create fixed effects structure
+  allTerms<-character(0)
+  keepTerms <- character(0)
   fixedStruct<-""
   for (i in 1:length(fixedFactors)){
     fixedStruct<-paste(fixedStruct,fixedFactors[i],sep="")
+    allTerms<-c(allTerms,fixedFactors[i])
     if ((i != length(fixedFactors)) | (length(fixedTerms)>0) | 
-          ((length(fixedTerms)==0) & (length(fixedInteractions)>0))){
+          ((length(fixedTerms)==0) & (
+            length(fixedInteractions)>0))){
       fixedStruct<-paste(fixedStruct,"+",sep="")
     }
   }
   if (length(fixedTerms)>0){
     for (i in 1:length(fixedTerms)){
-      fixedStruct<-paste(fixedStruct,"poly(",names(fixedTerms)[i],
-                         ",",fixedTerms[i],")",sep="")
+      term<-paste("poly(",names(fixedTerms)[i],
+                  ",",fixedTerms[i],")",sep="")
+      fixedStruct<-paste(fixedStruct,term,sep="")
+      allTerms<-c(allTerms,term)
       if ((i != length(fixedTerms)) | (length(fixedInteractions)>0)){
         fixedStruct<-paste(fixedStruct,"+",sep="")
       }
     }
   }
- 
- if (length(keepVars)>0){
+  
+  if (length(keepVars)>0){
     for (i in 1:length(keepVars)){
       term<-paste("poly(",names(keepVars)[i],
                   ",",keepVars[i],")",sep="")
@@ -83,17 +90,30 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
     }
   }
 
-  if (fitInteractions) fixedStruct<-paste("(",fixedStruct,")^2",sep="")
+  if (fitInteractions){
+    fixedStruct<-paste(fixedStruct,"+")
+    
+    mainTerms<-allTerms
+    
+    for (i in 1:(length(mainTerms)-1)){
+      for (j in (i+1):length(mainTerms)){
+        term<-paste(mainTerms[i],mainTerms[j],sep=":")
+        fixedStruct<-paste(fixedStruct,term)
+        allTerms<-c(allTerms,term)
+      }
+    }
+  }
   
   if (length(fixedInteractions)>0){
     for (i in 1:length(fixedInteractions)){
       fixedStruct<-paste(fixedStruct,fixedInteractions[i],sep="")
+      allTerms<-c(allTerms,fixedInteractions[i])
       if (i != length(fixedInteractions)){
         fixedStruct<-paste(fixedStruct,"+",sep="")
       }
     }
   }
-  
+
   
  
   print(paste("Fixed structure:",fixedStruct))

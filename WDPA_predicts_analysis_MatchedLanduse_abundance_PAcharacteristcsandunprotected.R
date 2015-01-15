@@ -283,22 +283,22 @@ RS <-  c("Within_PA")
 
 
 ### without slope
-fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("ag_suit" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
-keepVars <- character(0)
-fI <- character(0)
-RS <-  c("Within_PA")
+#fF <- c("Zone", "taxon_of_interest", "Within_PA") 
+#fT <- list("ag_suit" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
+#keepVars <- character(0)
+#fI <- character(0)
+#RS <-  c("Within_PA")
 
 
-fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3")
-keepVars <- c("ag_suit" = "1", "log_elevation" = "1")
-fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_elevation,1)",
-	"Within_PA:taxon_of_interest", 
-	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,3)",
-	"Within_PA:Zone",
-	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,3)")
-RS <-  c("Within_PA")
+#fF <- c("Zone", "taxon_of_interest", "Within_PA") 
+#fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3")
+#keepVars <- c("ag_suit" = "1", "log_elevation" = "1")
+#fI <- c("Within_PA:poly(ag_suit,1)", "Within_PA:poly(log_elevation,1)",
+#	"Within_PA:taxon_of_interest", 
+#	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,3)",
+#	"Within_PA:Zone",
+#	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,3)")
+#RS <-  c("Within_PA")
 # log_abundance~poly(log_AREA.PA,3)+taxon_of_interest
 # +Within_PA:poly(ag_suit,1)+Within_PA+poly(ag_suit,1)+poly(log_elevation,1)
 # +(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
@@ -306,7 +306,7 @@ RS <-  c("Within_PA")
 
 
 
-log_abundance.best.random <- compare_randoms(dataset = matched.landuse, 
+log_abundance.best.random <- compare_randoms(matched.landuse, 
 				responseVar = "log_abundance",
 				keepVars = keepVars,
 				fixedFactors=fF,
