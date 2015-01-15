@@ -102,6 +102,16 @@ multiple.taxa.matched.landuse  <- droplevels(multiple.taxa.matched.landuse)
 
 
 
+#make ordinal datasets
+
+matched.landuse_ord <- matched.landuse
+matched.landuse_ord$IUCN_CAT <- factor(matched.landuse_ord$IUCN_CAT, ordered = T, 
+	levels = c("0", "4.5", "7", "1.5"))
+
+multiple.taxa.matched.landuse_ord <- multiple.taxa.matched.landuse
+multiple.taxa.matched.landuse_ord$IUCN_CAT <- factor(multiple.taxa.matched.landuse_ord$IUCN_CAT, ordered = T, 
+	levels = c("0", "4.5", "7", "1.5"))
+
 
 
 
@@ -252,8 +262,19 @@ m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	family = "poisson", data = multiple.taxa.matched.landuse)
 
 
-anova(m1i, m0i)
 
+m2i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+
+
+anova(m1i, m0i)
+anova(m2i, m3i)
 summary(m1i)
 
 
@@ -271,13 +292,14 @@ levels.IUCN <- levels(multiple.taxa.matched.landuse$IUCN_CAT)
 
 multiple.taxa.matched.landuse$IUCN_CAT <- relevel(multiple.taxa.matched.landuse$IUCN_CAT, "0")
 
-m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
+m4i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 
-y <- as.numeric(fixef(m1i)[2:4])
-se <- as.numeric(se.fixef(m1i)[2:4])
+y <- as.numeric(fixef(m4i)[2:4])
+se <- as.numeric(se.fixef(m4i)[2:4])
 yplus <- y + se*1.96
 yminus <- y - se*1.96
 y <-(exp(y)*100)
@@ -380,8 +402,17 @@ m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 #	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 #	family = "poisson", data = multiple.taxa.matched.landuse)
 
-anova(m3i,m4i)
 
+m5i <- glmer(Richness_rarefied ~1 + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+anova(m3i,m4i)
+anova(m5i,m6i)
 summary(m4i)
 
 
@@ -400,8 +431,9 @@ levels.IUCN <- levels(multiple.taxa.matched.landuse$IUCN_CAT)
 multiple.taxa.matched.landuse$IUCN_CAT <- relevel(multiple.taxa.matched.landuse$IUCN_CAT, "0")
 
 m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 
 y <- as.numeric(fixef(m4i)[2:4])
@@ -546,6 +578,29 @@ m2ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 
 anova(m1ai, m2ai)
 
+
+#doesnt converge
+m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+
+#try ordinal
+m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse_ord,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse_ord,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+anova(m3ai, m4ai)
+
+
 summary(m2ai)
 validate(m2ai)
 
@@ -560,15 +615,15 @@ labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
 levels.IUCN <- levels(matched.landuse$IUCN_CAT)
 
-matched.landuse$IUCN_CAT <- relevel(matched.landuse$IUCN_CAT, "0")
+#matched.landuse$IUCN_CAT <- relevel(matched.landuse$IUCN_CAT, "0")
 
-m2ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB), 
-	 data = matched.landuse)
+#m2ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+#	+ (Within_PA|SS) + (1|SSB), 
+#	 data = matched.landuse)
 
 
-y <- as.numeric(fixef(m2ai)[2:4])
-se <- as.numeric(se.fixef(m2ai)[2:4])
+y <- as.numeric(fixef(m4ai)[c(4,2,3)])
+se <- as.numeric(se.fixef(m4ai)[c(4,2,3)])
 yplus <- y + se*1.96
 yminus <- y - se*1.96
 y <-(exp(y)*100)
@@ -730,9 +785,28 @@ m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = matched.landuse)
 
-anova(m1ri, m2ri)
+#doesnt converge
+m3ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse)
+m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
-summary(m2ri)
+#try ordinal
+m3ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse_ord)
+m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse_ord,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+
+
+anova(m1ri, m2ri)
+anova(m3ri, m4ri)
+summary(m4ri)
 
 
 #PLOT
@@ -742,22 +816,22 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.land
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
-matched.landuse$IUCN_CAT <- relevel( matched.landuse$IUCN_CAT, "0")
+#matched.landuse$IUCN_CAT <- relevel( matched.landuse$IUCN_CAT, "0")
 
-m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
+#m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+#	+ (Within_PA|SS)+ (1|SSB), 
+#	 data = matched.landuse)
 
-y0 <-as.numeric(fixef(m2ri)[1])
+y0 <-as.numeric(fixef(m4ri)[1])
 e.y1 <- 1/y0
-y <- as.numeric(fixef(m2ri)[2:4])
+y <- as.numeric(fixef(m4ri)[c(4,2,3)])
 y2 <- y0+y
 e.y2 <- 1/y2
 
 #as a percentage of outside 
 e.relative <- e.y2/e.y1*100
 
-se <- as.numeric(se.fixef(m2ri)[2:4])
+se <- as.numeric(se.fixef(m4ri)[c(4,2,3)])
 y2plus <- y0 + y + se*1.96
 e.y2plus <- 1/y2plus
 e.relative.plus <- e.y2plus/e.y1*100

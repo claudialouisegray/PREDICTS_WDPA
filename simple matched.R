@@ -75,9 +75,7 @@ PA_11_2014$IUCN_CAT <- PA_11_2014$IUCN_CAT_number
 levels(PA_11_2014$IUCN_CAT) <- c(levels(PA_11_2014$IUCN_CAT), "0")
 PA_11_2014$IUCN_CAT[which(PA_11_2014$Within_PA == "no")] <- 0
 
-PA_11_2014_ord <- PA_11_2014
-PA_11_2014_ord$IUCN_CAT <- factor(PA_11_2014_ord$IUCN_CAT, ordered = T, 
-	levels = c("0", "4.5", "7", "1.5"))
+
 
 
 
@@ -107,6 +105,14 @@ multiple.taxa.PA_11_2014  <- subset(PA_11_2014 , SS %in% more.than.one.taxa)
 length(multiple.taxa.PA_11_2014 [,1]) #6874
 
 multiple.taxa.PA_11_2014  <- droplevels(multiple.taxa.PA_11_2014)
+
+
+
+#make ordinal datasets
+
+PA_11_2014_ord <- PA_11_2014
+PA_11_2014_ord$IUCN_CAT <- factor(PA_11_2014_ord$IUCN_CAT, ordered = T, 
+	levels = c("0", "4.5", "7", "1.5"))
 
 multiple.taxa.PA_11_2014_ord <- multiple.taxa.PA_11_2014
 multiple.taxa.PA_11_2014_ord$IUCN_CAT <- factor(multiple.taxa.PA_11_2014_ord$IUCN_CAT, ordered = T, 
@@ -406,7 +412,6 @@ m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 # so compare against null
-# neither of these converge
 m5i <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014,
@@ -417,8 +422,6 @@ m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	family = "poisson", data = multiple.taxa.PA_11_2014)
 
 # try with ordinal data
-# only converges with ordinal data
-
 m5i <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
 	family = "poisson", data = multiple.taxa.PA_11_2014_ord,
@@ -453,16 +456,16 @@ labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
 levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
 
-multiple.taxa.PA_11_2014_ord$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014_ord$IUCN_CAT, "0")
+multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
 
-#m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-#	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-#	family = "poisson", data = multiple.taxa.PA_11_2014_ord,
-#	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 
-y <- as.numeric(fixef(m6i)[c(4,2,3)])
-se <- as.numeric(se.fixef(m6i)[c(4,2,3)])
+y <- as.numeric(fixef(m6i)[2:4])
+se <- as.numeric(se.fixef(m6i)[2:4])
 yplus <- y + se*1.96
 yminus <- y - se*1.96
 y <-(exp(y)*100)
@@ -509,10 +512,10 @@ points
 # block also very useful here
 m1a <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014_ord)
+	 data = PA_11_2014)
 m2a <- lmer(log_abundance ~ 1 + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014_ord)
+	 data = PA_11_2014)
 anova(m1a, m2a)
 
 summary(m1a)
@@ -601,12 +604,15 @@ m2ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 
+# m3ai doesnt converge - use ordinal stats 
 m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_2014,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_2014,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 #(Intercept)    4.698465   0.221816  21.182
 #IUCN_CAT1.5    0.198650   0.134044   1.482
@@ -769,6 +775,10 @@ e.y2 <- 1/y2
 
 #as a percentage of outside 
 e.relative <- e.y2/e.y1*100
+
+# what does this mean?
+# difference of 0.3% = e.y2 - e.y1 #0.00057
+# or y2 - y0 #- 0.0022 log sq km
 
 se <- as.numeric(se.fixef(m2r)[2])
 y2plus <- y0 + y + se*1.96

@@ -761,10 +761,13 @@ mean.range.large <- mean(sp.range$Geographic_range_log10_square_km[16607:16617])
 #so a community made up of equal numbers of 10 smallest range species would be
 1/mean.range.small ; 10^mean.range.small
 #anda community made up of equal numbers of 10 largest range species would be
-1/ 10^mean.range.large; 10^mean.range.large
+1/mean.range.large; 10^mean.range.large
 # and the difference is
 10^mean.range.large - 10^mean.range.small
 #31,736,682
+
+
+
 
 
 ### PROPENSITY MATCHING ######

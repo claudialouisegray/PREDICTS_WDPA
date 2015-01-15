@@ -205,13 +205,13 @@ summary(gamm.model$gam)
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("DoP.PA" = "1", "log_AREA.PA" = "1")
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3")
 keepVars <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "2")
 fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_slope,3)", "Within_PA:poly(log_elevation,2)",
 	"Within_PA:taxon_of_interest", 
-	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,1)",
+	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,3)",
 	"Within_PA:Zone",
-	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,1)")
+	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,3)")
 RS <-  c("Within_PA")
 
 #without block
