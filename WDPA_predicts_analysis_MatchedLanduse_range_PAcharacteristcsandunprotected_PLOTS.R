@@ -54,7 +54,7 @@ lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Crop
 lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
 
 
-ylims <- c(0.1,0.25)
+ylims <- c(0.15,0.22)
 slope.lim <- log(c(0,25)+1)
 elev.lim <- c()
 size.lim <- log(c(0,10000)+1)
@@ -615,42 +615,7 @@ mam<- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer="
 legend("topright", c("Protected", "Unprotected") , col = c(inside.col,outside.col), lty = c(1,1), lwd = c(1,1))
 
 
-# add half violin plots to show data spread of different landuses
-t1 <- data.frame()
-y <- 0
-ag <- seq(1,8,1)
-for (i in 1:length(lu)){
-	t2 <- aggregate(Predominant_habitat ~ ag_suit, data = model.data[which(model.data$Predominant_habitat == lu[i]),], length)
-	names(t2) <- c("ag_suit", lu[i])
-	#combine into table so missing values can be replaced with 0 where appropriate
-		if(i == 1){
-		t1 <- t2
-		}else{
-		t1 <- merge(t1,t2, by = "ag_suit", all.x = T)
-	}
-}
-
-t1[is.na(t1)] <- 0
-
-y <- 0.05
-t3 <- t1
-for(i in 2:ncol(t1)){
-	t3[,i] <- t3[,i]/40000 + min(ylims) + y 
-	polygon(c(ag,rev(ag)), c(t3[,i],rep(min(ylims)+y,length(ag))),lty=1, col = lu.cols[i-1])
-	y <- y-0.01
-	}
-
-scale.bar <- 500/40000
-start <- 0.165
-arrows(1,start,1,start + scale.bar, length = 0.06, code = 3, angle = 90)
-text(x = 1.5, y = start + scale.bar/2, pos = 4, cex = 0.7,
-	" polygons below show agricultural suitability values for different landuses, \n scale bar height equals 500 sites")
-
-legend("topleft",lu, cex = 0.7, col = lu.cols, pch = 16, bty = "n")
-#x = 6.5, y = 0.185
-
 dev.off()
-
 
 
 

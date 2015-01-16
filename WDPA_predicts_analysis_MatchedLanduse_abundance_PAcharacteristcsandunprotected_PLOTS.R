@@ -1,6 +1,11 @@
 library(lme4)
 library(RColorBrewer)
 
+setwd("R:\\ecocon_d\\clg32\\GitHub\\PREDICTS_WDPA")
+source("addHistogram.R")
+source("addDataDistribution.R")
+
+
 ### dist to boundary PLOTS
 
 load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\abundance_with_block_and_keeping_confounding_vars.RData")
@@ -52,12 +57,12 @@ lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
 lu.cols2 = c("#66A61E", "#8ecfbc", "#7570B3","#E6AB02","#D95F02", "#E7298A")
 lu.cols2.ci <- c("#66A61E90","#8ecfbc90","#7570B390","#E6AB0290","#D95F0290","#E7298A90")
 
-ylims <- c(0,300) #c(0,500)
-slope.lim <- log(c(0,25)+1)
-elev.lim <- c()
-size.lim <- log(c(0,10000)+1)
-age.lim <- c(0,85)
-ag.lim <- c(0.3,8)
+ylims <- c(0,400) #c(0,500)
+slope.lim <- c(-0.3, log(60))
+elev.lim <- c(-0.3,log(300000))
+size.lim <- c(-0.3,log(500000))
+age.lim <- c(-5,100)
+ag.lim <- c(0.3,10.5)
 
 
 
@@ -213,15 +218,19 @@ length(unique(model.data$SS))
 model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest, "Invertebrates")
 
 
+
+
 #### PA Size in different zones #####
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs PA.AREA vs zone.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs PA.AREA vs zone.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs PA.AREA vs zone EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
 
-
-
+  par(mfrow = c(3,1))
   par(mar=c(4,4.5,1,1.5))
   par(mgp=c(2.5,1,0))
   
@@ -274,9 +283,10 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
  zl <- exp(zl)
 
   plot(gis,z, ylim=ylims, xlim = size.lim, col = zone.cols[1], lwd = 1,
-		bty = "l", xaxt = "n", #log = "x", yaxt = "n", 
+		bty = "l", axes = F, #log = "x", yaxt = "n", 
 		type = "l",ylab = "Abundance per site ± s.e", xlab="PA size (km2)")
-  axis(1, c(0, log(5), log(10), log(100), log(1000), log(10000)), c(0,5,10,100,1000,10000))
+  axis(1, log(c(0,5,10,100,1000,10000)+1), c(0,5,10,100,1000,10000))
+  axis(2, c(0,100,200,300,400),c(0,100,200,300,400))
   rug(data$log_AREA.PA[which(data$Zone == "Tropical")]
 	, ticksize = 0.03, side = 1, lwd = 1, col = zone.cols[1])
 #  points(gis,zu,type="l",lty=2,  lwd = 1, col =  1)
@@ -338,7 +348,38 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
 #  points(gis,zl,type="l",lty=2,  lwd = 1, col =  1)
   polygon(c(gis,rev(gis)),c(yu, rev(yl)),lty=0, col = zone.cols.ci[2])
 
-legend("topleft", c("Tropical", "Temperate") , col = zone.cols, lty = 1, lwd = c(2,1))
+legend(x = log(10000 +1) + 0.1, y = mean(ylims),
+	c("Tropical", "Temperate") , col = zone.cols, bty = "n", lty = 1, lwd = c(2,1))
+
+
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_AREA.PA",
+			xlim = size.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 0.1,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = log(c(0,5,10,100,1000,10000)+1),
+			axis.text = c(0,5,10,100,1000,10000))
+
+
+
+addDataDistribution(data = model.data,
+			b = 50, 
+			x = "log_AREA.PA",
+			xlim = size.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 0.1,
+			levels.col = taxa.cols,
+			axis.text.pos = log(c(0,5,10,100,1000,10000)+1),
+			axis.text = c(0,5,10,100,1000,10000))
+
 
 dev.off()
 
@@ -351,10 +392,14 @@ dev.off()
 #### PA age, for different zones #####
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs zone vs DoP.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs zone vs DoP.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs zone vs DoP EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
 
+par(mfrow = c(3,1))
 
 
   par(mar=c(4,4.5,1,1.5))
@@ -377,7 +422,7 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
  for (x in 1:L)
   {
     log_abundance <-0
-#    log_slope <- mean(model.data$log_slope)
+    log_slope <- mean(model.data$log_slope)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- dop[x]
     IUCN.PA <- "1.5"
@@ -387,7 +432,7 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
     ag_suit <- median(model.data$ag_suit)
     log_elevation <- mean(model.data$log_elevation)
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_abundance, log_AREA.PA, DoP.PA, log_elevation, ag_suit)) # log_slope,
+    newdat.n<-data.frame(cbind(log_abundance, log_AREA.PA, DoP.PA, log_elevation, log_slope, ag_suit))
     newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat,  Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -408,10 +453,13 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
  zl <- exp(zl)
 
   plot(dop,z, ylim=ylims, xlim = age.lim, col = zone.cols[1], lwd = 1,
-		bty = "l", #log = "x", #yaxt = "n", 
+		bty = "l", axes = F, #log = "x",  
 		type = "l",ylab = "Abundance per site ± s.e", xlab="Duration of protection (yr)")
   rug(data$DoP.PA[which(data$Zone == "Tropical")]
 	, ticksize = 0.03, side = 1, lwd = 1, col = zone.cols[1])
+  axis(1, c(0,20,40,60,80),c(0,20,40,60,80))
+  axis(2, c(0,100,200,300,400),c(0,100,200,300,400))
+
 #  points(dop,zu,type="l",lty=2,  lwd = 2, col =  zone.cols[1])
 #  points(dop,zl,type="l",lty=2,  lwd = 2, col =  zone.cols[1])
   polygon(c(dop,rev(dop)),c(zu, rev(zl)),lty=0, col = zone.cols.ci[1])
@@ -467,7 +515,35 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
   polygon(c(dop,rev(dop)),c(yu, rev(yl)),lty=0, col = zone.cols.ci[2])
 
 
-legend("topleft", c("Tropical", "Temperate") , col = zone.cols, lty = 1, lwd = c(2,1))
+legend("right", c("Tropical", "Temperate") , col = zone.cols, lty = 1, lwd = c(2,1), bty = "n")
+
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "DoP.PA",
+			xlim = age.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 3,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = c(0,20,40,60,80),
+			axis.text = c(0,20,40,60,80) )
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "DoP.PA",
+			xlim = age.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 3,
+			levels.col = taxa.cols,
+			axis.text.pos = c(0,20,40,60,80),
+			axis.text = c(0,20,40,60,80))
+
 
 dev.off()
 
@@ -479,17 +555,17 @@ dev.off()
 #### within PA and slope ##########
 
 
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs within pa vs slope EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs within pa vs slope.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs within pa vs slope.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
-
-
+par(mfrow = c(3,1))
 
   par(mar=c(4,4.5,1,1.5))
   par(mgp=c(2.5,1,0))
   
- L = 100
 
   slope <-seq(from=min(model.data$log_slope[which(data$Within_PA == "yes")])
 		,to=max(model.data$log_slope[which(data$Within_PA == "yes")]),length=L)
@@ -548,12 +624,13 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
 
   plot(slope_plot,z, ylim=ylims, xlim = slope.lim,
 		 col =inside.col, 
-		bty = "l",  lwd =1, xaxt = "n", #log = "x",
+		bty = "l",  lwd =1, axes = F, #log = "x",
 		type = "l",ylab = "Abundance per site ± s.e", xlab="Slope (degrees)")
 #  points(slope_plot,zu,type="l",lty=2,lwd = 1, col = inside.col)
 #  points(slope_plot,zl,type="l",lty=2, lwd = 1,col = inside.col)
   polygon(c(slope_plot,rev(slope_plot)),c(zu, rev(zl)),lty=0, col = inside.col.ci)
-  axis(1, log(c(0,2.5,5, 10, 20)+1), c(0,2.5,5,10,20) )
+  axis(1, log(c(0,2.5,5, 10, 20)+1), c(0,2.5,5,10,20))
+  axis(2, c(0,100,200,300,400),c(0,100,200,300,400))
   rug(data$log_slope[which(data$Within_PA == "yes")],
 		col = inside.col, lwd = 1)
 
@@ -616,8 +693,40 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
 		col = 8, lwd = 1, pos = min(ylims))
 
 
-legend("topleft", c("Protected", "Unprotected") , col = c(inside.col,outside.col), lty = 1, lwd = c(2))
+legend("right", c("Protected", "Unprotected") , col = c(inside.col,outside.col), bty = "n", lty = 1, lwd = c(2))
 
+
+# add half violin plots
+
+
+
+
+par(mar=c(2,4.5,1,3))
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_slope",
+			xlim = slope.lim,
+			var = "Predominant_habitat",
+			levels = lu,
+			legend.spacing = 0.25,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = log(c(0,2.5,5, 10, 20)+1),
+			axis.text = c(0,2.5,5,10,20) )
+
+
+
+addDataDistribution(data = model.data,
+			b = 50, 
+			x = "log_slope",
+			xlim = slope.lim,
+			var = "taxon_of_interest",
+			levels = taxa,
+			legend.spacing = 0.25,
+			levels.col = taxa.cols,
+			axis.text.pos = log(c(0,2.5,5, 10, 20)+1),
+			axis.text = c(0,2.5,5,10,20) )
 
 
 dev.off()
@@ -634,17 +743,14 @@ dev.off()
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance within pa vs ag_suit.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/no_slope abundance within pa vs ag_suit.tif",
-	width = 12, height = 25, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance within pa vs ag_suit EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
 
 par(mfrow = c(3,1))
 
 
-  par(mar=c(4,4.5,1,1.5))
+  par(mar=c(2,4.5,1,3))
   par(mgp=c(2.5,1,0))
   
  L = 30
@@ -665,7 +771,7 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
   {
     ag_suit <- ag[x]
     log_abundance <-0
-#    log_slope <- mean(model.data$log_slope)
+    log_slope <- mean(model.data$log_slope)
     log_elevation<- mean(model.data$log_elevation)
     log_AREA.PA <- mean(model.data$log_AREA.PA)
     DoP.PA <- mean(model.data$DoP.PA)
@@ -673,7 +779,7 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
     taxon_of_interest<- "Invertebrates"
     Predominant_habitat <-"Primary Vegetation"
     Within_PA <- "no"
-    newdat.n<-data.frame(cbind(log_abundance, log_AREA.PA, DoP.PA, log_elevation, ag_suit)) #log_slope, 
+    newdat.n<-data.frame(cbind(log_abundance, log_AREA.PA, DoP.PA, log_elevation, log_slope, ag_suit)) 
     newdat.f<-data.frame(cbind(Zone,taxon_of_interest, Predominant_habitat, Within_PA))
     levels(newdat.f$Zone)<-levels(model.data$Zone)
     levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
@@ -700,9 +806,10 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
   zl <- exp(zl)
 
   plot(ag,z, ylim=ylims, xlim = ag.lim, col = outside.col,
-		bty = "l", #log = "x",
+		bty = "l", axes = F,
 		type = "l",ylab = "Abundance per site ± s.e", xlab="Agricultural suitability (higher = more suitable)")
   axis(1, seq(1,8,1), seq(1,8,1))
+  axis(2, seq(min(ylims),max(ylims),50), seq(min(ylims),max(ylims),50))
 #  points(ag,zu,type="l",lty=2, col = outside.col)
 #  points(ag,zl,type="l",lty=2, col = outside.col)
    polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
@@ -763,84 +870,33 @@ mam<- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(opt
 #  points(ag,yl,type="l",lty=3, lwd = 2, col = inside.col)
    polygon(c(ag,rev(ag)),c(yu, rev(yl)),lty=0, col = inside.col.ci)
 
-legend("topright", c("Protected", "Unprotected") , col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,1))
+legend(x = 8.5, y = 175 , c("Protected", "Unprotected") , col = c(inside.col, outside.col), lty = c(1,1), lwd = c(1,1), bty = "n")
 
 
-# add half violin plots to show data spread of different landuses
+# add half violin plots to show data spread of different landuses and taxa 
 
-# per site
-t1 <- data.frame()
-y <- 0
-ag <- c(0.5, 1.5,1.5,2.5,2.5,3.5,3.5,4.5,4.5,5.5,5.5,6.5,6.5,7.5,7.5,8.5)
+ag2 <- rep(seq(0.5, 8.5, 1),each = 2)
+	end <- length(ag2)-1
+ag2 <- ag2[2:end]
 
-for (i in 1:length(lu)){
-	t2 <- aggregate(Predominant_habitat ~ ag_suit, data = model.data[which(model.data$Predominant_habitat == lu[i]),], length)
-	names(t2) <- c("ag_suit", lu[i])
-	#combine into table so missing values can be replaced with 0 where appropriate
-		if(i == 1){
-		t1 <- t2
-		}else{
-		t1 <- merge(t1,t2, by = "ag_suit", all.x = T)
-	}
-}
+par(mar=c(2,4.5,1,3))
 
-t1[is.na(t1)] <- 0
-
-plot(rep(0, length(ag)) ~ ag, ylim = c(0,1600), xlim = ag.lim, 
-	bty = "l", type = "n",
-	ylab = "Number of sites", xlab = "", axes = F)
-axis(1, seq(1,8,1), seq(1,8,1))
-y <- 0
-for(i in 2:ncol(t1)){
-	yvals <- t1[,i] + y
-	polygon(c(ag,rev(ag)), c(rep(yvals, each = 2),rep(min(ylims)+y,length(ag))), lty = 0, col = lu.cols2.ci[i-1])
-	y <- y + min(ylims) + max(t1[,i]) + 30 
-	}
-
-arrows(0.45,0,0.45,100, length = 0.015, code = 3, angle = 90)
-text(x = 0.5, y = 50, pos = 2, cex = 0.7, offset = 0.6,
-	"100 \n sites")
-legend("topleft", rev(lu), cex = 1, col = rev(lu.cols2.ci), pch = 16, bty = "n", ncol = 2, text.width = 0.7)
+addHistogram(data = model.data,
+			var = "Predominant_habitat",
+			x =   "ag_suit",
+			xlim = ag.lim,
+			levels = lu,
+			levels.col = lu.cols2.ci,
+			bar.breaks = ag2)
 
 
-
-
-# add half violin plots to show data spread of different taxa
-t1 <- data.frame()
-y <- 0
-ag <- c(0.5, 1.5,1.5,2.5,2.5,3.5,3.5,4.5,4.5,5.5,5.5,6.5,6.5,7.5,7.5,8.5)
-
-taxa <- c("Plants", "Invertebrates", "Vertebrates")
-for (i in 1:length(taxa)){
-	t2 <- aggregate(taxon_of_interest ~ ag_suit, data = model.data[which(model.data$taxon_of_interest == taxa[i]),], length)
-	names(t2) <- c("ag_suit", taxa[i])
-	#combine into table so missing values can be replaced with 0 where appropriate
-		if(i == 1){
-		t1 <- t2
-		}else{
-		t1 <- merge(t1,t2, by = "ag_suit", all.x = T)
-	}
-}
-
-t1[is.na(t1)] <- 0
-
-plot(rep(0, length(ag)) ~ ag, ylim = c(0,1600), xlim = ag.lim, 
-	bty = "l", type = "n",
-	ylab = "Number of sites", xlab = "",  axes = F)
-axis(1, seq(1,8,1), seq(1,8,1))
-y <- 0
-for(i in 2:ncol(t1)){
-	yvals <- t1[,i] + y
-	polygon(c(ag,rev(ag)), c(rep(yvals, each = 2),rep(min(ylims)+y,length(ag))), lty = 0, col = taxa.cols[i-1])
-	y <- y + min(ylims) + max(t1[,i]) + 30 
-	}
-
-arrows(0.45,0,0.45,100, length = 0.015, code = 3, angle = 90)
-text(x = 0.5, y = 50, pos = 2, cex = 0.7, offset = 0.6,
-	"100 \n sites")
-
-legend("topleft", rev(taxa), cex = 1, col = rev(taxa.cols), pch = 16, bty = "n", ncol = 1, text.width = 0.7)
-
+addHistogram(data = model.data,
+			var = "taxon_of_interest",
+			x =   "ag_suit",
+			xlim = ag.lim,
+			levels = taxa,
+			levels.col = taxa.cols,
+			bar.breaks = ag2)
 
 
 
@@ -854,23 +910,20 @@ dev.off()
 
 
 
-### from before block was added  ###
 
 
 #### elevation ##########
 
 
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs elevation.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/abundance vs elevation.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/abundance vs elevation EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
-par(mfrow = c(1,1))
-
-
+  par(mfrow = c(3,1))
   par(mar=c(4,4.5,4,1.5))
   par(mgp=c(2.5,1,0))
-  
- L = 30
 
   elevation <-seq(from=min(model.data$log_elevation),to=max(model.data$log_elevation),length=L)
   z<-vector(mode="numeric",length=L)
@@ -920,19 +973,50 @@ mam <- lmer(log_abundance.model$final.call, model.data, control= lmerControl(opt
 
  # transforming back 
 
-  elevation <- exp(elevation) -1
+#  elevation <- exp(elevation) -1
 
   z  <- exp(z)
   zu <- exp(zu)
   zl <- exp(zl)
 
-  plot(elevation,z, ylim=c(0, 300), col = 1,
-		bty = "l", log = "x", xaxt = "n",
+  plot(elevation,z, ylim=ylims, col = 1,
+		bty = "l",  xaxt = "n", #log = "x",
 		type = "l",ylab = "Abundance per site ± s.e", xlab="Elevation (m)")
-  points(elevation,zu,type="l",lty=2, col = 1)
-  points(elevation,zl,type="l",lty=2, col = 1)
-  rug(data$elevation, ticksize = 0.03, side = 1,  lwd = 0.5, col = 1) #### change to be data used in model, poss slightly fewer points
-  axis(1, c(1,5,50,500), c(1, 5, 50 , 500))
+#  points(elevation,zu,type="l",lty=2, col = 1)
+#  points(elevation,zl,type="l",lty=2, col = 1)
+   polygon(c(elevation,rev(elevation)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
+  rug(model.data$log_elevation, ticksize = 0.03, side = 1,  lwd = 0.5, col = 1) 
+  axis(1, log(c(0,1,5,50,500,2000, 5000)+1), c(0,1, 5, 50 , 500, 2000, 5000))
+
+
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_elevation",
+			xlim = elev.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 0.1,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = log(c(0,1,5,50,500,2000,5000)+1),
+			axis.text =c(0,1, 5, 50 , 500, 2000, 5000))
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_elevation",
+			xlim = elev.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 0.1,
+			levels.col = taxa.cols,
+			axis.text.pos = log(c(0,1,5,50,500,2000,5000)+1),
+			axis.text =c(0,1, 5, 50 , 500, 2000, 5000))
+
+
 
 dev.off()
 

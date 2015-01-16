@@ -856,20 +856,20 @@ labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
 PA_11_2014$IUCN_CAT <- relevel( PA_11_2014$IUCN_CAT, "0")
 
-m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = PA_11_2014)
 
-y0 <-as.numeric(fixef(m2ri)[1])
+y0 <-as.numeric(fixef(m4ri)[1])
 e.y1 <- 1/y0
-y <- as.numeric(fixef(m2ri)[2:4])
+y <- as.numeric(fixef(m4ri)[2:4])
 y2 <- y0+y
 e.y2 <- 1/y2
 
 #as a percentage of outside 
 e.relative <- e.y2/e.y1*100
 
-se <- as.numeric(se.fixef(m2ri)[2:4])
+se <- as.numeric(se.fixef(m4ri)[2:4])
 y2plus <- y0 + y + se*1.96
 e.y2plus <- 1/y2plus
 e.relative.plus <- e.y2plus/e.y1*100

@@ -238,6 +238,7 @@ RS <-  c("Within_PA")
 range.best.random <- compare_randoms(matched.landuse, "range",
 				fixedFactors=fF,
                          fixedTerms=fT,
+				keepVars = keepVars,
                        fixedInteractions=fI,
                          otherRandoms=c("Predominant_habitat"),
 				fixed_RandomSlopes = RS,
