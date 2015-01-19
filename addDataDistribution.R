@@ -1,5 +1,5 @@
 addDataDistribution <- function(b = 50, x, var, data, levels, 
-	axis.text.pos, axis.text, legend.spacing = 0, include.lowest = TRUE,
+	axis.text.pos, axis.text, spacing = 30, legend.spacing = 0, include.lowest = TRUE,
 	levels.col, xlim = c(0,1000)){
 
 # b is the number of bins to cut the continuous data into

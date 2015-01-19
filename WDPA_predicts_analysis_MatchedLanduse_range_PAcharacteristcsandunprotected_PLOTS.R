@@ -2,6 +2,13 @@
 # PLOTS
 
 library(reshape)
+library(lme4)
+library(RColorBrewer)
+
+setwd("R:\\ecocon_d\\clg32\\GitHub\\PREDICTS_WDPA")
+source("addHistogram.R")
+source("addDataDistribution.R")
+
 
 model.data <- range.model2$data
 
@@ -36,7 +43,7 @@ display.brewer.pal(8, "Paired")
 
 taxa.cols <- cols[c(4,2,8)]
 taxa.cols.ci <- c("#33A02C44", "#1F78B444", "#FF7F0044")
-
+taxa <- c("Plants", "Invertebrates", "Vertebrates")
 
 cols <- brewer.pal(8, "Paired")
 #drop the red to avoid red-green colorblindness issues
@@ -50,15 +57,26 @@ outside.col <- 1
 outside.col.ci <- "#33333344"
 
 
+
 lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
 lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+lu.cols2 = c("#66A61E", "#8ecfbc", "#7570B3","#E6AB02","#D95F02", "#E7298A")
+lu.cols2.ci <- c("#66A61E90","#8ecfbc90","#7570B390","#E6AB0290","#D95F0290","#E7298A90")
+
 
 
 ylims <- c(0.15,0.22)
-slope.lim <- log(c(0,25)+1)
-elev.lim <- c()
-size.lim <- log(c(0,10000)+1)
-age.lim <- c(0,85)
+#slope.lim <- log(c(0,25)+1)
+#elev.lim <- c()
+#size.lim <- log(c(0,10000)+1)
+#age.lim <- c(0,85)
+
+#new limits for 2 panel plots with data distribution
+slope.lim <- c(-0.3, log(100))
+elev.lim <- c(-0.3,log(300000))
+size.lim <- c(-0.3,log(300000))
+age.lim <- c(-5,110)
+ag.lim <- c(0.3,10.5)
 
 
 # is data dominated by invertebrates
@@ -83,27 +101,23 @@ length(unique(plant$SS)) #31
 
 #### PA size, for different zones #####
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs zone vs PA size.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs zone vs PA size.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs zone vs PA size EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
-  par(mar=c(4,4.5,4,1.5))
+  par(mfrow = c(3,1))
+  par(mar=c(4,4.5,2,1.5))
   par(mgp=c(2.5,1,0))
   
- L = 30
-
   gis <-seq(from=min(model.data$log_AREA.PA[which(model.data$Zone == "Tropical")]),
 		to=max(model.data$log_AREA.PA[which(model.data$Zone == "Tropical")]),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
   
-
-
-
-
-
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
@@ -144,9 +158,10 @@ mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer=
   gis_plot <- gis
 
   plot(gis_plot,z, ylim = ylims, xlim = size.lim, col = zone.cols[1], lwd = 1,
-		bty = "l",  xaxt = "n", #yaxt = "n", log = "x",
+		bty = "l",  axes = F, #yaxt = "n", log = "x",
 		type = "l",ylab = "Endemicity (1/10^(CWM log10 range)) ± s.e", xlab="PA size (km2)")
   axis(1,at = log(c(0,10,100,1000,10000)+1), c(0,10,100,1000,10000))
+  axis(2,at = c(0.16, 0.18, 0.2, 0.22),  c(0.16, 0.18, 0.2, 0.22))
   rug(data$log_AREA.PA[which(data$Zone == "Tropical")]
 	, ticksize = 0.03, side = 1, lwd = 1, col = zone.cols[1])
   polygon(c(gis_plot,rev(gis_plot)),c(zu, rev(zl)),lty=0, col = zone.cols.ci[1])
@@ -211,7 +226,41 @@ mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer=
 
 
 
-legend("topright", c("Tropical", "Temperate"), col = zone.cols, lty = 1, lwd = c(1,1))
+legend(x = log(10000) + 0.1, y = 0.19, 
+	 c("Tropical", "Temperate"), col = zone.cols, bty = "n", lty = 1, lwd = c(1,1))
+
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_AREA.PA",
+			xlim = size.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 0.1,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = log(c(0,5,10,100,1000,10000)+1),
+			axis.text = c(0,5,10,100,1000,10000))
+
+
+
+addDataDistribution(data = model.data,
+			b = 50, 
+			x = "log_AREA.PA",
+			xlim = size.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 0.1,
+			levels.col = taxa.cols,
+			axis.text.pos = log(c(0,5,10,100,1000,10000)+1),
+			axis.text = c(0,5,10,100,1000,10000))
+
+
+
+
+
 
 dev.off()
 
@@ -222,27 +271,24 @@ dev.off()
 
 #### PA age, for different zones #####
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs zone vs PA age.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs zone vs PA age.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs zone vs PA age EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
+
+  par(mfrow = c(3,1))
   par(mar=c(4,4.5,4,1.5))
   par(mgp=c(2.5,1,0))
   
- L = 30
-
   dop <-seq(from=min(model.data$DoP.PA[which(model.data$Zone == "Tropical")]),
 		to=max(model.data$DoP.PA[which(model.data$Zone == "Tropical")]),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
   
-
-
-
-
-
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
@@ -282,8 +328,10 @@ mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer=
 
 
   plot(dop,z, ylim=ylims, xlim = age.lim, col = zone.cols[1], lwd = 1,
-		bty = "l",  #yaxt = "n", log = "x",
+		bty = "l",  axes = F, #log = "x",
 		type = "l",ylab = "Endemicity (1/CWM range) ± s.e", xlab="PA age (years)")
+  axis(1, c(0,20,40,60,80),c(0,20,40,60,80))
+  axis(2,at = c(0.16, 0.18, 0.2, 0.22),  c(0.16, 0.18, 0.2, 0.22))
   rug(data$DoP.PA[which(data$Zone == "Tropical")]
 	, ticksize = 0.03, side = 1, lwd = 1, col = zone.cols[1])
   polygon(c(dop,rev(dop)),c(zu, rev(zl)),lty=0, col = zone.cols.ci[1])
@@ -344,9 +392,33 @@ mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer=
   rug(data$DoP.PA[which(data$Zone == "Temperate")],
 		col = zone.cols[2], lwd = 1, pos = min(ylims))
 
+legend(x = 80 + 3, y = 0.19, c("Tropical", "Temperate"), col = zone.cols, bty = "n", lty = 1, lwd = c(1,1))
 
 
-legend("topright", c("Tropical", "Temperate"), col = zone.cols, lty = 1, lwd = c(1,1))
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "DoP.PA",
+			xlim = age.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 3,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = c(0,20,40,60,80),
+			axis.text = c(0,20,40,60,80) )
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "DoP.PA",
+			xlim = age.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 3,
+			levels.col = taxa.cols,
+			axis.text.pos = c(0,20,40,60,80),
+			axis.text = c(0,20,40,60,80))
 
 dev.off()
 
@@ -364,27 +436,23 @@ dev.off()
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity within pa vs slope.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity within pa vs slope.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity within pa vs slope EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
-par(mfrow = c(1,1))
-
-
+  par(mfrow = c(3,1))
   par(mar=c(4,4.5,1,1.5))
   par(mgp=c(2.5,1,0))
   
- L = 100
-
  slope <-seq(from=min(model.data$log_slope[which(model.data$Within_PA == "no")]),
 		to=max(model.data$log_slope[which(model.data$Within_PA == "no")]),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
   
-
-
 model.data$Within_PA <- relevel(model.data$Within_PA, "no")
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
 model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
@@ -423,13 +491,15 @@ mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer=
 
   plot(slope,z, ylim=ylims, xlim = slope.lim,
 		col = outside.col, #xlim = c(0.001,1500),
-		bty = "l",  xaxt = "n", #log = "x",
+		bty = "l",  axes = F, #log = "x",
 		type = "l",ylab = "Endemicity (1/CWM range) ± s.e", 
 		xlab="Slope (degrees)")
+   axis(1, log(c(0,2.5,5,10,20)+1), c(0,2.5,5,10,20))
+   axis(2,at = c(0.16, 0.18, 0.2, 0.22),  c(0.16, 0.18, 0.2, 0.22))
    rug(data$log_slope[which(data$Within_PA == "no")]
 	, ticksize = 0.03, side = 1,   lwd = 1, col = 8, pos = min(ylims)) 
-  polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
-  axis(1, log(c(0,2.5,5,10,20)+1), c(0,2.5,5,10,20))
+   polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
+
 
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
@@ -483,7 +553,37 @@ mam<- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer="
 
 
 
-legend("topleft", c("Protected", "Unprotected") , col = c(inside.col,outside.col), lty = c(1,1))
+legend(x = log(30+1), y = 0.19, c("Protected", "Unprotected") , col = c(inside.col,outside.col), bty = "n",  lty = c(1,1))
+
+
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_slope",
+			xlim = slope.lim,
+			var = "Predominant_habitat",
+			levels = lu,
+			legend.spacing = 0.25,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = log(c(0,2.5,5, 10, 20)+1),
+			axis.text = c(0,2.5,5,10,20) )
+
+
+
+addDataDistribution(data = model.data,
+			b = 50, 
+			x = "log_slope",
+			xlim = slope.lim,
+			var = "taxon_of_interest",
+			levels = taxa,
+			legend.spacing = 0.25,
+			levels.col = taxa.cols,
+			axis.text.pos = log(c(0,2.5,5, 10, 20)+1),
+			axis.text = c(0,2.5,5,10,20) )
+
+
+
 
 
 dev.off()
@@ -496,28 +596,21 @@ dev.off()
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity within pa vs  ag_suit.tif",
-	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity within pa vs  ag_suit.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
 
-par(mfrow = c(1,1))
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity within pa vs  ag_suit EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
-
+  par(mfrow = c(3,1))
   par(mar=c(4,4.5,4,1.5))
   par(mgp=c(2.5,1,0))
-  
- L = 30
 
   ag <-seq(from=min(model.data$ag_suit[which(model.data$Within_PA == "no")]),
 		to=max(model.data$ag_suit[which(model.data$Within_PA == "no")]),length=L)
   z<-vector(mode="numeric",length=L)
   zu<-vector(mode="numeric",length=L)
   zl<-vector(mode="numeric",length=L)
-  
-
-
-# it doesnt matter what the values for taxon and zone are, as there is no interaction with these
-
-
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "no")
 model.data$Zone<- relevel(model.data$Zone, "Tropical")
@@ -554,9 +647,12 @@ mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer=
   zu <- 1/zu
   zl <- 1/zl
 
-  plot(ag,z, ylim=ylims, col = outside.col,
-		bty = "l", #log = "x",
-		type = "l",ylab = "Endemicity (1/CWM range) ± s.e", xlab="Agricultural suitability (higher = more suitable)")
+  plot(ag,z, ylim=ylims, xlim = ag.lim, col = outside.col,
+		bty = "l", axes = F, #log = "x",
+		type = "l",ylab = "Endemicity (1/CWM range) ± s.e", 
+		xlab="Agricultural suitability (higher = more suitable)")
+  axis(1,at = seq(1,8,1), seq(1,8,1))
+  axis(2,at = c(0.16, 0.18, 0.2, 0.22),  c(0.16, 0.18, 0.2, 0.22))
   polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
 #  points(ag,zu,type="l",lty=2, col = 8)
 #  points(ag,zl,type="l",lty=2, col = 8)
@@ -612,7 +708,33 @@ mam<- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer="
 #  points(ag,yl,type="l",lty=3, lwd = 2, col = 1)
 
 
-legend("topright", c("Protected", "Unprotected") , col = c(inside.col,outside.col), lty = c(1,1), lwd = c(1,1))
+legend(x = 8.5, y = 0.19, c("Protected", "Unprotected") , col = c(inside.col,outside.col), bty = "n", lty = c(1,1), lwd = c(1,1))
+
+ag2 <- rep(seq(0.5, 8.5, 1),each = 2)
+	end <- length(ag2)-1
+ag2 <- ag2[2:end]
+
+
+addHistogram(data = model.data,
+			var = "Predominant_habitat",
+			x =   "ag_suit",
+			xlim = ag.lim,
+			levels = lu,
+			levels.col = lu.cols2.ci,
+			bar.breaks = ag2)
+
+
+addHistogram(data = model.data,
+			var = "taxon_of_interest",
+			x =   "ag_suit",
+			xlim = ag.lim,
+			levels = taxa,
+			levels.col = taxa.cols,
+			bar.breaks = ag2)
+
+
+
+
 
 
 dev.off()
@@ -621,6 +743,100 @@ dev.off()
 
 
 
+### elevation ### 
+
+
+#tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs elevation.tif",
+#	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/endemicity vs elevation EXTRA.tif",
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
+
+
+  par(mfrow = c(3,1))
+  par(mar=c(4,4.5,1,1.5))
+  par(mgp=c(2.5,1,0))
+  
+  elevation <-seq(from=min(model.data$log_elevation[which(model.data$Within_PA == "no")]),
+		to=max(model.data$log_elevation[which(model.data$Within_PA == "no")]),length=L)
+  z<-vector(mode="numeric",length=L)
+  zu<-vector(mode="numeric",length=L)
+  zl<-vector(mode="numeric",length=L)
+  
+model.data$Within_PA <- relevel(model.data$Within_PA, "no")
+model.data$Zone<- relevel(model.data$Zone , "Tropical")
+model.data$taxon_of_interest <- relevel(model.data$taxon_of_interest , "Invertebrates")
+mam <- lmer(range.model2$final.call, model.data, control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+
+ for (x in 1:L)
+  {
+    log_elevation <- elevation[x]
+    range <-0
+    log_slope <- mean(model.data$log_slope)
+    ag_suit <- median(model.data$ag_suit)
+    log_AREA.PA <- mean(model.data$log_AREA.PA )
+    DoP.PA <- mean(model.data$DoP.PA)
+    Zone <-"Temperate"
+    taxon_of_interest<- "Vertebrates"
+    Predominant_habitat <-"Primary Vegetation"
+    Within_PA <- "no"
+    newdat.n<-data.frame(cbind(log_elevation, log_AREA.PA, DoP.PA, range, log_slope, ag_suit))
+    newdat.f<-data.frame(cbind( Zone,taxon_of_interest, Predominant_habitat, Within_PA))
+    levels(newdat.f$Zone)<-levels(model.data$Zone)
+    levels(newdat.f$taxon_of_interest)<-levels(model.data$taxon_of_interest)
+    levels(newdat.f$Predominant_habitat)<-levels(model.data$Predominant_habitat)
+    levels(newdat.f$Within_PA) <- levels(model.data$Within_PA)
+    newdat<-data.frame(newdat.f,newdat.n)
+    mm<-model.matrix(terms(mam),newdat)
+    pvar1 <- diag(mm %*% tcrossprod(vcov(mam),mm))
+    z[x]<-mm %*% fixef(mam)
+    zu[x]<-z[x]+sqrt(pvar1)
+    zl[x]<-z[x]-sqrt(pvar1) 
+  }
+  
+
+  z <- 1/z
+  zu <- 1/zu
+  zl <- 1/zl
+
+  plot(elevation,z, ylim=ylims, xlim = elev.lim,
+		col = outside.col, bty = "l",  axes = F, #log = "x",
+		type = "l",ylab = "Endemicity (1/CWM range) ± s.e", 
+		xlab="Elevation (m)")
+   rug(data$log_elevation[which(data$Within_PA == "no")]
+	, ticksize = 0.03, side = 1,   lwd = 1, col = 8, pos = min(ylims)) 
+  polygon(c(elevation,rev(elevation)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
+  axis(1, log(c(0,1,5,50,500,2000, 5000)+1), c(0,1, 5, 50 , 500, 2000, 5000))
+  axis(2,at = c(0.16, 0.18, 0.2, 0.22),  c(0.16, 0.18, 0.2, 0.22))
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_elevation",
+			xlim = elev.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 0.1,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = log(c(0,1,5,50,500,2000,5000)+1),
+			axis.text =c(0,1, 5, 50 , 500, 2000, 5000))
+
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_elevation",
+			xlim = elev.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 0.1,
+			levels.col = taxa.cols,
+			axis.text.pos = log(c(0,1,5,50,500,2000,5000)+1),
+			axis.text =c(0,1, 5, 50 , 500, 2000, 5000))
+
+
+dev.off()
 
 
 

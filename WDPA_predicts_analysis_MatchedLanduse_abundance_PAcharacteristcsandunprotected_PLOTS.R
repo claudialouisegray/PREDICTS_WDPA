@@ -38,7 +38,7 @@ display.brewer.pal(8, "Paired")
 
 taxa.cols <- cols[c(4,2,8)]
 taxa.cols.ci <- c("#33A02C44", "#1F78B444", "#FF7F0044")
-
+taxa <- c("Plants", "Invertebrates", "Vertebrates")
 
 cols <- brewer.pal(8, "Paired")
 #drop the red to avoid red-green colorblindness issues
@@ -57,10 +57,18 @@ lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
 lu.cols2 = c("#66A61E", "#8ecfbc", "#7570B3","#E6AB02","#D95F02", "#E7298A")
 lu.cols2.ci <- c("#66A61E90","#8ecfbc90","#7570B390","#E6AB0290","#D95F0290","#E7298A90")
 
+#old limits
+#slope.lim <- log(c(0,25)+1)
+#elev.lim <- c(0, log(4000))
+#size.lim <- log(c(0,10000)+1)
+#age.lim <- c(0,85)
+
+
+
 ylims <- c(0,400) #c(0,500)
 slope.lim <- c(-0.3, log(60))
 elev.lim <- c(-0.3,log(300000))
-size.lim <- c(-0.3,log(500000))
+size.lim <- c(-0.3,log(300000))
 age.lim <- c(-5,100)
 ag.lim <- c(0.3,10.5)
 
@@ -83,8 +91,6 @@ par(mgp=c(2.5,1,0))
   
 par(mfrow = c(1,3))
 
-
-taxa <- c("Plants", "Invertebrates", "Vertebrates")
 
 t <- taxa[1]
 i <- 0
@@ -189,8 +195,11 @@ dev.off()
 
 
 
-
-
+# which are the ones furthest from the boundary
+over.10.in <- unique(matched.landuse$SS[which(matched.landuse$bound_dist_km_PA_neg < -10)])
+View(subset(matched.landuse, SS %in% over.10.in))
+to.look <- diversity[,c("SS", "Kingdom","Phylum","Class","Order","Family","Genus","Species","Higher_taxon")] 
+View(subset(to.look, SS %in% over.10.in))
 
 
 
@@ -809,7 +818,7 @@ mam <- lmer(log_abundance.model2$final.call, model.data, control= lmerControl(op
 		bty = "l", axes = F,
 		type = "l",ylab = "Abundance per site ± s.e", xlab="Agricultural suitability (higher = more suitable)")
   axis(1, seq(1,8,1), seq(1,8,1))
-  axis(2, seq(min(ylims),max(ylims),50), seq(min(ylims),max(ylims),50))
+  axis(2, c(0,100,200,300,400),c(0,100,200,300,400))
 #  points(ag,zu,type="l",lty=2, col = outside.col)
 #  points(ag,zl,type="l",lty=2, col = outside.col)
    polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
@@ -979,15 +988,15 @@ mam <- lmer(log_abundance.model$final.call, model.data, control= lmerControl(opt
   zu <- exp(zu)
   zl <- exp(zl)
 
-  plot(elevation,z, ylim=ylims, col = 1,
-		bty = "l",  xaxt = "n", #log = "x",
+  plot(elevation,z, ylim=ylims, xlim = elev.lim, col = 1,
+		bty = "l",  axes = F, #log = "x",
 		type = "l",ylab = "Abundance per site ± s.e", xlab="Elevation (m)")
 #  points(elevation,zu,type="l",lty=2, col = 1)
 #  points(elevation,zl,type="l",lty=2, col = 1)
    polygon(c(elevation,rev(elevation)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
-  rug(model.data$log_elevation, ticksize = 0.03, side = 1,  lwd = 0.5, col = 1) 
+  rug(model.data$log_elevation, ticksize = 0.03, side = 1,  lwd = 0.5, col = 8) 
   axis(1, log(c(0,1,5,50,500,2000, 5000)+1), c(0,1, 5, 50 , 500, 2000, 5000))
-
+  axis(2, c(0,100,200,300,400),c(0,100,200,300,400))
 
 
 
