@@ -5,8 +5,6 @@
 # give PA attributes
 # split to matched all and matched landuse datasets
 
-# NB all length numbers will be wrong now that data curation has removed some studies
-# check these again after PREDICTS data update
 
 #### read in ESRI file with WDPA data on each site, with site metrics already calculated
 
@@ -310,9 +308,7 @@ PA.predicts.subset <- subset(PA.predicts, Predominant_habitat != "Cannot decide"
 unique(PA.predicts.subset$Predominant_habitat)
 
 # can leave in the ones with intensity "Cannot decide"
-# View(PA.predicts.subset)
-
-length(PA.predicts.subset[,1]) # 5538
+length(PA.predicts.subset[,1]) # 14331
 
 
 
@@ -323,13 +319,15 @@ length(PA.predicts.subset[,1]) # 5538
 # as reclassifying here may allow more studies to be included
 # e.g. previously MSV inside and ISV outside would not have been included. Now it can be. 
 
-PA.predicts.subset$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", PA.predicts.subset$Predominant_habitat)
-PA.predicts.subset$Predominant_habitat <- gsub("Primary non-forest", "Primary Vegetation", PA.predicts.subset$Predominant_habitat)
-PA.predicts.subset$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary Vegetation",PA.predicts.subset$Predominant_habitat)
-PA.predicts.subset$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary Vegetation",PA.predicts.subset$Predominant_habitat)
-PA.predicts.subset$Predominant_habitat <- gsub("Intermediate secondary vegetation","Secondary Vegetation", PA.predicts.subset$Predominant_habitat)
-PA.predicts.subset$Predominant_habitat[which(PA.predicts.subset$Predominant_habitat == "Secondary vegetation (indeterminate age)")] <- "Secondary Vegetation"
+#PA.predicts.subset$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", PA.predicts.subset$Predominant_habitat)
+#PA.predicts.subset$Predominant_habitat <- gsub("Primary non-forest", "Primary Vegetation", PA.predicts.subset$Predominant_habitat)
+#PA.predicts.subset$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary Vegetation",PA.predicts.subset$Predominant_habitat)
+#PA.predicts.subset$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary Vegetation",PA.predicts.subset$Predominant_habitat)
+#PA.predicts.subset$Predominant_habitat <- gsub("Intermediate secondary vegetation","Secondary Vegetation", PA.predicts.subset$Predominant_habitat)
+#PA.predicts.subset$Predominant_habitat[which(PA.predicts.subset$Predominant_habitat == "Secondary vegetation (indeterminate age)")] <- "Secondary Vegetation"
 
+
+# MSV = 629, ISV = 901, YSC = 1133, IndYS = 1051  - i.e. a large chunk is indeterminate sec veg. 
 unique(PA.predicts.subset$Predominant_habitat)
 
 

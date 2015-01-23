@@ -14,7 +14,7 @@ model_select<-function(all.data,responseVar,
   
   contEffectNames<-names(fixedTerms)
   
-  model.data<-subset(all.data,select=c("SS", "SS_PH","SSB","SSBS",fixedFactors,
+  model.data<-subset(all.data,select=c("SS", "SSB","SSBS",fixedFactors, #"SS_PH",
                                     names(fixedTerms),responseVar,otherRandoms,names(keepVars)))
     
   model.data<-na.omit(model.data)

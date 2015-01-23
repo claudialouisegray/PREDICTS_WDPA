@@ -30,7 +30,7 @@ validate <- function(x) {
 
 
 
-source("N:/Documents/PREDICTS/WDPA analysis/site_metrics_per_taxon.R")
+source("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA/site_metrics_per_taxon.R")
 
 
 

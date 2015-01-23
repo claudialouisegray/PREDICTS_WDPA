@@ -313,13 +313,14 @@ length(PA.predicts_amph_mamm_bird.subset[,1]) # 5325
 # exact numbers of sites in each class may differ from totals of the previous summary tables
 # as reclassifying here may allow more studies to be included
 # e.g. previously MSV inside and ISV outside would not have been included. Now it can be. 
+# keep landuses separate - 23/01/2015 as sam has 8 landuses in LUPA
 
-PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
-PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Primary non-forest", "Primary Vegetation", PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
-PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary Vegetation",PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
-PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary Vegetation",PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
-PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Intermediate secondary vegetation","Secondary Vegetation", PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
-PA.predicts_amph_mamm_bird.subset$Predominant_habitat[which(PA.predicts_amph_mamm_bird.subset$Predominant_habitat == "Secondary vegetation (indeterminate age)")] <- "Secondary Vegetation"
+#PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
+#PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Primary non-forest", "Primary Vegetation", PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
+#PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary Vegetation",PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
+#PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary Vegetation",PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
+#PA.predicts_amph_mamm_bird.subset$Predominant_habitat <- gsub("Intermediate secondary vegetation","Secondary Vegetation", PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
+#PA.predicts_amph_mamm_bird.subset$Predominant_habitat[which(PA.predicts_amph_mamm_bird.subset$Predominant_habitat == "Secondary vegetation (indeterminate age)")] <- "Secondary Vegetation"
 
 unique(PA.predicts_amph_mamm_bird.subset$Predominant_habitat)
 
@@ -697,7 +698,9 @@ spdf <- SpatialPointsDataFrame(spatial, matched.landuse)
 
 
 
-### JOIN ON DATA FOR ENDANGERED AMPHIBS, MAMMALS, BIRDS ### 
+### DATA FOR ENDANGERED AMPHIBS, MAMMALS, BIRDS ### 
+## species richness of only threatened species ##
+## no longer using this (Jan 2015)
 
 
 d.metrics <- read.csv("d.metrics_11_14_VU_EN_CR.csv")

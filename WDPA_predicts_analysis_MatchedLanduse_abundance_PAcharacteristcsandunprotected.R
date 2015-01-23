@@ -52,7 +52,7 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 
 
 
-nrow(matched.landuse)
+nrow(matched.landuse) #5015
 
 
 
@@ -145,7 +145,7 @@ RS <-  c("log_bound_dist_km_PA_neg")
 
 # without block:log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
 # with block: log_abundance~poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)"
- 
+# all 8 landuses in random:  
 
 # look at gamm
 
@@ -188,23 +188,6 @@ RS <-  c("log_bound_dist_km_PA_neg")
 
 
 
-#### without slope
-# check polynomials
-fF <- c("Zone", "taxon_of_interest") 
-fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
-keepVars <- character(0)
-fI <- character(0)
-RS <-  c("log_bound_dist_km_PA_neg")
-# log_abundance~poly(log_bound_dist_km_PA_neg,3)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)"
-
-fF <- c("Zone", "taxon_of_interest") 
-fT <- list("log_bound_dist_km_PA_neg" = "3", "DoP.PA" = "1", "log_AREA.PA" = "1")
-keepVars <- c("ag_suit" = "1", "log_elevation" = "1")
-fI <- c("Zone:poly(log_bound_dist_km_PA_neg,3)", "taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)")
-RS <-  c("log_bound_dist_km_PA_neg")
-#
-
-
 log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
 				fixedFactors=fF,
                          fixedTerms=fT,
@@ -215,7 +198,7 @@ log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
 				verbose=TRUE)
 
 
-log_abundance.best.random$best.random #has block but not landuse
+log_abundance.best.random$best.random 
  
 
 
@@ -227,12 +210,12 @@ log_abundance.model <- model_select(all.data  = matched.landuse,
                        fixedTerms= fT,
 			     keepVars = keepVars,
                        fixedInteractions=fI,
-                       randomStruct = "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB) +(1|Predominant_habitat)",
+                       randomStruct = log_abundance.best.random$best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
 
-write.csv(log_abundance.model$stats, "ab.model.stats.22.12.2014.csv")
+write.csv(log_abundance.model$stats, "ab.model.stats.23.01.2014.csv")
 
 
 

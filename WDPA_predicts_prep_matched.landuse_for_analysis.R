@@ -90,8 +90,16 @@ matched.landuse<- read.csv("matched.landuse_11_2014.csv")
 nrow(matched.landuse)
 
 
+matched.landuse$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", matched.landuse$Predominant_habitat)
+matched.landuse$Predominant_habitat <- gsub("Primary non-forest", "Primary Vegetation", matched.landuse$Predominant_habitat)
+#matched.landuse$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary Vegetation",matched.landuse$Predominant_habitat)
+#matched.landuse$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary Vegetation",matched.landuse$Predominant_habitat)
+#matched.landuse$Predominant_habitat <- gsub("Intermediate secondary vegetation","Secondary Vegetation", matched.landuse$Predominant_habitat)
+#matched.landuse$Predominant_habitat[which(matched.landuse$Predominant_habitat == "Secondary vegetation (indeterminate age)")] <- "Secondary Vegetation"
 
-nrow(matched.landuse)#5491
+matched.landuse <- subset(matched.landuse, Predominant_habitat != "Secondary vegetation (indeterminate age)")
+
+nrow(matched.landuse)#5491 to 5015 after sec veg split and indet. sec veg dropped
 
 m <- merge(matched.landuse, access.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "access"
@@ -209,8 +217,16 @@ multiple.taxa.matched.landuse <- droplevels(multiple.taxa.matched.landuse)
 
 
 matched.landuse_amp_mam_bir <- read.csv("matched.landuse_amphib_mammal_bird_11_2014.csv")
+nrow(matched.landuse_amp_mam_bir)#2074, down to 1983 if 8 landuses
 
-nrow(matched.landuse_amp_mam_bir)#2074
+
+
+matched.landuse_amp_mam_bir$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", matched.landuse_amp_mam_bir$Predominant_habitat)
+matched.landuse_amp_mam_bir$Predominant_habitat <- gsub("Primary non-forest", "Primary Vegetation", matched.landuse_amp_mam_bir$Predominant_habitat)
+
+matched.landuse_amp_mam_bir <- subset(matched.landuse_amp_mam_bir, Predominant_habitat != "Secondary vegetation (indeterminate age)")
+
+
 
 
 m <- merge(matched.landuse_amp_mam_bir, access.1, "SSS")
@@ -299,96 +315,74 @@ matched.landuse_amp_mam_bir$IUCN.PA[which(matched.landuse_amp_mam_bir$Within_PA 
 
 
 ### load dataset on endangered species only
-
-matched.landuse_VU_EN_CR <- read.csv("matched.landuse_VU_EN_CR_11_2014.csv")
-
-
-
+# no longer using this - Jan 2015
+#matched.landuse_VU_EN_CR <- read.csv("matched.landuse_VU_EN_CR_11_2014.csv")
 
 #remove problem studies from checking abstracts
 
-nrow(matched.landuse_VU_EN_CR) #796
+#nrow(matched.landuse_VU_EN_CR) #796
 
 
-m <- merge(matched.landuse_VU_EN_CR, access.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "access"
-m <- merge(m, hpd.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
-m <- merge(m, elevation.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
-m <- merge(m, slope.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
-m <- merge(m, ag.1, "SSS")
+#m <- merge(matched.landuse_VU_EN_CR, access.1, "SSS")
+#colnames(m)[which(colnames(m) == "MEAN")] <- "access"
+#m <- merge(m, hpd.1, "SSS")
+#colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
+#m <- merge(m, elevation.1, "SSS")
+#colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
+#m <- merge(m, slope.1, "SSS")
+#colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
+#m <- merge(m, ag.1, "SSS")
+#nrow(m)
 
-nrow(m)
-
-
-matched.landuse_VU_EN_CR <- m
-
-length(matched.landuse_VU_EN_CR[,1]) #should match above
-names(matched.landuse_VU_EN_CR)
-
-
+#matched.landuse_VU_EN_CR <- m
 
 #merge distance to boundary data onto matched landuse
-nrow(PA_dists_data)
-nrow(matched.landuse_VU_EN_CR)
+#nrow(PA_dists_data)
+#nrow(matched.landuse_VU_EN_CR)
 
-m <- merge(matched.landuse_VU_EN_CR, PA_dists_data, by = "SSS")
-nrow(m)
-matched.landuse_VU_EN_CR <- m
+#m <- merge(matched.landuse_VU_EN_CR, PA_dists_data, by = "SSS")
+#nrow(m)
+#matched.landuse_VU_EN_CR <- m
 
 
-matched.landuse_VU_EN_CR$bound_dist_km <- matched.landuse_VU_EN_CR$NEAR_DIST/1000
-matched.landuse_VU_EN_CR$log_bound_dist_km <- log(matched.landuse_VU_EN_CR$bound_dist_km+1)
+#matched.landuse_VU_EN_CR$bound_dist_km <- matched.landuse_VU_EN_CR$NEAR_DIST/1000
+#matched.landuse_VU_EN_CR$log_bound_dist_km <- log(matched.landuse_VU_EN_CR$bound_dist_km+1)
 
 #make variables where the sign is negative inside PAs
-matched.landuse_VU_EN_CR$bound_dist_km_PA_neg <- matched.landuse_VU_EN_CR$bound_dist_km
-matched.landuse_VU_EN_CR$bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")] <- -1*matched.landuse_VU_EN_CR$bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")]
-matched.landuse_VU_EN_CR$log_bound_dist_km_PA_neg <- matched.landuse_VU_EN_CR$log_bound_dist_km
-matched.landuse_VU_EN_CR$log_bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")] <- -1*matched.landuse_VU_EN_CR$log_bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")]
-
-
-
-
+#matched.landuse_VU_EN_CR$bound_dist_km_PA_neg <- matched.landuse_VU_EN_CR$bound_dist_km
+#matched.landuse_VU_EN_CR$bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")] <- -1*matched.landuse_VU_EN_CR$bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")]
+#matched.landuse_VU_EN_CR$log_bound_dist_km_PA_neg <- matched.landuse_VU_EN_CR$log_bound_dist_km
+#matched.landuse_VU_EN_CR$log_bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")] <- -1*matched.landuse_VU_EN_CR$log_bound_dist_km_PA_neg[which(matched.landuse_VU_EN_CR$Within_PA == "yes")]
 
 # sort out explanatory variables
 
-matched.landuse_VU_EN_CR$IUCN_CAT_number <- factor(matched.landuse_VU_EN_CR$IUCN_CAT_number) # they arent really in an order
+#matched.landuse_VU_EN_CR$IUCN_CAT_number <- factor(matched.landuse_VU_EN_CR$IUCN_CAT_number) # they arent really in an order
 
-matched.landuse_VU_EN_CR$log_slope <- log(matched.landuse_VU_EN_CR$slope +1)
-matched.landuse_VU_EN_CR$log_elevation <- log(matched.landuse_VU_EN_CR$elevation +1)
-matched.landuse_VU_EN_CR$log_hpd<- log(matched.landuse_VU_EN_CR$hpd +1)
-matched.landuse_VU_EN_CR$log_access <- log(matched.landuse_VU_EN_CR$access +1)
+#matched.landuse_VU_EN_CR$log_slope <- log(matched.landuse_VU_EN_CR$slope +1)
+#matched.landuse_VU_EN_CR$log_elevation <- log(matched.landuse_VU_EN_CR$elevation +1)
+#matched.landuse_VU_EN_CR$log_hpd<- log(matched.landuse_VU_EN_CR$hpd +1)
+#matched.landuse_VU_EN_CR$log_access <- log(matched.landuse_VU_EN_CR$access +1)
+#matched.landuse_VU_EN_CR$log_GIS_AREA <- log(matched.landuse_VU_EN_CR$GIS_AREA+1)
 
-matched.landuse_VU_EN_CR$log_GIS_AREA <- log(matched.landuse_VU_EN_CR$GIS_AREA+1)
+#matched.landuse_VU_EN_CR$DoP.PA <- matched.landuse_VU_EN_CR$DoP
+#matched.landuse_VU_EN_CR$DoP.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- 0
 
+#matched.landuse_VU_EN_CR$AREA.PA <- matched.landuse_VU_EN_CR$GIS_AREA
+#matched.landuse_VU_EN_CR$AREA.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- 0
 
+#matched.landuse_VU_EN_CR$log_AREA.PA <- matched.landuse_VU_EN_CR$log_GIS_AREA
+#matched.landuse_VU_EN_CR$log_AREA.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- 0
 
-matched.landuse_VU_EN_CR$DoP.PA <- matched.landuse_VU_EN_CR$DoP
-matched.landuse_VU_EN_CR$DoP.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- 0
-
-matched.landuse_VU_EN_CR$AREA.PA <- matched.landuse_VU_EN_CR$GIS_AREA
-matched.landuse_VU_EN_CR$AREA.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- 0
-
-matched.landuse_VU_EN_CR$log_AREA.PA <- matched.landuse_VU_EN_CR$log_GIS_AREA
-matched.landuse_VU_EN_CR$log_AREA.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- 0
-
-matched.landuse_VU_EN_CR$IUCN.PA <- matched.landuse_VU_EN_CR$IUCN_CAT_number
-levels(matched.landuse_VU_EN_CR$IUCN.PA) <- c( "1.5", "4.5", "7", "0")
-matched.landuse_VU_EN_CR$IUCN.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- "0"
-
-
-
+#matched.landuse_VU_EN_CR$IUCN.PA <- matched.landuse_VU_EN_CR$IUCN_CAT_number
+#levels(matched.landuse_VU_EN_CR$IUCN.PA) <- c( "1.5", "4.5", "7", "0")
+#matched.landuse_VU_EN_CR$IUCN.PA[which(matched.landuse_VU_EN_CR$Within_PA == "no")] <- "0"
 
 #make response variables
-
-matched.landuse_VU_EN_CR$log_abundance <- log(matched.landuse_VU_EN_CR$Total_abundance +1)
-
+#matched.landuse_VU_EN_CR$log_abundance <- log(matched.landuse_VU_EN_CR$Total_abundance +1)
 
 ### make version with only species that studies more than one species
-multiple.taxa.matched.landuse_VU_EN_CR <- subset(matched.landuse_VU_EN_CR, SS %in% more.than.one.taxa)
-multiple.taxa.matched.landuse_VU_EN_CR <- droplevels(multiple.taxa.matched.landuse_VU_EN_CR)
+#multiple.taxa.matched.landuse_VU_EN_CR <- subset(matched.landuse_VU_EN_CR, SS %in% more.than.one.taxa)
+#multiple.taxa.matched.landuse_VU_EN_CR <- droplevels(multiple.taxa.matched.landuse_VU_EN_CR)
 
 
 

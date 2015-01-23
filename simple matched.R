@@ -2,23 +2,24 @@
 
 rm(list=ls())
 
-setwd("N:/Documents/PREDICTS/WDPA analysis")
-
-
 library(lme4)
 library(yarg)
 library(roquefort)
 library(influence.ME)
 
+# load functions
+setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
+#source("compare_randoms.R")
+source("compare_randoms_lmer - with poly.R")
+source("model_select.R")
+
+
+
+
 # Load dataset on taxa_split matched all
-
-
+setwd("N:/Documents/PREDICTS/WDPA analysis")
 PA_11_2014 <- read.csv("PA_11_2014.csv")
 nrow(PA_11_2014 )#7077
-
-
-
-
 
 ### LOAD MATCHING DATA
 
@@ -113,10 +114,15 @@ multiple.taxa.PA_11_2014  <- droplevels(multiple.taxa.PA_11_2014)
 PA_11_2014_ord <- PA_11_2014
 PA_11_2014_ord$IUCN_CAT <- factor(PA_11_2014_ord$IUCN_CAT, ordered = T, 
 	levels = c("0", "4.5", "7", "1.5"))
+PA_11_2014_ord$ag_suit <- factor(PA_11_2014$ag_suit, ordered = T)
 
 multiple.taxa.PA_11_2014_ord <- multiple.taxa.PA_11_2014
 multiple.taxa.PA_11_2014_ord$IUCN_CAT <- factor(multiple.taxa.PA_11_2014_ord$IUCN_CAT, ordered = T, 
 	levels = c("0", "4.5", "7", "1.5"))
+
+
+
+
 
 
 
@@ -125,14 +131,44 @@ multiple.taxa.PA_11_2014_ord$IUCN_CAT <- factor(multiple.taxa.PA_11_2014_ord$IUC
 # check is block useful
 # yes definitely
 
+# check polynomials for confounding variables
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
 
-m1 <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
+
+sp.model <- model_select(all.data  = multiple.taxa.PA_11_2014, 
+			     responseVar = "Species_richness", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+# Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Within_PA+(Within_PA|SS)+(1|SSB)+(1|SSBS)
+
+data <- multiple.taxa.PA_11_2014[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
+data <- na.omit(data)
+m1 <- glmer(Species_richness ~ Within_PA + log_slope + poly(log_elevation,2) + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
-m2 <- glmer(Species_richness ~ 1 + log_slope + log_elevation + ag_suit
+	family = "poisson", data = data)
+m2 <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,2) + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = data)
 anova(m1, m2)
+
+# is ag suit significant
+m1_ag <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.PA_11_2014)
+
+anova(m1, m1_ag)
+
 
 summary(m1)
 # significant difference - now to plot the difference
@@ -182,8 +218,7 @@ exp(fixef(m1)[1] + fixef(m1)[2]-1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
 
 
 
-# what I had before dec 14 - following Andys instructions in Cambridge oct 2014
-#x <- exp(fixef(m1)[2]) - 1
+
 
 # plot
 
@@ -257,6 +292,25 @@ summary(m1z)
 #simple species richness with IUCN cat 
 
 multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+
+# check polynomials for confounding variables
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+
+
+sp.model <- model_select(all.data  = multiple.taxa.PA_11_2014, 
+			     responseVar = "Species_richness", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
 
 m0i <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
@@ -523,8 +577,10 @@ summary(m1a)
 exp(fixef(m1a)[2]) # 1.127
 
 
-
-
+m1a_ag <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation
+	+ (Within_PA|SS)+ (1|SSB), 
+	 data = PA_11_2014)
+anova(m1a, m1a_ag)
 
 # plot
 
@@ -710,6 +766,13 @@ anova(m1r, m2r)
 summary(m1r)
 
 exp(fixef(m1r)[2]) # 0.978
+
+
+m1r_ag <- lmer(range ~ Within_PA + log_slope + log_elevation
+	+ (Within_PA|SS)+ (1|SSB), 
+	 data = PA_11_2014)
+anova(m1r, m1r_ag)
+
 
 #convert to endemicity
 # not this 1 - exp(fixef(m1r)[2])

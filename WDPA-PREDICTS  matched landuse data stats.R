@@ -577,25 +577,93 @@ hist(matched.landuse$ag_suit[matched.landuse$Within_PA == "yes"])
 hist(matched.landuse$ag_suit[matched.landuse$Within_PA == "no"])
 
 
+
 ### do protected and unprotected sites differ in elevation/slope/ag suit
 
 
 plot(log_elevation ~ Within_PA, PA_11_2014)
 
-m <- lmer(log_elevation ~ Within_PA + (Within_PA|SS) + (1|SSB), PA_11_2014)
-n <- lmer(log_elevation ~ 1 + (Within_PA|SS) + (1|SSB), PA_11_2014)
-summary(m)
-anova(m,n)
+m <- lmer(ag_suit ~ Within_PA + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+m1 <- lmer(ag_suit ~ 1 + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+anova(m1, m)
 
-m <- lmer(log_slope ~ Within_PA + (Within_PA|SS) + (1|SSB), PA_11_2014)
-n <- lmer(log_slope ~ 1 + (Within_PA|SS) + (1|SSB), PA_11_2014)
+m <- lmer(log_elevation ~ Within_PA + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+m1 <- lmer(log_elevation ~ 1 + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+anova(m1, m)
 summary(m)
-anova(m,n)
 
-m <- lmer(ag_suit ~ Within_PA + (Within_PA|SS) + (1|SSB), PA_11_2014)
-n <- lmer(ag_suit ~ 1 + (Within_PA|SS) + (1|SSB), PA_11_2014)
+m <- lmer(log_slope ~ Within_PA + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+m1 <- lmer(log_slope ~ 1 + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+anova(m1, m)
 summary(m)
-anova(m,n)
+
+
+# does the ag_suit inside vs outside vary between protected and unprotected
+
+m <- lmer(ag_suit ~ Within_PA + Predominant_habitat + Within_PA:Predominant_habitat
+		  + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+m1 <- lmer(ag_suit ~ Within_PA + Predominant_habitat  + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+anova(m1, m)
+
+# does ag suit vary between PA and non PA if habitat is in the model
+m2 <- lmer(ag_suit ~  Predominant_habitat
+		  + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+anova(m2, m1)
+
+# does ag_suit vary between land uses?
+PA_11_2014$Predominant_habitat <- relevel(PA_11_2014$Predominant_habitat, "Primary Vegetation")
+m3 <- lmer(ag_suit ~  1
+		  + (Within_PA|SS) + (1|SSB),  PA_11_2014)
+anova(m3, m2) # yes
+summary(m2)
+
+
+
+# check for matched.landuse
+# does ag_suit vary between land uses?
+matched.landuse$Predominant_habitat <- relevel(matched.landuse$Predominant_habitat, "Primary Vegetation")
+m2 <- lmer(ag_suit ~  Predominant_habitat
+		  + (Within_PA|SS) + (1|SSB),  matched.landuse)
+m3 <- lmer(ag_suit ~  1
+		  + (Within_PA|SS) + (1|SSB),  matched.landuse)
+anova(m2, m3) # yes
+summary(m2)
+
+
+
+# plot
+
+labels <- c("Primary", "Cropland", "Pasture", "Plantation", "Secondary", "Urban")
+y <- as.numeric(fixef(m2)[2:6])
+se <- as.numeric(se.fixef(m2)[2:6])
+yplus <- y + se*1.96
+yminus <- y - se*1.96
+y <-(y + 1) # plot as relative to 1
+yplus<-(yplus + 1)
+yminus<-(yminus + 1)
+
+points <- c(1, y)
+
+
+df <- data.frame(y = c(1,y), yplus = c(1,yplus), yminus = c(1,yminus), labels = labels)
+df <- df[c(1,5,4,2,3,6),]
+
+plot(df$y ~ c(1:6), ylim = c(0.8,1.5), xlim = c(0.5,6.5), 
+	bty = "l", pch = 16, col = 1, cex = 1.5,
+	yaxt = "n", xaxt = "n",
+	ylab = "Relative agricultural suitability (± 95%CI)",
+	xlab = "")
+axis(1, c(1:6), df$labels)
+axis(2, c(0.8,1,1.2,1.4), c(0.8,1,1.2,1.4))
+arrows(c(1:6),df$yplus,c(1:6),df$yminus, code = 3, length = 0.03, angle = 90)
+abline(h = 1, lty = 2)
+
+
+
+
+
+
+
 
 
 
