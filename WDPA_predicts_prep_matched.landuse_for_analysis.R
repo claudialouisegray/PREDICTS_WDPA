@@ -99,6 +99,8 @@ matched.landuse$Predominant_habitat <- gsub("Primary non-forest", "Primary Veget
 
 matched.landuse <- subset(matched.landuse, Predominant_habitat != "Secondary vegetation (indeterminate age)")
 
+matched.landuse$Predominant_habitat <- factor(matched.landuse$Predominant_habitat)
+
 nrow(matched.landuse)#5491 to 5015 after sec veg split and indet. sec veg dropped
 
 m <- merge(matched.landuse, access.1, "SSS", all.x = T)
@@ -226,7 +228,7 @@ matched.landuse_amp_mam_bir$Predominant_habitat <- gsub("Primary non-forest", "P
 
 matched.landuse_amp_mam_bir <- subset(matched.landuse_amp_mam_bir, Predominant_habitat != "Secondary vegetation (indeterminate age)")
 
-
+matched.landuse_amp_mam_bir$Predominant_habitat <- factor(matched.landuse_amp_mam_bir$Predominant_habitat)
 
 
 m <- merge(matched.landuse_amp_mam_bir, access.1, "SSS")

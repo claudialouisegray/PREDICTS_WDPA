@@ -71,8 +71,9 @@ length(unique(data$SS[which(data$Within_PA == "yes")]))
 
 LUnames <- unique(data$Predominant_habitat)
 
-LUnames <-  LUnames[c(2,3,6,1,4,5)]
-comparisons <- matrix(0,nrow = 6, ncol = 6)
+# LUnames <-  LUnames[c(4,8,7,5,6,3,1,2)] #for PA_11_2014
+LUnames <-  LUnames[c(2,7,6,3,8,4,1,5)]
+comparisons <- matrix(0,nrow = length(LUnames), ncol = length(LUnames))
 comp <- data.frame(comparisons)
 colnames(comp) <-  LUnames
 rownames(comp) <- LUnames
@@ -91,7 +92,7 @@ for(s in studies){
 }
 comp 
 
-write.csv(comp,"studies per landuse comparison 15 09 14.csv")
+write.csv(comp,"studies per landuse comparison matchedlanduse.csv")
 
 
 

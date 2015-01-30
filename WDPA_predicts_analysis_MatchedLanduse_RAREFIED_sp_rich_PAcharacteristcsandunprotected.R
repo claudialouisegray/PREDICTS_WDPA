@@ -127,6 +127,7 @@ fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
 # without block "Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
 # with block: "Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
+# 8 landuses: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
 
 
@@ -142,7 +143,7 @@ RS <-  c("log_bound_dist_km_PA_neg")
 #without block - but elevation is wrong here, should have been cubic. Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,1)+Zone
 #+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
 # with block: "Richness_rarefied~Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
-
+# 8 landuses: Richness_rarefied~poly(log_AREA.PA,2)+Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
 				fitFamily = "poisson",
@@ -181,7 +182,7 @@ Richness_rarefied.model <- model_select(all.data  = multiple.taxa.matched.landus
 
 
 validate(Richness_rarefied.model$model) #ok
-write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.stats.05.01.2015.csv")
+write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.stats.23.01.2015.csv")
 
 
 
@@ -199,6 +200,7 @@ RS <-  c("Within_PA")
 
 #without block: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|Predominant_habitat)"
 # with block: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
+# 8 landuses: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 
 # add interactions
@@ -221,7 +223,7 @@ RS <-  c("Within_PA")
 # with block: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone
 #+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
-
+# 8 landuses: Richness_rarefied~poly(log_AREA.PA,2)+Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
 				fitFamily = "poisson",
@@ -258,10 +260,7 @@ Richness_rarefied.model2 <- model_select(all.data  = multiple.taxa.matched.landu
 
 
 validate(Richness_rarefied.model2$model) #ok
-write.csv(Richness_rarefied.model2$stats, "Richness_rarefied.model2.stats.05.01.2015.csv")
-
-save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\rarefied.richness_with_block_and_keeping_confounding_vars.RData")
-
+write.csv(Richness_rarefied.model2$stats, "Richness_rarefied.model2.stats.23.01.2015.csv")
 
 Richness_rarefied.model$warnings
 Richness_rarefied.model$final.call

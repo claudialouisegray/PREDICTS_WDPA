@@ -50,7 +50,7 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 }
 
 
-nrow(matched.landuse) #5491
+nrow(matched.landuse) #5491 down to 5015
 
 
 
@@ -125,9 +125,21 @@ RS <-  c("log_bound_dist_km_PA_neg")
 
 #without block: range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
 #with block:  range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
+# 8 landuses: "range~poly(ag_suit,3)+poly(log_bound_dist_km_PA_neg,2)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
+
+
+#check gamm
+#doesnt converge
+gamm.model <- gamm4(range ~ Zone + taxon_of_interest # + ag_suit + s(log_elevation) + s(log_slope),
+	+ s(log_bound_dist_km_PA_neg),
+ 	#+ s(DoP.PA) + s(log_AREA.PA), 
+	random = ~(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB) + (1|Predominant_habitat), data =  matched.landuse)
+anova(gamm.model$gam)
+plot(gamm.model$gam)
 
 
 #add interactions
+# non linear dist to boundary relationship not strongly supported, keep linear
 
 fF <- c("Zone", "taxon_of_interest") 
 fT <- list("log_bound_dist_km_PA_neg" = "1", "DoP.PA" = "1", "log_AREA.PA" = "1")
@@ -137,7 +149,7 @@ RS <-  c("log_bound_dist_km_PA_neg")
 
 #without block: range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
 # with block: "range~taxon_of_interest+Zone+poly(ag_suit,3)+poly(log_slope,3)+poly(log_elevation,2)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
-
+# 8 landuses: range~taxon_of_interest+Zone+poly(ag_suit,3)+poly(log_slope,3)+poly(log_elevation,2)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
 
 range.best.random <- compare_randoms(matched.landuse, "range",
 				fixedFactors=fF,
@@ -149,7 +161,7 @@ range.best.random <- compare_randoms(matched.landuse, "range",
 				verbose=TRUE)
 
 
-range.best.random$best.random #block is better
+range.best.random$best.random 
  
 
 
@@ -166,18 +178,12 @@ range.model <- model_select(all.data  = matched.landuse,
                        verbose=TRUE)
 
 
-write.csv(range.model$stats, "range.model.stats.05.01.2015.csv")
+write.csv(range.model$stats, "range.model.stats.23.01.2015.csv")
 
 
 
 
 ### IUCN cat analysis
-
-fF <- c("Zone", "taxon_of_interest", "IUCN.PA") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3", "DoP.PA" = "3", "log_AREA.PA" = "3")
-fI <- character(0)
-RS <-  c("IUCN.PA")
-
 # this doesnt converge - return to including it in simple models
 
 
@@ -194,8 +200,9 @@ RS <-  c("Within_PA")
 
 # without block: range~poly(ag_suit,3)+poly(DoP.PA,3)+poly(log_AREA.PA,3)+poly(log_elevation,3)+poly(log_slope,3)+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|Predominant_habitat)"
 # with block: range~poly(ag_suit,3)+poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,3)+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)
-
+# 8 landuses: range~poly(ag_suit,3)+poly(log_AREA.PA,1)+poly(log_elevation,3)+poly(log_slope,3)+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)
 # compare to gamm
+
 
 gamm.model <- gamm4(range ~ Within_PA + Zone + taxon_of_interest + ag_suit + s(log_elevation) + s(log_slope)+ s(DoP.PA) + s(log_AREA.PA), 
 	random = ~(1+ Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat), data =  matched.landuse)
@@ -205,13 +212,13 @@ summary(gamm.model$gam)
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA") 
-fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3")
-keepVars <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "2")
-fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_slope,3)", "Within_PA:poly(log_elevation,2)",
+fT <- list("DoP.PA" = "1", "log_AREA.PA" = "1")
+keepVars <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_slope,3)", "Within_PA:poly(log_elevation,3)",
 	"Within_PA:taxon_of_interest", 
-	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,3)",
+	"taxon_of_interest:poly(DoP.PA,1)", "taxon_of_interest:poly(log_AREA.PA,1)",
 	"Within_PA:Zone",
-	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,3)")
+	"Zone:poly(DoP.PA,1)", "Zone:poly(log_AREA.PA,1)")
 RS <-  c("Within_PA")
 
 #without block
@@ -231,7 +238,33 @@ RS <-  c("Within_PA")
 #+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
 
 
+#8landuse:
+#range~poly(log_AREA.PA,1)+taxon_of_interest+Within_PA+Zone
+#+Within_PA:poly(ag_suit,3)
+#+Within_PA:poly(log_slope,3)
+#+Within_PA:taxon_of_interest
+#+taxon_of_interest:poly(DoP.PA,1)
+#+taxon_of_interest:poly(log_AREA.PA,1)
+#+Zone:poly(DoP.PA,1)
+#+Zone:poly(log_AREA.PA,1)
+#+poly(DoP.PA,1)+poly(ag_suit,3)+poly(log_slope,3)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)"
 
+
+
+
+
+# 8 landuse, limited to quadratic
+# not that different, as p value is 0.0489 for taxon:PA_area.
+"range~poly(log_AREA.PA,1)+taxon_of_interest+Within_PA+Zone
+#+Within_PA:poly(ag_suit,2)
+#+Within_PA:poly(log_slope,2)
+#+Within_PA:taxon_of_interest
+#+taxon_of_interest:poly(DoP.PA,1)
+#+Zone:poly(DoP.PA,1)
+#+Zone:poly(log_AREA.PA,1)+poly(DoP.PA,1)+poly(ag_suit,2)+poly(log_slope,2)+poly(log_elevation,2)
+#+(1+Within_PA|SS)+(1|SSB)+(1|Predominant_habitat)
+
+#same results with other optimizer too
 
 
 
@@ -246,7 +279,7 @@ range.best.random <- compare_randoms(matched.landuse, "range",
 				verbose=TRUE)
 
 
-range.best.random$best.random #block is better
+range.best.random$best.random 
  
 
 
@@ -262,13 +295,36 @@ range.model2 <- model_select(all.data  = matched.landuse,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
+range.model2_NM <- model_select(all.data  = matched.landuse, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = range.best.random$best.random,
+			     otherRandoms=c("Predominant_habitat"),
+			     optimizer = "Nelder_Mead",
+                       verbose=TRUE)
+
+# check if result is the same with ag suit and elevation and slope quadratic
+range.model2.quad <- model_select(all.data  = matched.landuse, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = range.best.random$best.random,
+			     otherRandoms=c("Predominant_habitat"),
+                       verbose=TRUE)
 
 
 
 
 
 validate(range.model2$model) #ok
-write.csv(range.model2$stats, "range.model2.stats.05.01.2015.csv")
+write.csv(range.model2$stats, "range.model2.stats.23.01.2015.csv")
 
 
 

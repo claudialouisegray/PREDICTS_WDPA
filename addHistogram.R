@@ -22,7 +22,7 @@ for (i in 1:length(levels)){
 		if(i == 1){
 		t1 <- t2
 		}else{
-		t1 <- merge(t1,t2, by = paste(x), all.x = T)
+		t1 <- merge(t1,t2, by = paste(x), all.x = T, all.y = T)
 	}
 }
 
@@ -40,7 +40,8 @@ axis(1, axis.labels,axis.labels)
 y <- 0
 for(i in 2:ncol(t1)){
 	yvals <- t1[,i] + y
-	polygon(c(bar.breaks,rev(bar.breaks)), c(rep(yvals, each = 2),rep(min(ylims)+y,length(bar.breaks))), lty = 0, col = levels.col[i-1])
+	polygon(c(bar.breaks,rev(bar.breaks)), c(rep(yvals, each = 2),rep(min(ylims)+y,length(bar.breaks))), lty = 0, col = levels.col[i-1],
+		border = levels.col[i-1])
 	y.pos <- y + max(t1[,i])/2
 #	text(x = max(bar.breaks), y = y.pos, pos = 4, cex = 0.7, paste(levels[i - 1]))
 	y <- y + min(ylims) + max(t1[,i]) + spacing 

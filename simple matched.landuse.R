@@ -2,16 +2,22 @@
 
 rm(list=ls())
 
-setwd("N:/Documents/PREDICTS/WDPA analysis")
+
 
 
 library(lme4)
 library(yarg)
 library(roquefort)
 
-# Load dataset on taxa_split matched all
+# load functions
+setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
+#source("compare_randoms.R")
+source("compare_randoms_lmer - with poly.R")
+source("model_select.R")
 
 
+# Load dataset 
+setwd("N:/Documents/PREDICTS/WDPA analysis")
 matched.landuse <- read.csv("matched.landuse_11_2014.csv")
 nrow(matched.landuse )#5491
 
@@ -117,16 +123,37 @@ multiple.taxa.matched.landuse_ord$IUCN_CAT <- factor(multiple.taxa.matched.landu
 
 ### model species richness
 
-# check is block useful
-# yes definitely
+# check polynomials
 
 
-m1 <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+#Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
+
+
+s.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
+			     responseVar = "Species_richness", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+
+data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
+data <- na.omit(data)
+m1 <- glmer(Species_richness ~ Within_PA + log_slope +poly(ag_suit,3)+poly(log_elevation,2)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
-m2 <- glmer(Species_richness ~ 1 + log_slope + log_elevation + ag_suit
+	family = "poisson", data = data)
+m2 <- glmer(Species_richness ~ 1 + log_slope + poly(ag_suit,3)+poly(log_elevation,2)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
+	family = "poisson", data = data)
 anova(m1, m2)
 
 summary(m1)
@@ -253,6 +280,31 @@ summary(m1z)
 
 #simple species richness with IUCN cat 
 
+
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+#cant converge with non-linear confounding variables
+
+
+s.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
+			     responseVar = "Species_richness", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+
+data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
+data <- na.omit(data)
+
+
 m0i <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse)
@@ -270,6 +322,17 @@ m2i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
 m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+#tried this m3i with Nelder_Mead - also convergence warnings
+
+#doesnt converge with ordinal data either
+m2i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse_ord,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse_ord,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 
@@ -339,12 +402,35 @@ dev.off()
 
 # rarefied richness
 
-m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+#Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
+
+r.sp.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
+			     responseVar = "Richness_rarefied", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+r.sp.model$stats # p <0.005
+
+data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Richness_rarefied")]
+data <- na.omit(data)
+
+
+m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
-m4 <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
+	family = "poisson", data = data)
+m4 <- glmer(Richness_rarefied ~ 1 + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
+	family = "poisson", data = data)
 anova(m3, m4)
 
 
@@ -390,6 +476,30 @@ dev.off()
 
 # rarefied richness with IUCN cat
 
+
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+#Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(IUCN_CAT|SS)+(1|SSB)+(1|SSBS)
+
+r.sp.model.IUCN <- model_select(all.data  = multiple.taxa.matched.landuse, 
+			     responseVar = "Richness_rarefied", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+r.sp.model.IUCN$stats # p <0.015
+
+data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Richness_rarefied")]
+data <- na.omit(data)
+
+
 m3i <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB)+ (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse)
@@ -403,13 +513,13 @@ m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 #	family = "poisson", data = multiple.taxa.matched.landuse)
 
 
-m5i <- glmer(Richness_rarefied ~1 + log_slope + log_elevation + ag_suit
+m5i <- glmer(Richness_rarefied ~1 + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse,
+	family = "poisson", data = data,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse,
+	family = "poisson", data = data,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 anova(m3i,m4i)
 anova(m5i,m6i)
@@ -428,11 +538,13 @@ labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
 levels.IUCN <- levels(multiple.taxa.matched.landuse$IUCN_CAT)
 
-multiple.taxa.matched.landuse$IUCN_CAT <- relevel(multiple.taxa.matched.landuse$IUCN_CAT, "0")
+data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Richness_rarefied")]
+data <- na.omit(data)
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse,
+	family = "poisson", data = data,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 
@@ -481,7 +593,29 @@ points
 
 
 ### model abundance
-# block also very useful here
+
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+#"log_abundance~poly(log_elevation,1)+(Within_PA|SS)+(1|SSB)"
+
+ab.model <- model_select(all.data  = matched.landuse, 
+			     responseVar = "log_abundance", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+ab.model$stats # p <0.015
+
+data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "log_abundance")]
+data <- na.omit(data)
+
+
 m1a <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = matched.landuse)
@@ -492,7 +626,7 @@ anova(m1a, m2a)
 
 summary(m1a)
 
-exp(fixef(m1a)[2]) # 1.127
+exp(fixef(m1a)[2]) 
 
 
 
@@ -569,6 +703,31 @@ summary(m1az)
 
 
 # model abundance and IUCN_category
+
+
+
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+#doesnt converge with nonlinear terms
+
+ab.model.IUCN <- model_select(all.data  = matched.landuse, 
+			     responseVar = "log_abundance", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+ab.model.IUCN$stats # p <0.015
+
+data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "log_abundance")]
+data <- na.omit(data)
+
+
 m1ai <- lmer(log_abundance ~ Within_PA +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = matched.landuse)
@@ -662,12 +821,37 @@ dev.off()
 
 
 ### model range
-m1r <- lmer(range ~ Within_PA + log_slope + log_elevation + ag_suit
+
+
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+#range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(Within_PA|SS)+(1|SSB) 
+
+
+
+range.model <- model_select(all.data  = matched.landuse, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+range.model$stats # p <0.015
+
+data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "range")]
+data <- na.omit(data)
+
+m1r <- lmer(range ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
-m2r <- lmer(range ~ 1 + log_slope + log_elevation + ag_suit
+	 data = data)
+m2r <- lmer(range ~ 1 +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
+	 data = data)
 anova(m1r, m2r)
 
 summary(m1r)
@@ -709,7 +893,7 @@ plot(points ~ c(1,2), ylim = c(0.8,1.5), xlim = c(0.5,2.5),
 	ylab = "Relative CWM range difference (± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(0.8,1,1.2,1.4), c(0.8,1,1.2,1.4))
+axis(2, c(0.8,1,1.2,1.4), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 1, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
@@ -739,7 +923,7 @@ e.y2 <- 1/y2
 #as a percentage of outside 
 e.relative <- e.y2/e.y1*100
 
-se <- as.numeric(se.fixef(m2r)[2])
+se <- as.numeric(se.fixef(m1r)[2])
 y2plus <- y0 + y + se*1.96
 e.y2plus <- 1/y2plus
 e.relative.plus <- e.y2plus/e.y1*100
@@ -754,7 +938,7 @@ e.relative.minus <- e.y2minus/e.y1*100
 points <- c(100, e.relative)
 CI <- c(e.relative.plus, e.relative.minus)
 
-plot(points ~ c(1,2), ylim = c(99,102), xlim = c(0.5,2.5), 
+plot(points ~ c(1,2), ylim = c(98,102), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Endemicity difference (% ± 95%CI)",
@@ -767,8 +951,8 @@ points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 data <- matched.landuse[,c("Within_PA", "SSS", "range")]
 data <- na.omit(data)
-text(2,99, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
-text(1,99, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+text(2,98, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,98, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
 
 dev.off()
 
@@ -777,6 +961,25 @@ dev.off()
 
 
 ### range and IUCN category
+
+
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+#doesnt converge with nonlinear terms
+
+range.model.IUCN <- model_select(all.data  = matched.landuse, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
 
 m1ri <- lmer(range ~ Within_PA +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
@@ -795,6 +998,7 @@ m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 #try ordinal
+#also doesnt converge
 m3ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = matched.landuse_ord)

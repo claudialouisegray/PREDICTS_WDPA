@@ -44,7 +44,7 @@ for (i in 1:length(levels)){
 	d$upper <- as.numeric(d$upper)
 	d$mean <- rowMeans(d[,c("lower", "upper")])
 
-	polygon(c(d$mean,rev(d$mean)), c(d$Freq+y,rep(y,length(d$mean))), lty = 0, col = levels.col[i])
+	polygon(c(d$mean,rev(d$mean)), c(d$Freq+y,rep(y,length(d$mean))), lty = 1, border = levels.col[i], col = levels.col[i])
 	y <- y + max(d$Freq) + spacing 
 	}
 

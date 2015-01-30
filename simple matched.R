@@ -15,114 +15,7 @@ source("model_select.R")
 
 
 
-
-# Load dataset on taxa_split matched all
-setwd("N:/Documents/PREDICTS/WDPA analysis")
-PA_11_2014 <- read.csv("PA_11_2014.csv")
-nrow(PA_11_2014 )#7077
-
-### LOAD MATCHING DATA
-
-setwd("N:/Documents/PREDICTS/WDPA analysis/matching data")
-#setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis jan 2015/WDPA analysis/matching data")
-
-access <- read.table("bfer_1km_acc50k_11_14.txt", header = T, sep = ",")
-hpd <- read.table("bfer_1km_HPD_11_14.txt", header = T, sep = ",")
-elevation <- read.table("bfer_1km_mn30_elevation_11_14.txt", header = T, sep = ",")
-slope <- read.table("bfer_1km_mn30_slope_11_14.txt", header = T, sep = ",")
-
-ag_suit <- read.csv("ag_suitability_11_2014_moll.csv") 
-
-# this is taken from extract values to points function, saved as text file, then opened in excel
-# FID column deleted and -9999 values in RASTERVALU switched to NA
-
-ag.1 <- ag_suit[,c("SSS", "RASTERVALU")] 
-colnames(ag.1) <- c("SSS", "ag_suit")
-
-#these are water, must have fallen on the edge of lakes/rivers
-ag.1$ag_suit[which(ag.1$ag_suit==9)] <- NA
-
-# switch scale to be more intuitive - higher values more agriculturally suitable
-ag.1$ag_suit <- 9 - ag.1$ag_suit
-
-access.1 <- access[,c("SSS", "MEAN")]
-hpd.1 <- hpd[,c("SSS", "MEAN")]
-elevation.1 <- elevation[,c("SSS", "MEAN")]
-slope.1 <- slope[,c("SSS", "MEAN")]
-
-m <- merge(PA_11_2014 , access.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "access"
-m <- merge(m, hpd.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
-m <- merge(m, elevation.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
-m <- merge(m, slope.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
-m <- merge(m, ag.1, "SSS", all.x = T)
-nrow(m)
-PA_11_2014  <- m
-
-# create explanatory variables
-
-PA_11_2014$IUCN_CAT_number <- factor(PA_11_2014$IUCN_CAT_number) # they arent really in an order
-PA_11_2014$log_slope <- log(PA_11_2014$slope +1)
-PA_11_2014$log_elevation <- log(PA_11_2014$elevation +1)
-PA_11_2014$log_hpd<- log(PA_11_2014$hpd +1)
-PA_11_2014$log_access <- log(PA_11_2014$access +1)
-PA_11_2014$log_GIS_AREA <- log(PA_11_2014$GIS_AREA+1)
-
-# make IUCN cat variable of I or II vs III to VI vs unknown vs unprotected
-PA_11_2014$IUCN_CAT <- PA_11_2014$IUCN_CAT_number 
-levels(PA_11_2014$IUCN_CAT) <- c(levels(PA_11_2014$IUCN_CAT), "0")
-PA_11_2014$IUCN_CAT[which(PA_11_2014$Within_PA == "no")] <- 0
-
-
-
-
-
-#make response variables
-
-PA_11_2014$range <- PA_11_2014$CWM_Geographic_range_log10_square_km
-PA_11_2014$mass <- PA_11_2014$CWM_Mass_log10_g  ### UPDATE
-PA_11_2014$veg <- PA_11_2014$CWM_Vegetative_height_log10_m
-PA_11_2014$vol <- PA_11_2014$CWM_Length_derived_volume_3log10_mm
-PA_11_2014$log_abundance <- log(PA_11_2014$Total_abundance +1)
-
-
-### CREATE MULTIPLE TAXA PER STUDY DATASET 
-# create dataset for species richness analysis that without all studies that are only on one taxon
-
-setwd("N:/Documents/PREDICTS/WDPA analysis")
-#setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis jan 2015/WDPA analysis")
-
-studies.taxa <- read.csv("Number of taxa per study split_taxa_coarse 11_2014.csv")
-
-which(studies.taxa$number.taxa == 1)
-length(which(studies.taxa$number.taxa == 1)) #25
-
-more.than.one.taxa <- studies.taxa$SS[which(studies.taxa$number.taxa != 1)]
-
-multiple.taxa.PA_11_2014  <- subset(PA_11_2014 , SS %in% more.than.one.taxa)
-length(multiple.taxa.PA_11_2014 [,1]) #6874
-
-multiple.taxa.PA_11_2014  <- droplevels(multiple.taxa.PA_11_2014)
-
-
-
-#make ordinal datasets
-
-PA_11_2014_ord <- PA_11_2014
-PA_11_2014_ord$IUCN_CAT <- factor(PA_11_2014_ord$IUCN_CAT, ordered = T, 
-	levels = c("0", "4.5", "7", "1.5"))
-PA_11_2014_ord$ag_suit <- factor(PA_11_2014$ag_suit, ordered = T)
-
-multiple.taxa.PA_11_2014_ord <- multiple.taxa.PA_11_2014
-multiple.taxa.PA_11_2014_ord$IUCN_CAT <- factor(multiple.taxa.PA_11_2014_ord$IUCN_CAT, ordered = T, 
-	levels = c("0", "4.5", "7", "1.5"))
-
-
-
-
+source("WDPA_predicts_prep_PA_11_14_for_analysis.R")
 
 
 
@@ -139,7 +32,7 @@ fI <- character(0)
 RS <-  c("Within_PA")
 
 
-sp.model <- model_select(all.data  = multiple.taxa.PA_11_2014, 
+sp.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
@@ -152,7 +45,7 @@ sp.model <- model_select(all.data  = multiple.taxa.PA_11_2014,
 
 # Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Within_PA+(Within_PA|SS)+(1|SSB)+(1|SSBS)
 
-data <- multiple.taxa.PA_11_2014[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
+data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
 data <- na.omit(data)
 m1 <- glmer(Species_richness ~ Within_PA + log_slope + poly(log_elevation,2) + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
@@ -165,7 +58,7 @@ anova(m1, m2)
 # is ag suit significant
 m1_ag <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
 
 anova(m1, m1_ag)
 
@@ -243,7 +136,7 @@ plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5),
 	ylab = "Species richness difference (% ± 95%CI)",
 	xlab = "")
 
-data <- multiple.taxa.PA_11_2014[,c("Within_PA", "SSS", "Species_richness")]
+data <- multiple.taxa.PA_11_14[,c("Within_PA", "SSS", "Species_richness")]
 data <- na.omit(data)
 text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
 text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
@@ -266,11 +159,11 @@ dev.off()
 m0z <- glmer(Species_richness ~ Within_PA + Zone + Within_PA:Zone
 	+ log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
 
 m1z <- glmer(Species_richness ~ Within_PA + Zone + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
 
 anova(m0z,m1z)
 
@@ -291,7 +184,7 @@ summary(m1z)
 
 #simple species richness with IUCN cat 
 
-multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+multiple.taxa.PA_11_14$IUCN_CAT <- relevel(multiple.taxa.PA_11_14$IUCN_CAT, "0")
 
 # check polynomials for confounding variables
 fF <- c("IUCN_CAT") 
@@ -300,8 +193,10 @@ keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
 
+# "Species_richness~IUCN_CAT+poly(ag_suit,1)+poly(log_elevation,3)+(IUCN_CAT|SS)+(1|SSB)+(1|SSBS)"
+# but, doesnt converge for elevation down to quadratic
 
-sp.model <- model_select(all.data  = multiple.taxa.PA_11_2014, 
+sp.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
@@ -312,25 +207,31 @@ sp.model <- model_select(all.data  = multiple.taxa.PA_11_2014,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
+
+data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
+data <- na.omit(data)
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "4.5")
+
 m0i <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
 
 m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
 
-m2i <- glmer(Species_richness ~ 1 + log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
 
-m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m2i <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,3) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = data)
+
+m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,3) + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = data)
 
 anova(m1i, m0i) # ordinal doesnt make any difference
 anova(m2i, m3i)
-summary(m2i)
+summary(m3i)
 
 SS <- data.frame(ranef(m2i)$SS)
 SS$SS <- rownames(SS)
@@ -355,13 +256,15 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model sp rich IUCN
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
-levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
+levels.IUCN <- levels(multiple.taxa.PA_11_14$IUCN_CAT)
 
-multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
+data <- na.omit(data)
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,3) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = data)
 
 summary(m1i)
 
@@ -385,7 +288,7 @@ axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
 
-data <- multiple.taxa.PA_11_2014[,c("IUCN_CAT", "SSS", "Species_richness")]
+data <- multiple.taxa.PA_11_14[,c("IUCN_CAT", "SSS", "Species_richness")]
 data <- na.omit(data)
 text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
@@ -406,12 +309,37 @@ dev.off()
 
 # rarefied richness
 
-m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
+# check polynomials
+
+# check polynomials for confounding variables
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+#Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
+
+r.sp.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
+			     responseVar = "Richness_rarefied", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+r.sp.model$stats  # pvalues <0.008
+
+
+data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Richness_rarefied")]
+data <- na.omit(data)
+m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
-m4 <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
+	family = "poisson", data = data)
+m4 <- glmer(Richness_rarefied ~ 1 + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = data)
 anova(m3, m4)
 
 
@@ -439,7 +367,7 @@ plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5),
 	yaxt = "n", xaxt = "n",
 	ylab = "Rarefied richness difference (% ± 95%CI)",
 	xlab = "")
-data <- multiple.taxa.PA_11_2014[,c("Within_PA", "SSS", "Richness_rarefied")]
+data <- multiple.taxa.PA_11_14[,c("Within_PA", "SSS", "Richness_rarefied")]
 data <- na.omit(data)
 text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
 text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
@@ -457,39 +385,65 @@ dev.off()
 
 # rarefied richness with IUCN cat
 
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+
+
+
+r.sp.model.IUCN <- model_select(all.data  = multiple.taxa.PA_11_14, 
+			     responseVar = "Richness_rarefied", 
+			     fitFamily = "poisson", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB) + (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+r.sp.model.IUCN$stats 
+# cant converge with slope less than quadratic.
+# NB overall result the same even if all confounding variables non linear 
+
 # the comparison against within_PA doesnt really make sense as theres no effect of protection
 m3i <- glmer(Richness_rarefied ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
 m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
 
 # so compare against null
-m5i <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
+# null doesnt converge with the non linear confounding variables.  Test as non-linear.
+
+m5i <- glmer(Richness_rarefied ~ 1 + log_slope + ag_suit + log_elevation
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014,
+	family = "poisson", data = multiple.taxa.PA_11_14,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + ag_suit + log_elevation 
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)),
-	family = "poisson", data = multiple.taxa.PA_11_2014)
+	family = "poisson", data = multiple.taxa.PA_11_14)
+
+summary(m5i)
 
 # try with ordinal data
 m5i <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014_ord,
+	family = "poisson", data = multiple.taxa.PA_11_14_ord,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)),
-	family = "poisson", data = multiple.taxa.PA_11_2014_ord)
+	family = "poisson", data = multiple.taxa.PA_11_14_ord)
 
 
 # m4i above is the same as
 #m4i <- glmer(Richness_rarefied ~ IUCN_CAT + Within_PA + log_slope + log_elevation + ag_suit
 #	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-#	family = "poisson", data = multiple.taxa.PA_11_2014)
+#	family = "poisson", data = multiple.taxa.PA_11_14)
 
 anova(m3i,m4i)
 anova(m5i, m6i)
@@ -508,13 +462,13 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model rar rich IUC
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
-levels.IUCN <- levels(multiple.taxa.PA_11_2014$IUCN_CAT)
+levels.IUCN <- levels(multiple.taxa.PA_11_14$IUCN_CAT)
 
-multiple.taxa.PA_11_2014$IUCN_CAT <- relevel(multiple.taxa.PA_11_2014$IUCN_CAT, "0")
+multiple.taxa.PA_11_14$IUCN_CAT <- relevel(multiple.taxa.PA_11_14$IUCN_CAT, "0")
 
 m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.PA_11_2014,
+	family = "poisson", data = multiple.taxa.PA_11_14,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 
@@ -537,7 +491,7 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
-data <- multiple.taxa.PA_11_2014[,c("IUCN_CAT", "SSS", "Richness_rarefied")]
+data <- multiple.taxa.PA_11_14[,c("IUCN_CAT", "SSS", "Richness_rarefied")]
 data <- na.omit(data)
 text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
@@ -563,13 +517,32 @@ points
 
 
 ### model abundance
-# block also very useful here
+
+# check polynomials
+
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+#log_abundance~Within_PA+(Within_PA|SS)+(1|SSB)
+
+ab.model <- model_select(all.data  = PA_11_14, 
+			     responseVar = "log_abundance", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
 m1a <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data =  PA_11_14)
 m2a <- lmer(log_abundance ~ 1 + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data =  PA_11_14)
 anova(m1a, m2a)
 
 summary(m1a)
@@ -579,7 +552,7 @@ exp(fixef(m1a)[2]) # 1.127
 
 m1a_ag <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 anova(m1a, m1a_ag)
 
 # plot
@@ -612,7 +585,7 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-data <- PA_11_2014[,c("Within_PA", "SSS", "log_abundance")]
+data <- PA_11_14[,c("Within_PA", "SSS", "log_abundance")]
 data <- na.omit(data)
 text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
 text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
@@ -631,11 +604,11 @@ dev.off()
 m0az <- lmer(log_abundance ~ Within_PA + Zone + Within_PA:Zone
 	+log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB) , 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 
 m1az <- lmer(log_abundance ~ Within_PA + Zone +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 
 anova(m0az, m1az)
 
@@ -653,21 +626,39 @@ summary(m1az)
 
 
 # model abundance and IUCN_category
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+# cant converge with nonlinear terms
+
+ab.model.IUCN <- model_select(all.data  = PA_11_14, 
+			     responseVar = "log_abundance", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+
 m1ai <- lmer(log_abundance ~ Within_PA +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 m2ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 
-# m3ai doesnt converge - use ordinal stats 
+# m3ai doesnt converge - use ordinal stats but plot/coefficients from m4ai
 m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014,
+	 data = PA_11_14,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014,
+	 data = PA_11_14,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 #(Intercept)    4.698465   0.221816  21.182
@@ -676,13 +667,14 @@ m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 #IUCN_CAT7      0.122347   0.070013   1.747
 
 
-#with ordinal - gives exactly the same results but coefficients v different
+#with ordinal - gives exactly the same results when compared ord vs not ordinal with other responses 
+#but coefficients v different
 m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014_ord)
+	 data = PA_11_14_ord)
 m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014_ord)
+	 data = PA_11_14_ord)
 
 #(Intercept)    4.790783   0.225904  21.207
 #IUCN_CAT.L     0.149823   0.090057   1.664
@@ -704,15 +696,15 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance IU
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
-levels.IUCN <- levels(PA_11_2014$IUCN_CAT)
+levels.IUCN <- levels(PA_11_14$IUCN_CAT)
 
-PA_11_2014$IUCN_CAT <- relevel(PA_11_2014$IUCN_CAT, "0")
+PA_11_14$IUCN_CAT <- relevel(PA_11_14$IUCN_CAT, "0")
 
 m4ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 
-#PA_11_2014_ord$IUCN_CAT
+#PA_11_14_ord$IUCN_CAT
 #levels 0 < 4.5 < 7 < 1.5
 
 y <- as.numeric(fixef(m4ai)[2:4])
@@ -738,7 +730,7 @@ arrows(seq(2,length(points),1),CI[,1],
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
-data <- PA_11_2014[,c("IUCN_CAT", "SSS", "log_abundance")]
+data <- PA_11_14[,c("IUCN_CAT", "SSS", "log_abundance")]
 data <- na.omit(data)
 text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
@@ -755,12 +747,36 @@ dev.off()
 
 
 ### model range
-m1r <- lmer(range ~ Within_PA + log_slope + log_elevation + ag_suit
+
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+# range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(Within_PA|SS)+(1|SSB)"
+
+
+r.model.IUCN <- model_select(all.data  = PA_11_14, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+r.model.IUCN$stats
+
+data <- PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "range")]
+data <- na.omit(data)
+
+m1r <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
-m2r <- lmer(range ~ 1 + log_slope + log_elevation + ag_suit
+	 data = data)
+m2r <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = data)
 anova(m1r, m2r)
 
 summary(m1r)
@@ -770,7 +786,7 @@ exp(fixef(m1r)[2]) # 0.978
 
 m1r_ag <- lmer(range ~ Within_PA + log_slope + log_elevation
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 anova(m1r, m1r_ag)
 
 
@@ -843,7 +859,7 @@ e.relative <- e.y2/e.y1*100
 # difference of 0.3% = e.y2 - e.y1 #0.00057
 # or y2 - y0 #- 0.0022 log sq km
 
-se <- as.numeric(se.fixef(m2r)[2])
+se <- as.numeric(se.fixef(m1r)[2])
 y2plus <- y0 + y + se*1.96
 e.y2plus <- 1/y2plus
 e.relative.plus <- e.y2plus/e.y1*100
@@ -858,7 +874,7 @@ e.relative.minus <- e.y2minus/e.y1*100
 points <- c(100, e.relative)
 CI <- c(e.relative.plus, e.relative.minus)
 
-plot(points ~ c(1,2), ylim = c(99,102), xlim = c(0.5,2.5), 
+plot(points ~ c(1,2), ylim = c(98,102), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Endemicity difference (% ± 95%CI)",
@@ -869,10 +885,10 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-data <- PA_11_2014[,c("Within_PA", "SSS", "range")]
+data <- PA_11_14[,c("Within_PA", "SSS", "range")]
 data <- na.omit(data)
-text(2,99, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
-text(1,99, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+text(2,98, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,98, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
 
 dev.off()
 
@@ -882,27 +898,50 @@ dev.off()
 
 ### range and IUCN category
 
+
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+# range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(IUCN_CAT|SS)+(1|SSB)"
+
+
+ab.model.IUCN <- model_select(all.data  = PA_11_14, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+data <- PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "range")]
+data <- na.omit(data)
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
+
 m1ri <- lmer(range ~ Within_PA +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = PA_11_14)
 
-m3ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
+m3ri <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014)
-m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	 data = data)
+m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = data)
 
 #ordinal - gives same significance
 m3ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014_ord)
+	 data = PA_11_14_ord)
 m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014_ord)
+	 data = PA_11_14_ord)
 
 
 anova(m1ri, m2ri)
@@ -917,11 +956,13 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model endemicity I
 
 labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
 
-PA_11_2014$IUCN_CAT <- relevel( PA_11_2014$IUCN_CAT, "0")
+data <- PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "range")]
+data <- na.omit(data)
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_2014)
+	 data = data)
 
 y0 <-as.numeric(fixef(m4ri)[1])
 e.y1 <- 1/y0
@@ -959,7 +1000,7 @@ abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
 
-data <- PA_11_2014[,c("IUCN_CAT", "SSS", "range")]
+data <- PA_11_14[,c("IUCN_CAT", "SSS", "range")]
 data <- na.omit(data)
 text(1, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
@@ -971,15 +1012,17 @@ dev.off()
 
 
 
+
+
 ### model proportion threatened ###
 
-PA_11_2014_a_m_b <- read.csv("PA_11_2014_amph_mamm_bird.csv")
-nrow(PA_11_2014_a_m_b) #2695
-names(PA_11_2014_a_m_b)
+PA_11_14_a_m_b <- read.csv("PA_11_14_amph_mamm_bird.csv")
+nrow(PA_11_14_a_m_b) #2695
+names(PA_11_14_a_m_b)
 
 
 
-m <- merge(PA_11_2014_a_m_b , access.1, "SSS", all.x = T)
+m <- merge(PA_11_14_a_m_b , access.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "access"
 m <- merge(m, hpd.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
@@ -991,7 +1034,7 @@ m <- merge(m, ag.1, "SSS", all.x = T)
 
 
 nrow(m)
-PA_11_2014_a_m_b  <- m
+PA_11_14_a_m_b  <- m
 
 
 
@@ -999,24 +1042,48 @@ PA_11_2014_a_m_b  <- m
 
 # create explanatory variables
 
-PA_11_2014_a_m_b$IUCN_CAT_number <- factor(PA_11_2014_a_m_b$IUCN_CAT_number) # they arent really in an order
-PA_11_2014_a_m_b$log_slope <- log(PA_11_2014_a_m_b$slope +1)
-PA_11_2014_a_m_b$log_elevation <- log(PA_11_2014_a_m_b$elevation +1)
-PA_11_2014_a_m_b$log_hpd<- log(PA_11_2014_a_m_b$hpd +1)
-PA_11_2014_a_m_b$log_access <- log(PA_11_2014_a_m_b$access +1)
-PA_11_2014_a_m_b$log_GIS_AREA <- log(PA_11_2014_a_m_b$GIS_AREA+1)
+PA_11_14_a_m_b$IUCN_CAT_number <- factor(PA_11_14_a_m_b$IUCN_CAT_number) # they arent really in an order
+PA_11_14_a_m_b$log_slope <- log(PA_11_14_a_m_b$slope +1)
+PA_11_14_a_m_b$log_elevation <- log(PA_11_14_a_m_b$elevation +1)
+PA_11_14_a_m_b$log_hpd<- log(PA_11_14_a_m_b$hpd +1)
+PA_11_14_a_m_b$log_access <- log(PA_11_14_a_m_b$access +1)
+PA_11_14_a_m_b$log_GIS_AREA <- log(PA_11_14_a_m_b$GIS_AREA+1)
 
 
 
-PA_11_2014_a_m_b$y <- cbind(PA_11_2014_a_m_b$abundance_VU_EN_CR, PA_11_2014_a_m_b$abundance_LC_NT)
+PA_11_14_a_m_b$y <- cbind(PA_11_14_a_m_b$abundance_VU_EN_CR, PA_11_14_a_m_b$abundance_LC_NT)
 
 
-m1t <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
+# test nonlinear confoundinf variables
+
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+# y~poly(log_elevation,3)+poly(log_slope,3)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
+
+
+RLS.model<- model_select(all.data  = PA_11_14_a_m_b, 
+			     responseVar = "y", 
+			     fitFamily = "binomial",
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = "(Within_PA|SS) + (1|SSB)+ (1|SSBS)",
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+data <- PA_11_14_a_m_b[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "y")]
+data <- na.omit(data)
+
+m1t <- glmer(y ~ Within_PA + poly(log_elevation,3)+poly(log_slope,3) + ag_suit
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "binomial", data = PA_11_2014_a_m_b)
-m2t <- glmer(y ~ 1 + log_slope + log_elevation + ag_suit
+	family = "binomial", data = data)
+m2t <- glmer(y ~ 1 + poly(log_elevation,3)+poly(log_slope,3) + ag_suit
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "binomial", data = PA_11_2014_a_m_b)
+	family = "binomial", data = data)
 anova(m1t, m2t)
 
 summary(m1t)
@@ -1061,7 +1128,7 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-data <- PA_11_2014_a_m_b[,c("Within_PA", "SSS", "y")]
+data <- PA_11_14_a_m_b[,c("Within_PA", "SSS", "y")]
 data <- na.omit(data)
 text(2,0, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
 text(1,0, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
@@ -1073,10 +1140,10 @@ dev.off()
 # IUCN CAT
 m1ti <- glmer(y ~ Within_PA + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "binomial", data = PA_11_2014_a_m_b)
+	family = "binomial", data = PA_11_14_a_m_b)
 m2ti <- glmer(y ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "binomial", data = PA_11_2014_a_m_b)
+	family = "binomial", data = PA_11_14_a_m_b)
 anova(m1ti, m2ti)
 
 

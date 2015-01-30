@@ -56,12 +56,17 @@ outside.col <- 1
 outside.col.ci <- "#33333344"
 
 
+#land use colours for 6 landuses
+#lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
+#lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+#lu.cols2 = c("#66A61E", "#8ecfbc", "#7570B3","#E6AB02","#D95F02", "#E7298A")
+#lu.cols2.ci <- c("#66A61E90","#8ecfbc90","#7570B390","#E6AB0290","#D95F0290","#E7298A90")
 
-lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
-lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
-lu.cols2 = c("#66A61E", "#8ecfbc", "#7570B3","#E6AB02","#D95F02", "#E7298A")
-lu.cols2.ci <- c("#66A61E90","#8ecfbc90","#7570B390","#E6AB0290","#D95F0290","#E7298A90")
-
+#landuse colours for 8 land uses
+lu <- c("Primary Vegetation", "Mature secondary vegetation", "Intermediate secondary vegetation", "Young secondary vegetation",
+	"Plantation forest", "Cropland", "Pasture", "Urban")
+lu.cols = c("#5B8A3B","#147659", "#1B9E77","#8ecfbc", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+lu.cols2.ci <- c("#5B8A3B90","#14765990", "#1B9E7790","#8ecfbc90", "#7570B390", "#E6AB0290", "#D95F0290", "#E7298A90")
 
 
 ylims <- c(0.15,0.22)
@@ -70,12 +75,13 @@ ylims <- c(0.15,0.22)
 #size.lim <- log(c(0,10000)+1)
 #age.lim <- c(0,85)
 
-#new limits for 2 panel plots with data distribution
+#new limits for panel plots with data distribution
 slope.lim <- c(-0.3, log(100))
 elev.lim <- c(-0.3,log(300000))
 size.lim <- c(-0.3,log(300000))
 age.lim <- c(-5,110)
-ag.lim <- c(0.3,10.5)
+ag.lim <- c(0.3,131737-500-700.5)
+
 
 #get model objects
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
@@ -86,13 +92,13 @@ model.data$Within_PA<- relevel(model.data$Within_PA , "no")
 mam.out <- glmer(Richness_rarefied.model2$final.call, model.data, family = "poisson")
 
 
-#### within PA  vs ag suit ###########
+#### ag suit ###########
 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Richness_rarefied vs ag suit.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
- 
-  par(mar=c(4,4.5,4,1.5))
+	width = 18, height = 20, units = "cm", pointsize = 12, res = 300)
+  par(mfrow = c(3,1))
+  par(mar=c(4,4.5,1,2))
   par(mgp=c(2.5,1,0))
   
   ag <-seq(from=min(model.data$ag_suit[which(model.data$Within_PA == "yes")]),
@@ -135,10 +141,34 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Richness_rarefied vs ag s
   zl <- exp(zl)
 
 
-  plot(ag,z, ylim=c(0,20), col =outside.col, lwd = 1, 
+  plot(ag,z, ylim=c(0,20), xlim = ag.lim, axes = F,
+		col =outside.col, lwd = 1, 
 		bty = "l", 
 		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="Agricultural suitability (higher = more suitable)")
   polygon(c(ag,rev(ag)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
+  axis(1,at = seq(1,8,1), seq(1,8,1))
+  axis(2,at = seq(0,20,5), seq(0,20,5))
+
+ag2 <- rep(seq(0.5, 8.5, 1),each = 2)
+	end <- length(ag2)-1
+ag2 <- ag2[2:end]
+
+addHistogram(data = model.data,
+			var = "Predominant_habitat",
+			x =   "ag_suit",
+			xlim = ag.lim,
+			levels = lu,
+			levels.col = lu.cols2.ci,
+			bar.breaks = ag2)
+
+
+addHistogram(data = model.data,
+			var = "taxon_of_interest",
+			x =   "ag_suit",
+			xlim = ag.lim,
+			levels = taxa,
+			levels.col = taxa.cols,
+			bar.breaks = ag2)
 
 
 dev.off()
@@ -248,8 +278,9 @@ dev.off()
 ###### elevation ##########
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Richness_rarefied vs elevation.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
+  par(mfrow = c(3,1))
   par(mar=c(4,4.5,4,1.5))
   par(mgp=c(2.5,1,0))
 
@@ -295,13 +326,40 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Richness_rarefied vs elev
 
 
 
-  plot(elevation,z, ylim=c(0,20), xlim = c(0,log(4000)), col = 1, lwd = 1,
-		bty = "l",xaxt = "n",
+  plot(elevation,z, ylim=c(0,20), xlim = elev.lim, col = 1, lwd = 1,
+		bty = "l", axes = F,
 		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="Elevation (m)")
   rug(data$log_elevation, ticksize = 0.03, side = 1, lwd = 1, col = 8)
   polygon(c(elevation,rev(elevation)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
+  axis(2,at = seq(0,20,5), seq(0,20,5))
   axis(1, log(c(0,1,5,50,500,2000, 5000)+1), c(0,1, 5, 50 , 500, 2000, 5000))
 
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_elevation",
+			xlim = elev.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 0.1,
+			levels.col = lu.cols2.ci,
+			axis.text.pos = log(c(0,1,5,50,500,2000, 5000)+1),
+			axis.text = c(0,1, 5, 50 , 500, 2000, 5000))
+
+
+
+addDataDistribution(data = model.data,
+			b = 50, 
+			x = "log_elevation",
+			xlim = elev.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 0.1,
+			levels.col = taxa.cols,
+			axis.text.pos = log(c(0,1,5,50,500,2000, 5000)+1),
+			axis.text = c(0,1, 5, 50 , 500, 2000, 5000))
 
 
 dev.off()
@@ -311,9 +369,10 @@ dev.off()
 ### slope ###
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Richness_rarefied vs slope.tif",
-	width = 12, height = 10, units = "cm", pointsize = 12, res = 300)
+	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
-  par(mar=c(4,4.5,4,1.5))
+  par(mfrow = c(3,1))
+  par(mar=c(4,4.5,1,1.5))
   par(mgp=c(2.5,1,0))
 
   slope <-seq(from=min(model.data$log_slope),to=max(model.data$log_slope),length=L)
@@ -358,12 +417,42 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Richness_rarefied vs slop
 
 
 
-  plot(slope,z, ylim=c(0,20), xlim = c(0,log(26)), col = 1, lwd = 1,
-		bty = "l",xaxt = "n",
-		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="Slope (m)")
+  plot(slope,z, ylim=c(0,20), xlim = slope.lim, col = 1, lwd = 1,
+		bty = "l",axes = F,
+		type = "l",ylab = "Rarefied species richness per site ± s.e", xlab="Slope (degrees)")
   rug(data$log_slope, ticksize = 0.03, side = 1, lwd = 1, col = 8)
   polygon(c(slope,rev(slope)),c(zu, rev(zl)),lty=0, col = outside.col.ci)
-   axis(1, log(c(0,2.5,5,10,20)+1), c(0,2.5,5,10,20))
+  axis(1, log(c(0,2.5,5,10,20,30)+1), c(0,2.5,5,10,20,30))
+  axis(2,at = seq(0,20,5), seq(0,20,5))
+
+addDataDistribution(data = model.data, 
+			b = 50,
+			x = "log_slope",
+			xlim = slope.lim,
+			var = "Predominant_habitat",
+			include.lowest = F,
+			levels = lu,
+			legend.spacing = 0.1,
+			levels.col = lu.cols2.ci,
+			axis.text.pos =  log(c(0,2.5,5,10,20,30)+1),
+			axis.text = c(0,2.5,5,10,20,30))
+
+
+
+addDataDistribution(data = model.data,
+			b = 50, 
+			x = "log_slope",
+			xlim = slope.lim,
+			var = "taxon_of_interest",
+			include.lowest = F,
+			levels = taxa,
+			legend.spacing = 0.1,
+			levels.col = taxa.cols,
+			axis.text.pos =  log(c(0,2.5,5,10,20,30)+1),
+			axis.text = c(0,2.5,5,10,20,30))
+
+
+
 
 dev.off()
 

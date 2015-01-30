@@ -17,25 +17,6 @@ source("addDataDistribution.R")
 
 
 
-model.data <- Species_richness.model$data
-
-data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation",
-	 "log_AREA.PA", "DoP.PA", "AREA.PA",
-	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", 
-	 "SS", "SSBS", "SSB")]
-
-data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
-
-
-nrow(data)
-length(unique(data$SS))
-
-nrow(model.data)
-length(unique(model.data$SS))
-
-
-
-
 L = 100
 
 #make colours
@@ -61,11 +42,17 @@ outside.col <- 1
 outside.col.ci <- "#33333344"
 
 
+#land use colours for 6 landuses
+#lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
+#lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+#lu.cols2 = c("#66A61E", "#8ecfbc", "#7570B3","#E6AB02","#D95F02", "#E7298A")
+#lu.cols2.ci <- c("#66A61E90","#8ecfbc90","#7570B390","#E6AB0290","#D95F0290","#E7298A90")
 
-lu <- c("Primary Vegetation", "Secondary Vegetation", "Plantation forest", "Cropland", "Pasture", "Urban")
-lu.cols = c("#5B8A3B", "#1B9E77", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
-lu.cols2 = c("#66A61E", "#8ecfbc", "#7570B3","#E6AB02","#D95F02", "#E7298A")
-lu.cols2.ci <- c("#66A61E90","#8ecfbc90","#7570B390","#E6AB0290","#D95F0290","#E7298A90")
+#landuse colours for 8 land uses
+lu <- c("Primary Vegetation", "Mature secondary vegetation", "Intermediate secondary vegetation", "Young secondary vegetation",
+	"Plantation forest", "Cropland", "Pasture", "Urban")
+lu.cols = c("#5B8A3B","#147659", "#1B9E77","#8ecfbc", "#7570B3", "#E6AB02", "#D95F02", "#E7298A")
+lu.cols2.ci <- c("#5B8A3B90","#14765990", "#1B9E7790","#8ecfbc90", "#7570B390", "#E6AB0290", "#D95F0290", "#E7298A90")
 
 
 # set plot limits
@@ -78,12 +65,12 @@ size.lim <- log(c(0,10000)+1)
 age.lim <- c(0,85)
 
 
-#new limits for 2 panel plots with data distribution
+#new limits for panel plots with data distribution
 slope.lim <- c(-0.3, log(100))
 elev.lim <- c(-0.3,log(300000))
 size.lim <- c(-0.3,log(300000))
 age.lim <- c(-5,110)
-ag.lim <- c(0.3,10.5)
+ag.lim <- c(0.3,13.5)
 
 
 
@@ -93,17 +80,34 @@ ag.lim <- c(0.3,10.5)
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/12_14/Species_richness vs taxon vs dist to boundary.tif",
+
+model.data <- Species_richness.model$data
+
+data <- multiple.taxa.matched.landuse[,c("Species_richness", "Zone", "taxon_of_interest", "ag_suit", "log_elevation", "elevation",
+	 "log_AREA.PA", "DoP.PA", "AREA.PA",
+	 "log_slope", "slope", "log_bound_dist_km_PA_neg", "bound_dist_km_PA_neg", "Within_PA", "Predominant_habitat", 
+	 "SS", "SSBS", "SSB")]
+
+data <- na.omit(data) #have to get rid of NA to try poly on ag_suit
+
+
+nrow(data)
+length(unique(data$SS))
+
+nrow(model.data)
+length(unique(model.data$SS))
+
+
+
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Species_richness vs taxon vs dist to boundary.tif",
 	width = 25, height = 10, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,3))
-taxa <- levels(matched.landuse$taxon_of_interest)
-i <- 0
-t <- taxa[1]
 
 for(t in taxa){
 
-i <- i +1
+i <- which(taxa == t)
 
   par(mar=c(4,4.5,4,1.5))
   par(mgp=c(2.5,1,0))
@@ -159,13 +163,24 @@ mam <- glmer(Species_richness.model$final.call, model.data, family = "poisson")
  inside <- which(lbd < 0)
  lbd1[inside] <- lbd1[inside]*-1
 
-  plot(lbd1,z, ylim=ylims, xlim = c(-80, 200), col = cols[i],
-		bty = "l", #log = "x", #yaxt = "n", 
-		type = "l",ylab = "Species richness per site ± s.e", xlab="Distance to PA boundary (km)", main = t)
-  rug(data$bound_dist_km_PA_neg[which(data$taxon_of_interest == t)]
-	, ticksize = 0.03, side = 1, lwd = 0.5, pos = 0, col = cols[i])
-  points(lbd1,zu,type="l",lty=2, col = cols[i])
-  points(lbd1,zl,type="l",lty=2, col = cols[i])
+#  plot(lbd1,z, ylim=ylims, xlim = c(-80, 200), col = cols[i],
+#		bty = "l", #log = "x", #yaxt = "n", 
+#		type = "l",ylab = "Species richness per site ± s.e", xlab="Distance to PA boundary (km)", main = t)
+#  rug(data$bound_dist_km_PA_neg[which(data$taxon_of_interest == t)]
+#	, ticksize = 0.03, side = 1, lwd = 0.5, pos = 0, col = cols[i])
+#  points(lbd1,zu,type="l",lty=2, col = cols[i])
+#  points(lbd1,zl,type="l",lty=2, col = cols[i])
+
+
+ plot(lbd,z, ylim=ylims, xlim = c(-1*log(50+1), log(500+1)), col = taxa.cols[i], main = t,
+		bty = "l", xaxt = "n", #log = "x",
+		type = "l",ylab = "Species richness ± s.e", xlab=" Distance to PA boundary (km)")
+ axis(1,at = log(c(0,1,10,50,200)+1), c(0,1,10,50,200)) 
+ axis(1,at = -1*(log(c(1,10,50,200)+1)), c(-1,-10,-50,-200)) 
+ rug(model.data$log_bound_dist_km_PA_neg[which(data$taxon_of_interest == t)], ticksize = 0.03, side = 1, lwd = 0.5, col = taxa.cols[i]) 
+ polygon(c(lbd,rev(lbd)),c(zu, rev(zl)),lty=0, col = taxa.cols.ci[i])
+
+
 
  abline(v = 0, lty = 2, col = 8)
 
@@ -210,9 +225,6 @@ length(unique(model.data$SS))
 
 
 
-#### within PA and ag suit ##########
-
-
 
 model.data$Within_PA <- relevel(model.data$Within_PA, "yes")
 model.data$Zone<- relevel(model.data$Zone , "Tropical")
@@ -224,6 +236,12 @@ model.data$Within_PA <- relevel(model.data$Within_PA, "no")
 mam.out <- glmer(Species_richness.model2$final.call, model.data, family = "poisson")
 
 
+
+
+
+
+#### within PA and ag suit ##########
+
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Species_richness within pa vs  ag_suit EXTRA.tif",
 	width = 20, height = 20, units = "cm", pointsize = 12, res = 300)
 
@@ -232,7 +250,7 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/Species_richness within p
 
 
   par(mfrow = c(3,1))
-  par(mar=c(4,4.5,4,1.5))
+  par(mar=c(4,4.5,1,1.5))
   par(mgp=c(2.5,1,0))
   
   ag <-seq(from=min(model.data$ag_suit[which(model.data$Within_PA == "no")]),
