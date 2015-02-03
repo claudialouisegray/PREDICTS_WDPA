@@ -50,6 +50,8 @@ PA_11_14 <- subset(PA_11_14, Predominant_habitat != "Secondary vegetation (indet
 PA_11_14$Predominant_habitat <- factor(PA_11_14$Predominant_habitat)
 nrow(PA_11_14)
 
+#PA_11_14$Predominant_habitat <- relevel(PA_11_14$Predominant_habitat, "Primary Vegetation")
+
 # merge on the confounding variables
 m <- merge(PA_11_14, access.1, "SSS", all.x = T)
 colnames(m)[which(colnames(m) == "MEAN")] <- "access"
@@ -65,16 +67,39 @@ nrow(m) #6631
 PA_11_14 <- m
 
 # sort out explanatory variables
-PA_11_14$IUCN_CAT_number <- factor(PA_11_14$IUCN_CAT_number) # they arent really in an order
+#PA_11_14$IUCN_CAT_number <- factor(PA_11_14$IUCN_CAT_number) # they arent really in an order
+# make IUCN cat variable of I or II vs III to VI vs unknown vs unprotected
+PA_11_14$IUCN_CAT <- PA_11_14$IUCN_CAT_number 
+levels(PA_11_14$IUCN_CAT) <- c(levels(PA_11_14$IUCN_CAT), "0")
+PA_11_14$IUCN_CAT[which(PA_11_14$Within_PA == "no")] <- 0
+PA_11_14$IUCN_CAT  <- factor(PA_11_14$IUCN_CAT)
+
 PA_11_14$log_slope <- log(PA_11_14$slope +1)
 PA_11_14$log_elevation <- log(PA_11_14$elevation +1)
 PA_11_14$log_hpd<- log(PA_11_14$hpd +1)
 PA_11_14$log_access <- log(PA_11_14$access +1)
 PA_11_14$log_AREA.PA <- log(PA_11_14$GIS_AREA+1)
 
+
+PA_11_14$LU_3 <- PA_11_14$Predominant_habitat
+
+PA_11_14$LU_3 <- gsub("Cropland", "Human_dominated", PA_11_14$LU_3)
+PA_11_14$LU_3 <- gsub("Plantation forest", "Human_dominated", PA_11_14$LU_3)
+PA_11_14$LU_3 <- gsub("Pasture", "Human_dominated", PA_11_14$LU_3)
+PA_11_14$LU_3 <- gsub("Urban", "Human_dominated", PA_11_14$LU_3)
+PA_11_14$LU_3 <- gsub("Mature secondary vegetation", "Secondary", PA_11_14$LU_3)
+PA_11_14$LU_3 <- gsub("Intermediate secondary vegetation", "Secondary", PA_11_14$LU_3)
+PA_11_14$LU_3 <- gsub("Young secondary vegetation", "Secondary", PA_11_14$LU_3)
+unique(PA_11_14$LU_3)
+
+
 #make response variables
-# SAM - are you also now doing this? (remember us talking about how you were dropping 0 values before - cant remember what we decided in the end?)
 PA_11_14$log_abundance <- log(PA_11_14$Total_abundance +1)
+PA_11_14$range <- PA_11_14$CWM_Geographic_range_log10_square_km
+
+
+PA_11_14$Predominant_habitat <- relevel(PA_11_14$Predominant_habitat, "Primary Vegetation")
+PA_11_14$Within_PA <- relevel(PA_11_14$Within_PA, "no")
 
 
 

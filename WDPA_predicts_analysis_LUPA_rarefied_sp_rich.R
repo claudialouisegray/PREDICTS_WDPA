@@ -53,7 +53,7 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 
 
 
-# Species richness
+# test polynomials
 
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
@@ -61,16 +61,15 @@ keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
-# "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
+# Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Predominant_habitat+Zone+(Within_PA|SS)+(1|SSBS)+(1|SSB)
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
 fT <-character(0)
-keepVars <- list("ag_suit" = "1", "log_elevation" = "2", "log_slope" = "1")
+keepVars <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "1")
 fI <- c("Within_PA:Predominant_habitat")
 RS <-  c("Within_PA")
-#Species_richness~Predominant_habitat+taxon_of_interest+Within_PA+Zone+Within_PA:Predominant_habitat+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
+# Richness_rarefied~Predominant_habitat+Zone+poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)+(Within_PA|SS)+(1|SSBS)+(1|SSB)
 
 
 
@@ -79,7 +78,7 @@ fI <- c("Within_PA:poly(ag_suit,2)", "Within_PA:poly(log_elevation,2)", "Within_
 
 
 
-Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
+Richness_rarefied.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -92,15 +91,15 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species
 				verbose=TRUE)
 
 
-Species_richness.best.random$best.random #
+Richness_rarefied.best.random$best.random #
  
 best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
 
 # model select
 
-Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
-			     responseVar = "Species_richness",
+Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
+			     responseVar = "Richness_rarefied",
 			     fitFamily = "poisson",
 			     siteRandom = TRUE, 
 			     alpha = 0.05,
@@ -113,22 +112,22 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14,
                        verbose=TRUE)
 
 
-validate(Species_richness.model$model) #ok
-res <- data.frame(est = fixef(Species_richness.model$model), se = se.fixef(Species_richness.model$model))
-write.csv(res, "Species_richness.model.LUPA.estimates.02.02.2015.csv")
+validate(Richness_rarefied.model$model) #ok
+res <- data.frame(est = fixef(Richness_rarefied.model$model), se = se.fixef(Richness_rarefied.model$model))
+write.csv(res, "Richness_rarefied.model.LUPA.estimates.30.01.2015.csv")
 
-write.csv(Species_richness.model$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/LUPA/Species_richness.model.LUPA.stats.30.01.2015.csv")
+write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.LUPA.stats.30.01.2015.csv")
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/LUPA_sp_rich.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/LUPA_rar_rich.tif",
 	width = 20, height = 12, units = "cm", pointsize = 12, res = 300)
 
-plotLU (responseVar = "Species richness", 
+plotLU (responseVar = "Rarefied richness", 
 				xvar = "Predominant_habitat",
 				intVar = "Within_PA",
 				level2 = "yes",
-				model = Species_richness.model$model,
+				model = Richness_rarefied.model$model,
 				col.key = NULL,
 				logLink = "e",
 				seMultiplier=1.96,
@@ -142,18 +141,15 @@ dev.off()
 
 
 
-# try with Within_PA as random slope
-
-multiple.taxa.PA_11_14$Predominant_habitat <- relevel(multiple.taxa.PA_11_14$Predominant_habitat, "Primary Vegetation")
-multiple.taxa.PA_11_14$Within_PA <- relevel(multiple.taxa.PA_11_14$Within_PA, "no")
 
 
-data <- multiple.taxa.PA_11_14[,c("Species_richness", "Within_PA", "Predominant_habitat", "log_slope", "log_elevation", "ag_suit",
+
+data <- multiple.taxa.PA_11_14[,c("Richness_rarefied", "Within_PA", "Predominant_habitat", "log_slope", "log_elevation", "ag_suit",
 	"Zone", "taxon_of_interest", "SS", "SSB", "SSBS")]
 data <- na.omit(data)
 
-m1 <- glmer(Species_richness ~ Within_PA + Predominant_habitat +
-	Within_PA:Predominant_habitat + poly(log_slope,1) + poly(log_elevation,2) + poly(ag_suit,2)
+m1 <- glmer(Richness_rarefied ~ Within_PA + Predominant_habitat +
+	Within_PA:Predominant_habitat + poly(log_slope,1) + poly(log_elevation,1) + poly(ag_suit,1)
 	+ Zone + taxon_of_interest + 
 	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
 #	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000),
@@ -162,17 +158,8 @@ m1 <- glmer(Species_richness ~ Within_PA + Predominant_habitat +
 #Model failed to converge with max|grad| = 0.00148691 (tol = 0.001, component 15)
 
 
-m2 <- glmer(Species_richness ~ Within_PA + Predominant_habitat +
-	poly(log_slope,1) + poly(log_elevation,2) + poly(ag_suit,2)
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-#	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000),
-	data = data)
-
-anova(m1,m2)
-
 res <- data.frame(estimate = fixef(m1), se = se.fixef(m1))
-write.csv(res, "Species_richness.LUPA.CLG.30.01.2015.withpolylinear.csv")
+write.csv(res, "Richness_rarefied.LUPA.CLG.30.01.2015.withpolylinear.csv")
 
 
 
