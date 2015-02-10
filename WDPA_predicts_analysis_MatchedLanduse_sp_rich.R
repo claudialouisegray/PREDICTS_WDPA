@@ -154,8 +154,8 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "
 				verbose=TRUE)
 
 
-Species_richness.best.random$best.random #includes block and land use
- 
+Species_richness.best.random$best.random #"(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
+
 best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
 
@@ -237,7 +237,7 @@ RS <-  c("Within_PA")
 
 #8 landuses: Species_richness~taxon_of_interest+Zone+Within_PA:poly(ag_suit,3)+Within_PA:poly(log_slope,1)+Within_PA+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
-Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
+Species_richness.best.random2 <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -250,7 +250,7 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "
 				verbose=TRUE)
 
 
-Species_richness.best.random$best.random #
+Species_richness.best.random2$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
  
 best.random <- "(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB) + (1|Predominant_habitat)"
 

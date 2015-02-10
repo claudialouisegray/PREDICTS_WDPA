@@ -100,11 +100,6 @@ xyplot(log_abundance ~ ag_suit|Zone, matched.landuse)
 xyplot(log_abundance ~ slope|Zone, matched.landuse)
 xyplot(log_abundance ~ slope|Zone, matched.landuse)
 
-
-
-xyplot(log_abundance ~ ag_suit|IUCN.PA, matched.landuse)
-xyplot(log_abundance ~ log_slope|IUCN.PA, matched.landuse)
-
 hist(matched.landuse$elevation)
 hist(matched.landuse$ag_suit)
 hist(matched.landuse$slope)
@@ -302,7 +297,7 @@ log_abundance.model2 <- model_select(all.data  = matched.landuse,
                        fixedFactors= fF,
                        fixedTerms= fT,
                        fixedInteractions=fI,
-                       randomStruct = "(1+Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat)",
+                       randomStruct = log_abundance.best.random$best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 

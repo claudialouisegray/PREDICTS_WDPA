@@ -38,7 +38,7 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
   
   # Subset the data frame, retaining just the relevant columns
   # include Source_ID and remove blocks as not relevant
-  model.data<-subset(dataset,select=c("Source_ID","SS","SS_PH","SSB","SSBS",fixedFactors,
+  model.data<-subset(dataset,select=c("Source_ID","SS","SSB","SSBS",fixedFactors, #,"SS_PH"
 							names(fixedTerms),responseVar,otherRandoms, names(keepVars)))
 
   model.data<-na.omit(model.data)

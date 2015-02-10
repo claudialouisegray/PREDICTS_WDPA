@@ -127,8 +127,7 @@ fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
 # without block "Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
 # with block: "Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
-# 8 landuses: Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
-
+# 8 landuses: "Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,3)+Zone+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
 
 # add interactions
@@ -143,7 +142,7 @@ RS <-  c("log_bound_dist_km_PA_neg")
 #without block - but elevation is wrong here, should have been cubic. Richness_rarefied~poly(ag_suit,3)+poly(log_AREA.PA,2)+poly(log_elevation,1)+Zone
 #+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|Predominant_habitat)"
 # with block: "Richness_rarefied~Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
-# 8 landuses: Richness_rarefied~poly(log_AREA.PA,2)+Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
+# 8 landuses: "Richness_rarefied~Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
 Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
 				fitFamily = "poisson",
@@ -158,15 +157,13 @@ Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, 
 
 
 Richness_rarefied.best.random$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
-# but this isnt comparable with the other models
-# also conversation with Luca about specifing random factor structure first
+# use this - keep to PREDICTS approach
 
-best.random <- "(1+log_bound_dist_km_PA_neg|SS)+ (1|SSBS) + (1|SSB) + (1|Predominant_habitat)"
+best.random <- "(1|SS)+ (1|SSBS) + (1|SSB) + (1|Predominant_habitat)"
  
 
 
 # model select
-#Richness_rarefied.model has the simple model
 Richness_rarefied.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
 			     responseVar = "Richness_rarefied",
 			     fitFamily = "poisson",
@@ -182,7 +179,8 @@ Richness_rarefied.model <- model_select(all.data  = multiple.taxa.matched.landus
 
 
 validate(Richness_rarefied.model$model) #ok
-write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.stats.23.01.2015.csv")
+write.csv(Richness_rarefied.model$stats, 
+	"N:/Documents/PREDICTS/WDPA analysis/stats tables all/8 landuses/Richness_rarefied.model.stats.23.01.2015.csv")
 
 
 
@@ -225,7 +223,7 @@ RS <-  c("Within_PA")
 
 # 8 landuses: Richness_rarefied~poly(log_AREA.PA,2)+Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)
 
-Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
+Richness_rarefied.best.random2 <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -237,7 +235,7 @@ Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, 
 				verbose=TRUE)
 
 
-Richness_rarefied.best.random$best.random #
+Richness_rarefied.best.random2$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
 
 best.random <- "(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB) + (1|Predominant_habitat)"

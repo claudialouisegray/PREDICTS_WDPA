@@ -161,7 +161,7 @@ range.best.random <- compare_randoms(matched.landuse, "range",
 				verbose=TRUE)
 
 
-range.best.random$best.random 
+range.best.random$best.random  #"(1+log_bound_dist_km_PA_neg|SS)+ (1|SSB)+(1|Predominant_habitat)"
  
 
 
@@ -268,7 +268,7 @@ RS <-  c("Within_PA")
 
 
 
-range.best.random <- compare_randoms(matched.landuse, "range",
+range.best.random2 <- compare_randoms(matched.landuse, "range",
 				fixedFactors=fF,
                          fixedTerms=fT,
 				keepVars = keepVars,
@@ -279,7 +279,7 @@ range.best.random <- compare_randoms(matched.landuse, "range",
 				verbose=TRUE)
 
 
-range.best.random$best.random 
+range.best.random2$best.random #"(1+Within_PA|SS)+ (1|SSB)+(1|Predominant_habitat)"
  
 
 

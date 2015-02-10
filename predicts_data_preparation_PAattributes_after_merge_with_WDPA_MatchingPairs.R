@@ -435,7 +435,7 @@ PA.predicts$DESIG_TYPE <- factor(PA.predicts$DESIG_TYPE, ordered = F)
 
 spdf <- SpatialPointsDataFrame(spatial, PA.predicts)
 
-#writeOGR(obj = spdf, dsn = "C:/GIS/PA_predicts_mapping", "PA.predicts_11_2014", driver = "ESRI Shapefile")
+writeOGR(obj = spdf, dsn = "C:/GIS/PA_predicts_mapping", "PA.predicts_11_2014", driver = "ESRI Shapefile")
 
 
 
@@ -466,7 +466,7 @@ sites_total <-  aggregate(Within_PA ~  SS, PA.predicts.subset,length)
 
 
 colnames(sites_total) <- c("SS", "sites_total")
-length(sites_total[,1]) #411
+length(sites_total[,1]) #459
 
 sites_in <- aggregate(Within_PA ~  SS, within_PA,length)
 colnames(sites_in) <- c( "SS","sites_in")
@@ -474,7 +474,7 @@ colnames(sites_in) <- c( "SS","sites_in")
 
 #combine into dataframe
 sites_in_out <- merge(sites_total, sites_in, by = c("SS"), all.x = TRUE)
-length(sites_in_out[,1]) #still 411
+length(sites_in_out[,1]) #still 459
 
 
 # replace NAs with 0 as there are no sites in PAs in these studies
@@ -491,21 +491,11 @@ include <- unique(sites_in_out$SS[which(sites_in_out$sites_in > 0
 		& sites_in_out$sites_out > 0 )])
 length(include) # check = 187 studies that have sites in and out
 
-
-
-
 #use this index to select site level data that matches inclusion criteria
 PA.predicts.subset1 <- subset(PA.predicts.subset, SS %in% include)
 
-length(PA.predicts.subset1[,1]) # check = 7142  sites should be included
-length(unique(PA.predicts.subset1$SS)) # = 187  studies
-
-
-
 unique(PA.predicts.subset1$Predominant_habitat) #check no "Cannot decide" or indeterminate
 unique(PA.predicts.subset1$UseIntensity) #doesnt matter if cannot decide as not including as fixed factor
-
-
 
 # change IUCN cats to numbers so can express mean of all categories succintly
 # and combine so that 
@@ -672,7 +662,7 @@ unique(PA.predicts.subset1$Predominant_habitat) #check no "Cannot decide" or ind
 
 matched.landuse <- PA.predicts.subset1 #incase overwriting during coding
 names(matched.landuse)
-length(matched.landuse[,1]) # 5491
+length(matched.landuse[,1]) # 5366
 
 #save
 write.csv(matched.landuse, "matched.landuse_11_2014.csv")

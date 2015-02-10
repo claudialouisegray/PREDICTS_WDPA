@@ -31,6 +31,20 @@ keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
 
+Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
+				fitFamily = "poisson",
+				siteRandom = TRUE,
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+Species_richness.best.random$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
+
 
 sp.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
 			     responseVar = "Species_richness", 
@@ -192,6 +206,21 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
+
+Species_richness.best.random.IUCN <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
+				fitFamily = "poisson",
+				siteRandom = TRUE,
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+Species_richness.best.random.IUCN$best.random #
+
 
 # "Species_richness~IUCN_CAT+poly(ag_suit,1)+poly(log_elevation,3)+(IUCN_CAT|SS)+(1|SSB)+(1|SSBS)"
 # but, doesnt converge for elevation down to quadratic
@@ -527,6 +556,19 @@ fI <- character(0)
 RS <-  c("Within_PA")
 #log_abundance~Within_PA+(Within_PA|SS)+(1|SSB)
 
+abundance.best.random <- compare_randoms(PA_11_14, "log_abundance",
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+abundance.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
+
+
 ab.model <- model_select(all.data  = PA_11_14, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
@@ -547,7 +589,7 @@ anova(m1a, m2a)
 
 summary(m1a)
 
-exp(fixef(m1a)[2]) # 1.127
+exp(fixef(m1a)[2]) # 1.147
 
 
 m1a_ag <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation
@@ -1099,7 +1141,7 @@ se <- as.numeric(se.fixef(m1t)[2])
 yplus <- y + se*1.96
 yminus <- y - se*1.96
 
-intercept<-fixef(m1t)[1]
+intercept <-fixef(m1t)[1]
 true.intercept <- 1/(1+exp(-(intercept)))
 true.y <- 1/(1+exp(-(intercept+y)))
 true.yplus <- 1/(1+exp(-(intercept+yplus)))
@@ -1162,27 +1204,50 @@ anova(m1ti, m2ti)
 #PA effectiveness estimates
 
 # benefit for species richness
-#
+
 b.sp <- exp(fixef(m1)[2]) -1
-b.sp.max <- (exp(fixef(m1)[2]) + 1.96*se.fixef(m1)[2])-1
-b.sp.min <- (exp(fixef(m1)[2]) - 1.96*se.fixef(m1)[2])-1
+b.sp.max <- exp(fixef(m1)[2] + 1.96*se.fixef(m1)[2])-1
+b.sp.min <- exp(fixef(m1)[2] - 1.96*se.fixef(m1)[2])-1
 
 b.a <- exp(fixef(m1a)[2]) -1
-b.a.max <- (exp(fixef(m1a)[2]) + 1.96*se.fixef(m1a)[2])-1
-b.a.min <- (exp(fixef(m1a)[2]) - 1.96*se.fixef(m1a)[2])-1
+b.a.max <- exp(fixef(m1a)[2] + 1.96*se.fixef(m1a)[2])-1
+b.a.min <- exp(fixef(m1a)[2] - 1.96*se.fixef(m1a)[2])-1
 
-b.vals <- c(b.sp, b.sp.max, b.sp.min, b.a, b.a.max, b.a.min)
-all.results <- vector()
+b.r <- exp(fixef(m3)[2]) -1
+b.r.max <- exp(fixef(m3)[2] + 1.96*se.fixef(m3)[2])-1
+b.r.min <- exp(fixef(m3)[2] - 1.96*se.fixef(m3)[2])-1
 
-b <- b.a.max
+
+b.vals <- c(b.sp, b.sp.max, b.sp.min, b.a, b.a.max, b.a.min, b.r , b.r.max, b.r.min)
+
+b <- b.sp.min
 b <- b.a
 
+vals <- data.frame(name =  c("b.sp", "b.sp.max", "b.sp.min", "b.a", "b.a.max", "b.a.min", "b.r", "b.r.max", "b.r.min"),
+			b.vals = b.vals, 
+			metric = rep(c("sp.rich", "abundance", "rar.rich"), each = 3), 
+			NPA.abs = rep(NA,length(b.vals)),
+			PA.abs = rep(NA,length(b.vals)),
+			est = rep(NA,length(b.vals)))
 
-for(b in b.vals){
+
+#By 2005, we estimate that human impacts had reduced local richness by an average of 13.6% (95% CI: 9.1 – 17.8%) and 
+#total abundance by 10.7% (95% CI: 3.8% gain – 23.7% reduction) compared with pre-impact times. 
+#Approximately 60% of the decline in richness was independent of effects on abundance: 
+#average rarefied richness has fallen by 8.1% (95% CI: 3.5 – 12.9%).
+			
+for(b in vals$b.vals){
 
 benefit <- as.numeric(b)		# percentage increase in metric in PAs
 PA.pct <- 13 				# percentage of total land area in PAs
-global.loss <- 0.116			# global loss of biodiversity (from Newbold et al)
+# global loss of biodiversity (from Newbold et al)
+if(vals$metric[which(vals$b.vals == b)] == "sp.rich"){
+	global.loss <- 0.136			
+	}else if (vals$metric[which(vals$b.vals == b)] == "abundance"){
+	global.loss <- 0.107
+	}else if (vals$metric[which(vals$b.vals == b)] == "rar.rich"){
+	global.loss <- 0.081
+	}
 
 NPA.rel <- 1-benefit			# relative biodiversity in unprotected sites
 PA.rel <- 1					# biodiversity in protected sites
@@ -1205,38 +1270,44 @@ global.int <- 1-global.loss		# overall status of biodiversity relative to pristi
 # then
 PA.abs <- global.int/(PA.pct/100 + (NPA.pct/100 * (NPA.rel)))
 NPA.abs <- PA.abs*NPA.rel
+vals$NPA.abs[which(vals$b.vals == b)] <- NPA.abs
+vals$PA.abs[which(vals$b.vals == b)] <- PA.abs
 
 # if pristine is 1, then where between 1 and NPA.abs does PA.abs fall?
 # get difference between PA.abs and NPA.abs as a percentage of NPA.abs
 #((1-NPA.abs)-(1-PA.abs))/(1-NPA.abs)
 
 est <- 1-(1-PA.abs)/(1-NPA.abs)
+vals$est[which(vals$b.vals == b)] <- est
 
 # ie
 #est <- ((1-NPA.abs)-(1-PA.abs))/(1-NPA.abs)
-
-
-all.results <- c(all.results, est)
 }
 
-d <- data.frame(estimates= all.results, 
-	values = c("b.sp", "b.sp.max", "b.sp.min", "b.a", "b.a.max", "b.a.min"))
+vals
 
-write.csv(t(d), "simple.effectiveness.estimates.csv")
-
+write.csv(vals, "simple.effectiveness.estimates.csv")
 
 
 
+# alternatively, using it the other way around
+#PA.abs <- NPA.abs*PA.rel
+#global.int = NPA.pct/100*NPA.abs + PA.pct/100*NPA.abs*PA.rel
+#global.int = NPA.abs*(NPA.pct/100 + PA.pct/100*PA.rel)
+
+NPA.abs <- global.int/(NPA.pct/100 + PA.pct/100*PA.rel)
+PA.abs <- NPA.abs*PA.rel
+# this doesnt give the same answer
 
 
 # Getting andys numbers - my approach written before I got Andys code. 
 
 
-# so, if PAs are 7.5% higher in species richness
-# Sites outside PAs have 92.5% as many species as sites inside
+# so, if PAs are x% higher in species richness
+# Sites outside PAs have x% as many species as sites inside
 # we also know 13% of land surface is in Protected Areas
 # Globally PREDICTS (nature MS) estimates mean net loss of species from terrestrial sites 
-	# across all landuses at 12.9% (relative to pristine)
+	# across all landuses at 11.6% (relative to pristine)
 
 # what are Protected and Unprotected relevant to pristine
 # n = % sp  in unprotected relative to pristine

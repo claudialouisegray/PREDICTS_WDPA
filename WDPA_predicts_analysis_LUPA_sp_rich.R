@@ -139,6 +139,10 @@ plotLU (responseVar = "Species richness",
 dev.off()
 
 
+PlotErrBar(model = Species_richness.model$model, data = multiple.taxa.PA_11_14, responseVar = "Species richness",
+		logLink = "e", 
+		secdAge= T,
+		catEffects = c("Within_PA", "Predominant_habitat"))
 
 
 
@@ -173,6 +177,82 @@ anova(m1,m2)
 
 res <- data.frame(estimate = fixef(m1), se = se.fixef(m1))
 write.csv(res, "Species_richness.LUPA.CLG.30.01.2015.withpolylinear.csv")
+
+
+
+
+
+#combine secondary for feeding to land use
+
+#make new dataset
+PA_11_14_sec <- PA_11_14
+PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+PA_11_14_sec$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+
+multiple.taxa.PA_11_14_sec <- multiple.taxa.PA_11_14
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- factor(multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- relevel(multiple.taxa.PA_11_14_sec$Predominant_habitat, "Primary Vegetation")
+
+
+
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- character(0)
+fI <- character(0)
+RS <-  c("Within_PA")
+
+# "Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+
+
+# add interactions
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <-character(0)
+keepVars <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "1")
+fI <- c("Within_PA:Predominant_habitat")
+RS <-  c("Within_PA")
+#"Species_richness~Predominant_habitat+taxon_of_interest+Within_PA+Zone+Within_PA:Predominant_habitat+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+
+Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14_sec, "Species_richness",
+				fitFamily = "poisson",
+				siteRandom = TRUE,
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+
+Species_richness.best.random$best.random #(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)
+ 
+best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
+
+
+# model select
+
+Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14_sec, 
+			     responseVar = "Species_richness",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = Species_richness.best.random$best.random ,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+Species_richness.model$stats
+summary(Species_richness.model$model)
+
 
 
 
