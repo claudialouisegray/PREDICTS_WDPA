@@ -8,7 +8,8 @@ plotLU <- function (model,responseVar,
 				logLink = "n",
 				seMultiplier=1.96,
 				forPaper = FALSE,
-				cex.txt = 0.5){
+				cex.txt = 0.5,
+				offSet = 0){
 
 # reference level must be set to Primary Vegetation in data, and as model intercept too
 # col.key is the dataframe of colours to use, the first 
@@ -49,7 +50,7 @@ coef.labels <- paste(xvar, col.key[,1], sep = "")
 		if(length(grep(":", names(fixef(model)))) > 0){
 			#get positions of interaction terms
 			pos <- grep(paste(intVar, level2, sep = ""), names(fixef(model)))
-			#get position with the specified land use in 
+			#which of these has the specified land use in
 			posInt <- grep(lu, names(fixef(model))[pos])
 			est2 <- fixef(model)[pos[posInt]]
 			est.p <- est1 + est2 + ref.in
@@ -138,6 +139,7 @@ coef.labels <- paste(xvar, col.key[,1], sep = "")
 	 }
 
 
+# set labels dependent on whether there is an interaction or not
 if(length(grep(":", names(fixef(model)))) > 0){
  	xlims <- c(0.5, 2*length(coef.labels))
 	labels <- rep(coef.labels, each = 2)
@@ -219,19 +221,24 @@ plot(-1, -1, xlim = xlims,
             text(mean(grep("Urban", labels)), plotLims[1] + 0.05 * 
                 predRange, "Urban", col = "black", cex = cex.txt)
 
-shapes <- rep(c(16,1), length(coef.labels))
 
+#set filled and empty points if interaction, else all points the same
+if(length(grep(":", names(fixef(model)))) > 0){
+	shapes <- rep(c(16,1), length(coef.labels))
+	}else{
+	shapes <- rep(16, length(coef.labels))
+	}
 
 if (!forPaper) {
 	points(1, 0, pch = 20, cex = 1.5 * cex.pt, col = 1)
-	errbar(2:length(labels), y[2:length(y)], 
+	errbar(2:length(labels)+ offSet, y[2:length(y)], 
 		yplus[2:length(yplus)], yminus[2:length(yminus)], 
 		col = 1,  pch = shapes[2:length(shapes)],
             errbar.col = 1, add = T, cex = cex.pt)
 	}else{
 	cols <- rep(col.key[,2], each = 2)
 	points(1, 0, pch = 20, cex = 1.5 * cex.pt, col = cols[1])
-	errbar(2:length(labels), y[2:length(y)], 
+	errbar(2:length(labels)+ offSet, y[2:length(y)], 
 		yplus[2:length(yplus)], yminus[2:length(yminus)], 
 		col = cols[2:length(cols)],  pch = shapes[2:length(shapes)],
             errbar.col = cols[2:length(cols)], add = T, cex = cex.pt)
@@ -240,8 +247,8 @@ if (!forPaper) {
 abline(h = 0, lty = 2, col = 1)
 
 
-legend(x = max(xlims), y = max(plotLims), c("Protected", "Not protected"), 
-	xjust = 1,pch = c(1,16))
+#legend(x = max(xlims), y = max(plotLims), c("Protected", "Not protected"), 
+#	xjust = 1,pch = c(1,16))
 
 }
 

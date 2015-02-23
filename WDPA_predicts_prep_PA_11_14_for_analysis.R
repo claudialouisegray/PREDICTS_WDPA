@@ -80,9 +80,7 @@ PA_11_14$log_hpd<- log(PA_11_14$hpd +1)
 PA_11_14$log_access <- log(PA_11_14$access +1)
 PA_11_14$log_AREA.PA <- log(PA_11_14$GIS_AREA+1)
 
-
 PA_11_14$LU_3 <- PA_11_14$Predominant_habitat
-
 PA_11_14$LU_3 <- gsub("Cropland", "Human_dominated", PA_11_14$LU_3)
 PA_11_14$LU_3 <- gsub("Plantation forest", "Human_dominated", PA_11_14$LU_3)
 PA_11_14$LU_3 <- gsub("Pasture", "Human_dominated", PA_11_14$LU_3)
@@ -92,14 +90,21 @@ PA_11_14$LU_3 <- gsub("Intermediate secondary vegetation", "Secondary", PA_11_14
 PA_11_14$LU_3 <- gsub("Young secondary vegetation", "Secondary", PA_11_14$LU_3)
 unique(PA_11_14$LU_3)
 
+PA_11_14$PA <- PA_11_14$Within_PA
+levels(PA_11_14$PA) <- c(levels(PA_11_14$PA), "IN", "OUT")
+PA_11_14$PA[which(PA_11_14$Within_PA == "yes")] <- "IN"
+PA_11_14$PA[which(PA_11_14$Within_PA == "no")] <- "OUT"
+PA_11_14$LUPA <- factor(paste(PA_11_14$PA, PA_11_14$Predominant_habitat))
 
 #make response variables
 PA_11_14$log_abundance <- log(PA_11_14$Total_abundance +1)
 PA_11_14$range <- PA_11_14$CWM_Geographic_range_log10_square_km
 
-
+#set reference levels
+PA_11_14 <- droplevels(PA_11_14)
 PA_11_14$Predominant_habitat <- relevel(PA_11_14$Predominant_habitat, "Primary Vegetation")
 PA_11_14$Within_PA <- relevel(PA_11_14$Within_PA, "no")
+PA_11_14$LUPA <- relevel(PA_11_14$LUPA, "OUT Primary Vegetation")
 
 
 

@@ -186,6 +186,64 @@ write.csv(Richness_rarefied.model$stats,
 
 
 
+### Size and Age analysis
+
+xyplot(Richness_rarefied ~ taxon_of_interest|AREA_DoP, multiple.taxa.matched.landuse)
+
+#run with no interactions first to see which variables have nonlinear relationships
+fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- character(0)
+fI <- character(0)
+RS <-  character(0)
+#Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Zone+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
+
+
+
+# add interactions
+fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
+fT <- list()
+keepVars <- list("ag_suit" = "3", "log_slope" = "1", "log_elevation" = "3")
+fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
+RS <-  character(0)
+#Richness_rarefied~Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,3)+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
+
+
+Richness_rarefied.best.random2 <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
+				fitFamily = "poisson",
+				siteRandom = TRUE,
+				fixedFactors=fF,
+                        fixedTerms=fT,
+                       	fixedInteractions=fI,
+                        otherRandoms=c("Predominant_habitat"),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+
+Richness_rarefied.best.random2$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
+
+
+# model select
+Richness_rarefied.model2 <- model_select(all.data  = multiple.taxa.matched.landuse, 
+			     responseVar = "Richness_rarefied",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = Richness_rarefied.best.random2$best.random,
+			     otherRandoms=c("Predominant_habitat"),
+                       verbose=TRUE)
+
+
+write.csv(Richness_rarefied.model2$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/age size bins/rarrich.model.age.size.stats.10.02.2014.csv")
+
+
+
+
 
 ### within PA analysis
 

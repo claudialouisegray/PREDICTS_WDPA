@@ -182,9 +182,9 @@ write.csv(res, "Species_richness.LUPA.CLG.30.01.2015.withpolylinear.csv")
 
 
 
-#combine secondary for feeding to land use
+###combine secondary for land use estimate
 
-#make new dataset
+#make new datasets
 PA_11_14_sec <- PA_11_14
 PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
 PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
@@ -195,10 +195,12 @@ multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetati
 multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
 multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
 
+#make a factor and set primary as reference
 multiple.taxa.PA_11_14_sec$Predominant_habitat <- factor(multiple.taxa.PA_11_14_sec$Predominant_habitat)
 multiple.taxa.PA_11_14_sec$Predominant_habitat <- relevel(multiple.taxa.PA_11_14_sec$Predominant_habitat, "Primary Vegetation")
 
-
+#also need to make new LUPA
+multiple.taxa.PA_11_14_sec$LUPA <- factor(paste(multiple.taxa.PA_11_14_sec$PA, multiple.taxa.PA_11_14_sec$Predominant_habitat))
 
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
@@ -254,6 +256,33 @@ Species_richness.model$stats
 summary(Species_richness.model$model)
 
 
+#to plot need LUPA model as easy way to get standard errors for each landuse
+
+data <- multiple.taxa.PA_11_14_sec[,c("Species_richness", "PA", "Predominant_habitat", "LUPA",
+	"log_slope", "log_elevation", "ag_suit",
+	"Zone", "taxon_of_interest", "SS", "SSB", "SSBS")]
+data <- na.omit(data)
+
+
+# LUPA is the same as LU + PA + LU:PA
+# LUPA vs just LU and PA
+
+LUPA.sp3 <- glmer(Species_richness~taxon_of_interest+Zone+LUPA
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+LUPA.sp4 <- glmer(Species_richness~Predominant_habitat+taxon_of_interest+PA+Zone
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+anova(LUPA.sp3, LUPA.sp4)
+
+#normal
+LUPA.sp5 <- glmer(Species_richness~taxon_of_interest+Zone+Predominant_habitat+PA+PA:Predominant_habitat
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+LUPA.sp6 <- glmer(Species_richness~taxon_of_interest+Zone+Predominant_habitat+PA
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+anova(LUPA.sp5, LUPA.sp6)
 
 
 

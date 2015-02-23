@@ -1,9 +1,4 @@
-#setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
-
 rm(list=ls())
-
-
-
 
 library(lme4)
 library(yarg)
@@ -17,94 +12,9 @@ source("model_select.R")
 
 
 # Load dataset 
-setwd("N:/Documents/PREDICTS/WDPA analysis")
-matched.landuse <- read.csv("matched.landuse_11_2014.csv")
-nrow(matched.landuse )#5491
 
-
-
-
-
-### LOAD MATCHING DATA
-
-setwd("N:/Documents/PREDICTS/WDPA analysis/matching data")
-
-access <- read.table("bfer_1km_acc50k_11_14.txt", header = T, sep = ",")
-hpd <- read.table("bfer_1km_HPD_11_14.txt", header = T, sep = ",")
-elevation <- read.table("bfer_1km_mn30_elevation_11_14.txt", header = T, sep = ",")
-slope <- read.table("bfer_1km_mn30_slope_11_14.txt", header = T, sep = ",")
-
-ag_suit <- read.csv("ag_suitability_11_2014_moll.csv") 
-
-# this is taken from extract values to points function, saved as text file, then opened in excel
-# FID column deleted and -9999 values in RASTERVALU switched to NA
-
-ag.1 <- ag_suit[,c("SSS", "RASTERVALU")] 
-colnames(ag.1) <- c("SSS", "ag_suit")
-
-#these are water, must have fallen on the edge of lakes/rivers
-ag.1$ag_suit[which(ag.1$ag_suit==9)] <- NA
-
-# switch scale to be more intuitive - higher values more agriculturally suitable
-ag.1$ag_suit <- 9 - ag.1$ag_suit
-
-access.1 <- access[,c("SSS", "MEAN")]
-hpd.1 <- hpd[,c("SSS", "MEAN")]
-elevation.1 <- elevation[,c("SSS", "MEAN")]
-slope.1 <- slope[,c("SSS", "MEAN")]
-
-m <- merge(matched.landuse , access.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "access"
-m <- merge(m, hpd.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
-m <- merge(m, elevation.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
-m <- merge(m, slope.1, "SSS", all.x = T)
-colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
-m <- merge(m, ag.1, "SSS", all.x = T)
-nrow(m)
-matched.landuse  <- m
-
-# create explanatory variables
-
-matched.landuse$IUCN_CAT_number <- factor(matched.landuse$IUCN_CAT_number) # they arent really in an order
-matched.landuse$log_slope <- log(matched.landuse$slope +1)
-matched.landuse$log_elevation <- log(matched.landuse$elevation +1)
-matched.landuse$log_hpd<- log(matched.landuse$hpd +1)
-matched.landuse$log_access <- log(matched.landuse$access +1)
-matched.landuse$log_GIS_AREA <- log(matched.landuse$GIS_AREA+1)
-
-# make IUCN cat variable of I or II vs III to VI vs unknown vs unprotected
-matched.landuse$IUCN_CAT <- matched.landuse$IUCN_CAT_number 
-levels(matched.landuse$IUCN_CAT) <- c(levels(matched.landuse$IUCN_CAT), "0")
-matched.landuse$IUCN_CAT[which(matched.landuse$Within_PA == "no")] <- 0
-
-#make response variables
-
-matched.landuse$range <- matched.landuse$CWM_Geographic_range_log10_square_km
-matched.landuse$mass <- matched.landuse$CWM_Mass_log10_g  ### UPDATE
-matched.landuse$veg <- matched.landuse$CWM_Vegetative_height_log10_m
-matched.landuse$vol <- matched.landuse$CWM_Length_derived_volume_3log10_mm
-matched.landuse$log_abundance <- log(matched.landuse$Total_abundance +1)
-
-
-### CREATE MULTIPLE TAXA PER STUDY DATASET 
-# create dataset for species richness analysis that without all studies that are only on one taxon
-
-setwd("N:/Documents/PREDICTS/WDPA analysis")
-
-studies.taxa <- read.csv("Number of taxa per study split_taxa_coarse 11_2014.csv")
-
-which(studies.taxa$number.taxa == 1)
-length(which(studies.taxa$number.taxa == 1)) #25
-
-more.than.one.taxa <- studies.taxa$SS[which(studies.taxa$number.taxa != 1)]
-
-multiple.taxa.matched.landuse  <- subset(matched.landuse , SS %in% more.than.one.taxa)
-length(multiple.taxa.matched.landuse [,1]) #5311
-
-multiple.taxa.matched.landuse  <- droplevels(multiple.taxa.matched.landuse)
-
+#load data
+source("WDPA_predicts_prep_matched.landuse_for_analysis.R")
 
 
 
@@ -119,13 +29,9 @@ multiple.taxa.matched.landuse_ord$IUCN_CAT <- factor(multiple.taxa.matched.landu
 	levels = c("0", "4.5", "7", "1.5"))
 
 
-
-
 ### model species richness
 
 # check polynomials
-
-
 fF <- c("Within_PA") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
@@ -250,32 +156,6 @@ dev.off()
 
 
 
-#simple species richness with  Zone
-
-m0z <- glmer(Species_richness ~ Within_PA + Zone + Within_PA:Zone
-	+ log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
-
-m1z <- glmer(Species_richness ~ Within_PA + Zone + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
-
-anova(m0z,m1z)
-
-
-
-m2z <- update(m1z, .~. -Within_PA)
-m3z <- update(m1z, .~. -Zone)
-
-anova(m1z, m2z)
-anova(m1z, m3z)
-
-summary(m1z)
-
-
-
-
 
 
 #simple species richness with IUCN cat 
@@ -305,16 +185,6 @@ data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope"
 data <- na.omit(data)
 
 
-m0i <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
-
-m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse)
-
-
-
 m2i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse,
@@ -326,11 +196,11 @@ m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 #tried this m3i with Nelder_Mead - also convergence warnings
 
 #doesnt converge with ordinal data either
-m2i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
+m4i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse_ord,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m5i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse_ord,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
@@ -340,7 +210,15 @@ anova(m1i, m0i)
 anova(m2i, m3i)
 summary(m1i)
 
-
+m5i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse_ord,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m6i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = multiple.taxa.matched.landuse_ord,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+anova(m5i, m6i)
 
 
 # plot 
@@ -356,7 +234,7 @@ levels.IUCN <- levels(multiple.taxa.matched.landuse$IUCN_CAT)
 multiple.taxa.matched.landuse$IUCN_CAT <- relevel(multiple.taxa.matched.landuse$IUCN_CAT, "0")
 
 m4i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
@@ -913,22 +791,29 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.land
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
+
+
+# convert to nromal range first, then get percentage
+
 labels <- c("Unprotected", "Protected")
-y0 <-as.numeric(fixef(m1r)[1])
-e.y1 <- 1/y0
-y <- as.numeric(fixef(m1r)[2])
-y2 <- y0+y
+y1 <- 10^as.numeric(fixef(m1r)[1])
+e.y1 <- 1/y1
+y2 <- 10^(as.numeric(fixef(m1r)[2]) + as.numeric(fixef(m1r)[1]))
 e.y2 <- 1/y2
 
 #as a percentage of outside 
 e.relative <- e.y2/e.y1*100
 
+# what does this mean?
+# difference of 0.3% = e.y2 - e.y1 #0.00057
+# or y2 - y0 #- 0.0022 log sq km
+
 se <- as.numeric(se.fixef(m1r)[2])
-y2plus <- y0 + y + se*1.96
+y2plus <- 10^(as.numeric(fixef(m1r)[2]) + as.numeric(fixef(m1r)[1]) + se*1.96)
 e.y2plus <- 1/y2plus
 e.relative.plus <- e.y2plus/e.y1*100
 
-y2minus <- y0 + y - se*1.96
+y2minus <- 10^(as.numeric(fixef(m1r)[2]) + as.numeric(fixef(m1r)[1]) - se*1.96)
 e.y2minus <- 1/y2minus
 e.relative.minus <- e.y2minus/e.y1*100
 
@@ -938,21 +823,23 @@ e.relative.minus <- e.y2minus/e.y1*100
 points <- c(100, e.relative)
 CI <- c(e.relative.plus, e.relative.minus)
 
-plot(points ~ c(1,2), ylim = c(98,102), xlim = c(0.5,2.5), 
+plot(points ~ c(1,2), ylim = c(90,130), xlim = c(0.5,2.5), 
 	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Endemicity difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2), labels)
-axis(2, c(99,100,101,102), c(99,100,101,102))
+axis(2, c(90,100,110,120), c(90,100,110,120))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 data <- matched.landuse[,c("Within_PA", "SSS", "range")]
 data <- na.omit(data)
-text(2,98, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
-text(1,98, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+text(2,90, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,90, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+
+
 
 dev.off()
 
@@ -981,12 +868,6 @@ range.model.IUCN <- model_select(all.data  = matched.landuse,
                        verbose=TRUE)
 
 
-m1ri <- lmer(range ~ Within_PA +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
-m2ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
 
 #doesnt converge
 m3ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
@@ -1013,50 +894,61 @@ anova(m3ri, m4ri)
 summary(m4ri)
 
 
+m5ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
+	+ (1|SS)+ (1|SSB), 
+	 data = matched.landuse)
+m6ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (1|SS)+ (1|SSB), 
+	 data = matched.landuse,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+anova(m5ri, m6ri)
+
+
 #PLOT
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.landuse endemicity IUCN.tif",
 	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
-labels <- c("Unprotected", "IUCN I & II", "IUCN III  - VI", "unknown")
+labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II" )
 
-#matched.landuse$IUCN_CAT <- relevel( matched.landuse$IUCN_CAT, "0")
+data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "range")]
+data <- na.omit(data)
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-#m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-#	+ (Within_PA|SS)+ (1|SSB), 
-#	 data = matched.landuse)
+m6ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+	+ (1|SS)+ (1|SSB), 
+	 data = data,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
-y0 <-as.numeric(fixef(m4ri)[1])
-e.y1 <- 1/y0
-y <- as.numeric(fixef(m4ri)[c(4,2,3)])
-y2 <- y0+y
+
+y1 <- 10 ^(as.numeric(fixef(m6ri)[1]))
+e.y1 <- 1/y1
+pos <- c(grep("4.5", names(fixef(m6ri))),grep("7", names(fixef(m6ri))),grep("1.5", names(fixef(m6ri))))
+y2 <- 10^(as.numeric(fixef(m6ri)[pos]) + as.numeric(fixef(m6ri)[1]))
 e.y2 <- 1/y2
 
 #as a percentage of outside 
 e.relative <- e.y2/e.y1*100
 
-se <- as.numeric(se.fixef(m4ri)[c(4,2,3)])
-y2plus <- y0 + y + se*1.96
+se <- as.numeric(se.fixef(m6ri)[pos])
+y2plus <- 10^(as.numeric(fixef(m6ri)[pos]) + as.numeric(fixef(m6ri)[1])+ se*1.96)
 e.y2plus <- 1/y2plus
 e.relative.plus <- e.y2plus/e.y1*100
 
-y2minus <- y0 + y - se*1.96
+y2minus <- 10^(as.numeric(fixef(m6ri)[pos]) + as.numeric(fixef(m6ri)[1])- se*1.96)
 e.y2minus <- 1/y2minus
 e.relative.minus <- e.y2minus/e.y1*100
-
-
-
 
 points <- c(100, e.relative)
 CI <- cbind(e.relative.plus, e.relative.minus)
 
-plot(points ~ c(1,2,3,4), ylim = c(98,102), xlim = c(0.5,4.5), 
+plot(points ~ c(1,2,3,4), ylim = c(90,130), xlim = c(0.5,4.5), 
 	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Endemicity difference (% ± 95%CI)",
 	xlab = "")
 axis(1, c(1,2,3,4), labels)
-axis(2, c(99,100,101,102), c(99,100,101,102))
+axis(2, c(90,100,110,120), c(90,100,110,120))
 arrows(c(2,3,4),CI[,1],c(2,3,4),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
@@ -1064,13 +956,23 @@ points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
 data <- matched.landuse[,c("IUCN_CAT", "SSS", "range")]
 data <- na.omit(data)
-text(1, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
-text(2, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
-text(3, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
-text(4, 98, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
+text(1, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
+text(3, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(4, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
 
 
 dev.off()
+
+
+
+IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
+		upper = CI[,1], lower = CI[,2],
+		n.site = c(length(data$SSS[which(data$IUCN_CAT == "1.5")]), 
+			length(data$SSS[which(data$IUCN_CAT == "4.5")]),
+			length(data$SSS[which(data$IUCN_CAT == "7")])))
+r.plot2 <- rbind(r.plot1, IUCN.plot)
+
 
 
 

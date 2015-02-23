@@ -82,12 +82,11 @@ PA_dists_data <- PA_dists[,c("SSS", "NEAR_DIST")]
 
 ### Load dataset on matched landuse
 
-
-#matched.landuse<- read.csv("matched.landuse_07_2014.csv")
-
-
 matched.landuse<- read.csv("matched.landuse_11_2014.csv")
 nrow(matched.landuse)
+
+#make plants the reference
+matched.landuse$taxon_of_interest <- relevel(matched.landuse$taxon_of_interest, "Plants")
 
 
 matched.landuse$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", matched.landuse$Predominant_habitat)
@@ -153,7 +152,58 @@ matched.landuse$log_elevation <- log(matched.landuse$elevation +1)
 matched.landuse$log_hpd<- log(matched.landuse$hpd +1)
 matched.landuse$log_access <- log(matched.landuse$access +1)
 
+matched.landuse$DoP.PA <- matched.landuse$DoP
+matched.landuse$DoP.PA[which(matched.landuse$Within_PA == "no")] <- 0
+# make bins
+# based on violin plots try 0 - 10, 11 - 20, 21 - 40, 41 - 80
+matched.landuse$DoP.PA.f <- matched.landuse$DoP.PA
+matched.landuse$DoP.PA.f[which(matched.landuse$DoP.PA >=0 & matched.landuse$DoP.PA <= 20)] <- "young"
+matched.landuse$DoP.PA.f[which(matched.landuse$DoP.PA >= 21 & matched.landuse$DoP.PA <= max(matched.landuse$DoP.PA, na.rm = T))] <- "old"
+matched.landuse$DoP.PA.f[which(matched.landuse$Within_PA == "no")] <- "outside"
+matched.landuse$DoP.PA.f <- factor(matched.landuse$DoP.PA.f)
+matched.landuse$DoP.PA.f <- relevel(matched.landuse$DoP.PA.f, "outside")
+
+matched.landuse$AREA.PA <- matched.landuse$GIS_AREA
+matched.landuse$AREA.PA[which(matched.landuse$Within_PA == "no")] <- 0
+# make bins
+matched.landuse$AREA.PA.f <- matched.landuse$AREA.PA
+matched.landuse$AREA.PA.f[which(matched.landuse$AREA.PA >= 0 & matched.landuse$AREA.PA <= 400)] <- "small"
+matched.landuse$AREA.PA.f[which(matched.landuse$AREA.PA >= 401 & matched.landuse$AREA.PA <= max(matched.landuse$AREA.PA, na.rm = T))] <- "large"
+matched.landuse$AREA.PA.f[which(matched.landuse$Within_PA == "no")] <- "outside"
+matched.landuse$AREA.PA.f <- factor(matched.landuse$AREA.PA.f)
+matched.landuse$AREA.PA.f <- relevel(matched.landuse$AREA.PA.f, "outside")
+
+#make combined interaction term variable
+matched.landuse$AREA_DoP <- paste(matched.landuse$AREA.PA.f, matched.landuse$DoP.PA.f, sep = "_")
+matched.landuse$AREA_DoP[which(matched.landuse$Within_PA == "no")] <- "outside"
+matched.landuse$AREA_DoP[is.na(matched.landuse$DoP.PA)] <- "outside"
+matched.landuse$AREA_DoP <- factor(matched.landuse$AREA_DoP)
+matched.landuse$AREA_DoP <- relevel(matched.landuse$AREA_DoP, "outside")
+
+
+#check outside numbers are the same
+#aggregate(SSS~ AREA.PA.f + taxon_of_interest, matched.landuse, length)
+#aggregate(SSS~ DoP.PA.f + taxon_of_interest, matched.landuse, length)
+table(matched.landuse$AREA_DoP, matched.landuse$taxon_of_interest)
+table(matched.landuse$AREA_DoP, matched.landuse$Zone)
+
+
+
 matched.landuse$log_GIS_AREA <- log(matched.landuse$GIS_AREA+1)
+matched.landuse$log_AREA.PA <- matched.landuse$log_GIS_AREA
+matched.landuse$log_AREA.PA[which(matched.landuse$Within_PA == "no")] <- 0
+
+
+# make IUCN cat variable of I or II vs III to VI vs unknown vs unprotected
+matched.landuse$IUCN_CAT_number <- factor(matched.landuse$IUCN_CAT_number) # they arent really in an order
+matched.landuse$IUCN_CAT <- matched.landuse$IUCN_CAT_number 
+levels(matched.landuse$IUCN_CAT) <- c(levels(matched.landuse$IUCN_CAT), "0")
+matched.landuse$IUCN_CAT[which(matched.landuse$Within_PA == "no")] <- 0
+
+
+matched.landuse$IUCN.PA <- matched.landuse$IUCN_CAT_number
+levels(matched.landuse$IUCN.PA) <- c( "1.5", "4.5", "7", "0")
+matched.landuse$IUCN.PA[which(matched.landuse$Within_PA == "no")] <- "0"
 
 
 #make response variables
@@ -170,18 +220,6 @@ matched.landuse$log_sp_rich <- log(matched.landuse$Species_richness+1)
 
 
 
-matched.landuse$DoP.PA <- matched.landuse$DoP
-matched.landuse$DoP.PA[which(matched.landuse$Within_PA == "no")] <- 0
-
-matched.landuse$AREA.PA <- matched.landuse$GIS_AREA
-matched.landuse$AREA.PA[which(matched.landuse$Within_PA == "no")] <- 0
-
-matched.landuse$log_AREA.PA <- matched.landuse$log_GIS_AREA
-matched.landuse$log_AREA.PA[which(matched.landuse$Within_PA == "no")] <- 0
-
-matched.landuse$IUCN.PA <- matched.landuse$IUCN_CAT_number
-levels(matched.landuse$IUCN.PA) <- c( "1.5", "4.5", "7", "0")
-matched.landuse$IUCN.PA[which(matched.landuse$Within_PA == "no")] <- "0"
 
 
 
