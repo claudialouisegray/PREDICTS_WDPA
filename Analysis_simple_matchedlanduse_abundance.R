@@ -8,8 +8,7 @@ library(roquefort)
 
 # load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-#source("compare_randoms.R")
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 
 

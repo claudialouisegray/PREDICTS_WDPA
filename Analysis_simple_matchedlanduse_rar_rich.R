@@ -6,8 +6,7 @@ library(roquefort)
 
 # load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-#source("compare_randoms.R")
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 
 
@@ -526,7 +525,7 @@ r.sp.plot <- rbind(r.sp.plot3, tax)
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models matchedlanduse sp rich.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models matchedlanduse rar rich.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
