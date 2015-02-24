@@ -67,18 +67,41 @@ nrow(m) #6631
 PA_11_14 <- m
 
 # sort out explanatory variables
-#PA_11_14$IUCN_CAT_number <- factor(PA_11_14$IUCN_CAT_number) # they arent really in an order
-# make IUCN cat variable of I or II vs III to VI vs unknown vs unprotected
-PA_11_14$IUCN_CAT <- PA_11_14$IUCN_CAT_number 
-levels(PA_11_14$IUCN_CAT) <- c(levels(PA_11_14$IUCN_CAT), "0")
-PA_11_14$IUCN_CAT[which(PA_11_14$Within_PA == "no")] <- 0
-PA_11_14$IUCN_CAT  <- factor(PA_11_14$IUCN_CAT)
 
 PA_11_14$log_slope <- log(PA_11_14$slope +1)
 PA_11_14$log_elevation <- log(PA_11_14$elevation +1)
 PA_11_14$log_hpd<- log(PA_11_14$hpd +1)
 PA_11_14$log_access <- log(PA_11_14$access +1)
 PA_11_14$log_AREA.PA <- log(PA_11_14$GIS_AREA+1)
+
+
+PA_11_14$DoP.PA <- PA_11_14$DoP
+PA_11_14$DoP.PA[which(PA_11_14$Within_PA == "no")] <- 0
+# make bins
+# based on violin plots try 0 - 10, 11 - 20, 21 - 40, 41 - 80
+PA_11_14$DoP.PA.f <- PA_11_14$DoP.PA
+PA_11_14$DoP.PA.f[which(PA_11_14$DoP.PA >=0 & PA_11_14$DoP.PA <= 20)] <- "young"
+PA_11_14$DoP.PA.f[which(PA_11_14$DoP.PA >= 21 & PA_11_14$DoP.PA <= max(PA_11_14$DoP.PA, na.rm = T))] <- "old"
+PA_11_14$DoP.PA.f[which(PA_11_14$Within_PA == "no")] <- "outside"
+PA_11_14$DoP.PA.f <- factor(PA_11_14$DoP.PA.f)
+PA_11_14$DoP.PA.f <- relevel(PA_11_14$DoP.PA.f, "outside")
+
+PA_11_14$AREA.PA <- PA_11_14$GIS_AREA
+PA_11_14$AREA.PA[which(PA_11_14$Within_PA == "no")] <- 0
+# make bins
+PA_11_14$AREA.PA.f <- PA_11_14$AREA.PA
+PA_11_14$AREA.PA.f[which(PA_11_14$AREA.PA >= 0 & PA_11_14$AREA.PA <= 400)] <- "small"
+PA_11_14$AREA.PA.f[which(PA_11_14$AREA.PA >= 401 & PA_11_14$AREA.PA <= max(PA_11_14$AREA.PA, na.rm = T))] <- "large"
+PA_11_14$AREA.PA.f[which(PA_11_14$Within_PA == "no")] <- "outside"
+PA_11_14$AREA.PA.f <- factor(PA_11_14$AREA.PA.f)
+PA_11_14$AREA.PA.f <- relevel(PA_11_14$AREA.PA.f, "outside")
+
+#make combined interaction term variable
+PA_11_14$AREA_DoP <- paste(PA_11_14$AREA.PA.f, PA_11_14$DoP.PA.f, sep = "_")
+PA_11_14$AREA_DoP[which(PA_11_14$Within_PA == "no")] <- "outside"
+PA_11_14$AREA_DoP[is.na(PA_11_14$DoP.PA)] <- "outside"
+PA_11_14$AREA_DoP <- factor(PA_11_14$AREA_DoP)
+PA_11_14$AREA_DoP <- relevel(PA_11_14$AREA_DoP, "outside")
 
 PA_11_14$LU_3 <- PA_11_14$Predominant_habitat
 PA_11_14$LU_3 <- gsub("Cropland", "Human_dominated", PA_11_14$LU_3)
@@ -95,6 +118,14 @@ levels(PA_11_14$PA) <- c(levels(PA_11_14$PA), "IN", "OUT")
 PA_11_14$PA[which(PA_11_14$Within_PA == "yes")] <- "IN"
 PA_11_14$PA[which(PA_11_14$Within_PA == "no")] <- "OUT"
 PA_11_14$LUPA <- factor(paste(PA_11_14$PA, PA_11_14$Predominant_habitat))
+
+#PA_11_14$IUCN_CAT_number <- factor(PA_11_14$IUCN_CAT_number) # they arent really in an order
+# make IUCN cat variable of I or II vs III to VI vs unknown vs unprotected
+PA_11_14$IUCN_CAT <- PA_11_14$IUCN_CAT_number 
+levels(PA_11_14$IUCN_CAT) <- c(levels(PA_11_14$IUCN_CAT), "0")
+PA_11_14$IUCN_CAT[which(PA_11_14$Within_PA == "no")] <- 0
+PA_11_14$IUCN_CAT  <- factor(PA_11_14$IUCN_CAT)
+
 
 #make response variables
 PA_11_14$log_abundance <- log(PA_11_14$Total_abundance +1)

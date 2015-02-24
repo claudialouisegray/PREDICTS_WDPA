@@ -19,6 +19,12 @@ plotFactorInteraction <- function (model,responseVar, data,
 				ylab = ""){
 
 # reference level must be set to age and size of 0
+trop.col <- rgb(0.9,0,0)
+temp.col <- rgb(0,0.1,0.7)
+p.col <- rgb(0.2,0.7,0.2)
+i.col <- rgb(0,0.7,0.9)
+v.col <- rgb(0.9,0.5,0)
+
 
 #get estimates for level(s) of xvar, in order required for plotting
 pos.x <- NULL 
@@ -118,10 +124,33 @@ if(length(grep(":", names(fixef(model)))) > 0){
 xlims <- c(1, (length(xvar.order)+1)*(length(intvar.order)+1))
 ylims <- c(min(yminus)-10, max(yplus) + 10)
 par(mar = c(8,4,1,2), mgp = c(3,0.6,0))
-plot(-1, -1, xlim = xlims, 
-		ylim = ylims, xlab = "", ylab = ylab, xaxt = "n")
-mtext(side = 1, text = xlab, line =6)
-shapes <- as.numeric(yData$int) + 14
+plot(-1, -1, xlim = xlims, bty = "l",
+		ylim = ylims, xlab = "", ylab = ylab, cex.lab = 1.2, axes = F)
+axis(2,c(-50, 0, 50, 100), c(-50, 0, 50, 100))
+mtext(side = 1, text = xlab, line =6, cex = 1.2)
+
+shapes <- NULL
+#make shapes for plot
+if(intvar == "taxon_of_interest"){
+	shapes <- rep(17, length(yData$int))
+	}else if (intvar == "Zone"){
+	shapes <- rep(15, length(yData$int))
+	}else{
+	shapes <- as.numeric(yData$int) + 14
+	}
+
+colours <- NULL
+#make colours for plot
+if(intvar == "taxon_of_interest"){
+	colours[which(yData$int == "reference")]  <- p.col
+	colours[which(yData$int == "Invertebrates")]  <- i.col
+	colours[which(yData$int == "Vertebrates")]  <- v.col
+	}else if (intvar == "Zone"){
+	colours[which(yData$int == "reference")]  <- temp.col
+	colours[which(yData$int == "reference")]  <- trop.col
+	}else{
+	colours <- rep(1,length(yData$int))
+	}
 
 
 p <- 1
@@ -130,17 +159,18 @@ for(L in c("reference",intvar.order)){
 	errbar(xPositions, y[which(yData$int == L )], 
 		yplus[which(yData$int == L )], 
 		yminus[which(yData$int == L )],
-		col = 1,  
+		col = colours[which(yData$int == L )],  
 		pch = shapes[which(yData$int == L )],
-		errbar.col = 1, 
-		add = T)
+		errbar.col = colours[which(yData$int == L )], 
+		add = T, 
+		cap = 0)
 	if(L == "reference"){
 	text(mean(xPositions), max(ylims), levels(data[,c(intvar)])[1])
 	}else{
 	text(mean(xPositions), max(ylims), L)
 	}
 	axis(1, p:(p -1 +length(y[which(yData$int == L )])), c(ref.text, xvar.order), 
-		las = 2, cex.axis = 0.8)
+		las = 2, cex.axis = 1, tick = 0)
 	p <- p + length(y[which(yData$int == L )])
 	abline(v = p - 0.5, col = 8)
 }

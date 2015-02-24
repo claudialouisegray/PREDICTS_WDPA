@@ -36,24 +36,55 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 
 # load functions
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 
 
 #load data for matched studies
-source("WDPA_predicts_prep_matched.landuse_for_analysis.R")
+source("prep_matched.landuse_for_analysis.R")
 data <- matched.landuse
 
 # or if using LUPA data
-source("WDPA_predicts_prep_PA_11_14_for_analysis.R")
+source("rep_PA_11_14_for_analysis.R")
 data <- PA_11_14
+nrow(PA_11_14)
+
+
+# create shapefile for PA_11_14 data
+long.lat <- PA_11_14[,c("Longitd", "Latitud")]
+spatial <- SpatialPoints(long.lat)
+plot(spatial)
+
+PA.predicts$IUCN_CAT <- factor(PA.predicts$IUCN_CAT, ordered = F)
+PA.predicts$STATUS <- factor(PA.predicts$STATUS, ordered = F)
+PA.predicts$DESIG_TYPE <- factor(PA.predicts$DESIG_TYPE, ordered = F)
+
+
+spdf <- SpatialPointsDataFrame(spatial, PA_11_14)
+#writeOGR(obj = spdf, dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg", driver = "ESRI Shapefile")
+
+
+# map these
+countries <- readOGR(dsn = "C:/GIS/Data/world_borders", "BORDERS_without_antarctica_moll")
+PAs_all <- readOGR(dsn = "C:/GIS/Data/WDPA/WDPAmollmergeJULY", "WDPAmollmergeJULY_terrestrial")
+PAs_in_study <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_PAs_moll")
+
+par(mfrow = c(1,1))
+par(mar=c(0.2,0.1,1.5,0.2))
+
+plot(countries, lty = NULL, border = "grey", col = "grey")
+plot(PAs_all, lty = NULL, border = rgb(0.4,0.7,0.5), col = rgb(0.4,0.7,0.5), add = T)
+plot(PAs_in_study, lty = NULL, border = rgb(0.1,0.4,0.2), col = rgb(0.1,0.4,0.2), add = T)
+plot(spatial, pch = 16, col = rgb(0.1,0.1,0.1,0.7), add = TRUE, cex = 1.5)
+
+
+
+
+
+
 
 
 data$SS_PH <- paste(data$SS, data$Predominant_habitat)
-
-
-
-
 
 # how many sites and studies in each section of the data
 nrow(data)

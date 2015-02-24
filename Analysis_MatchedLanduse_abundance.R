@@ -24,12 +24,12 @@ library(rgl)
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 source("plotFactorInteraction.R")
 
 #load data
-source("WDPA_predicts_prep_matched.landuse_for_analysis.R")
+source("prep_matched.landuse_for_analysis.R")
 
 validate <- function(x) {
   par(mfrow = c(1,2))
@@ -299,8 +299,8 @@ logLink = "e",
 xlab = "PA size and age class",
 ylab = "Relative abundance %")
 
-text(0.7,90, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
-	adj = 0, cex = 0.8)
+#text(0.7,90, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
+#	adj = 0, cex = 0.8)
 
 dev.off()
 
