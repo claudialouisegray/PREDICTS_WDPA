@@ -51,9 +51,8 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 }
 
 
-
-
-
+length(unique(PA_11_14$SSS[which(PA_11_14$Within_PA == "yes")]))
+length(unique(PA_11_14$SSS[which(PA_11_14$Within_PA == "no")]))
 
 ### age/size analysis
 

@@ -29,12 +29,12 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
 
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 source("plotFactorInteraction.R")
 
 #load data
-source("WDPA_predicts_prep_matched.landuse_for_analysis.R")
+source("prep_matched.landuse_for_analysis.R")
 
 validate <- function(x) {
   par(mfrow = c(1,2))
@@ -228,7 +228,7 @@ Species_richness.model2 <- model_select(all.data  = multiple.taxa.matched.landus
                        fixedTerms= fT,
 			     keepVars = keepVars,
                        fixedInteractions=fI,
-                       randomStruct = Species_richness.best.random2$best.random,
+                       randomStruct ="(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)",
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
@@ -240,19 +240,21 @@ write.csv(Species_richness.model2$stats, "N:/Documents/PREDICTS/WDPA analysis/st
 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/sp rich vs size and age.tif",
-	width = 15, height = 15, units = "cm", pointsize = 12, res = 300)
+	width = 9, height = 15, units = "cm", pointsize = 12, res = 300)
+
 
 plotFactorInteraction(model = Species_richness.model2$model,
 responseVar = "Species_richness",
 data = Species_richness.model2$data,
 xvar = "AREA_DoP",
 xvar.order = c("small_young", "small_old", "large_young", "large_old"), #this must be the levels of the factor in the order to be plotted, not including reference level
+xvar.labels = c("Small, Young", "Small, Old", "Large, Young", "Large, Old"),
 logLink = "e",
 xlab = "PA size and age class",
 ylab = "Relative species richness %")
 
-text(1,26, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
-	adj = 0, cex = 0.8)
+#text(1,26, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
+#	adj = 0, cex = 0.8)
 
 dev.off()
 

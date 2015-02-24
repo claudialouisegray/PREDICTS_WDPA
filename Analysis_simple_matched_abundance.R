@@ -8,11 +8,10 @@ library(influence.ME)
 
 # load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-#source("compare_randoms.R")
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 
-source("WDPA_predicts_prep_PA_11_14_for_analysis.R")
+source("prep_PA_11_14_for_analysis.R")
 
 
 
@@ -318,7 +317,7 @@ m2aztr <- lmer(log_abundance ~ 1 + log_slope + poly(log_elevation,2) + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = tropical)
 anova(m1aztr, m2aztr)
-#5.3696      1    0.02049
+#5.3696      1,11    0.02049
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.temp <- na.omit(data.temp)
@@ -329,7 +328,7 @@ m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
 anova(m1azte, m2azte)
-#1.4397      1     0.2302
+#1.4397      1,11     0.2302
 
 
 #add results to master plot
@@ -451,8 +450,8 @@ m1txp <- lmer(log_abundance ~ Within_PA +poly(ag_suit,2)+poly(log_elevation,1)+p
 m2txp <- lmer(log_abundance ~ 1+poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
-anova(m1txp , m2txp )
-# 0.0539      1     0.8164
+anova(m1txp , m2txp)
+# 0.0539      1,13     0.8164
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.i <- na.omit(data.i)
@@ -463,7 +462,7 @@ m2txi<- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#2.1396      1     0.1435
+#2.1396      1,10     0.1435
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.v <- na.omit(data.v)
@@ -474,7 +473,7 @@ m2txv <- lmer(log_abundance ~ 1 + log_elevation +  poly(ag_suit,3)+poly(log_slop
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
 anova(m1txv, m2txv)
-#5.1925      1    0.02268
+#5.1925      1,12    0.02268
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100

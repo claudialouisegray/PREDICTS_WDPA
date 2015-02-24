@@ -175,7 +175,7 @@ m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + poly(ag_suit,3)+poly(log
 	family = "poisson", data = data,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 anova(m5i,m6i)
-
+#2.1856      3,12     0.5348
 
 
 
@@ -326,7 +326,7 @@ m2ztr <- glmer(Richness_rarefied ~ 1 + poly(ag_suit,3)+poly(log_elevation,1)+pol
 	+(1|SS)+  (1|SSBS), family = "poisson", 
 	 data = data.trop)
 anova(m1ztr, m2ztr)
-#0.0057      1       0.94
+#0.0057      1,10       0.94
 
 data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")] 
 data.temp <- na.omit(data.temp)
@@ -337,7 +337,7 @@ m2zte <- glmer(Richness_rarefied ~ 1 + poly(log_slope,1) + poly(log_elevation,1)
 	+ (1|SS)+  (1|SSB), family = "poisson", 
 	 data = data.temp)
 anova(m1zte, m2zte)
-#0.6426      1     0.4228
+#0.6426      1,7     0.4228
 
 
 #add results to master plot
@@ -472,7 +472,7 @@ m2txp <- glmer(Richness_rarefied ~ 1+poly(ag_suit,3)+poly(log_elevation,1)+poly(
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.p)
 anova(m1txp , m2txp)
-#0.0095      1     0.9224
+#0.0095      1,12     0.9224
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Richness_rarefied")]
 data.i <- na.omit(data.i)
@@ -483,7 +483,7 @@ m2txi<- glmer(Richness_rarefied ~ 1 +poly(log_elevation,1)+poly(log_slope,3) + a
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 anova(m1txi, m2txi)
-#0.0466      1      0.829
+#0.0466      1,12      0.829
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")]
 data.v <- na.omit(data.v)
@@ -494,7 +494,7 @@ m2txv <- glmer(Richness_rarefied ~ 1 + poly(ag_suit,1)+poly(log_elevation,1)+ po
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
 anova(m1txv, m2txv)
-#0.5976      1     0.4395
+#0.5976      1,10     0.4395
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100

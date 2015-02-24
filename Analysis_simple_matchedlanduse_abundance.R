@@ -166,17 +166,8 @@ data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", 
 data <- na.omit(data)
 
 
-m1ai <- lmer(log_abundance ~ Within_PA +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
-m2ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
 
-anova(m1ai, m2ai)
-
-
-#doesnt converge
+#converges
 m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = matched.landuse,
@@ -336,7 +327,7 @@ m2aztr <- lmer(log_abundance ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+poly(lo
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
 anova(m1aztr, m2aztr)
-#<0.0001      1          0.99
+#<0.0001      1,16          0.99
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.temp <- na.omit(data.temp)
@@ -347,7 +338,7 @@ m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
 anova(m1azte, m2azte)
-#0.9398      1     0.3323
+#0.9398      1,11     0.3323
 
 
 #add results to master plot
@@ -472,7 +463,7 @@ m2txp <- lmer(log_abundance ~ 1+poly(ag_suit,2)+poly(log_elevation,1)+poly(log_s
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
 anova(m1txp , m2txp)
-# 0.5774      1     0.4473
+# 0.5774      1,13     0.4473
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.i <- na.omit(data.i)
@@ -483,7 +474,7 @@ m2txi<- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#0.7399      1     0.3897
+#0.7399      1,10     0.3897
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.v <- na.omit(data.v)
@@ -494,7 +485,7 @@ m2txv <- lmer(log_abundance ~ 1 + log_elevation +  poly(ag_suit,3)+poly(log_slop
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
 anova(m1txv, m2txv)
-#1.4614      1     0.2267
+#1.4614      1,13     0.2267
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100

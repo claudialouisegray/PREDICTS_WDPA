@@ -8,13 +8,12 @@ library(influence.ME)
 
 # load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-#source("compare_randoms.R")
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 
 
 
-source("WDPA_predicts_prep_PA_11_14_for_analysis.R")
+source("prep_PA_11_14_for_analysis.R")
 
 
 
@@ -64,6 +63,9 @@ m2r <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data)
 anova(m1r, m2r)
+anova(m1r, m2r)$'Chi Df'[2]
+anova(m1r, m2r)$Df[2]
+
 
 summary(m1r)
 exp(fixef(m1r)[2]) # 0.978
@@ -232,10 +234,9 @@ m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = PA_11_14_ord)
 
-
-anova(m1ri, m2ri)
 anova(m3ri, m4ri)
 summary(m4ri)
+#4.2308      3, 24     0.2376
 
 
 #PLOT
@@ -380,7 +381,7 @@ m2aztr <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
 anova(m1aztr, m2aztr)
-#1.2576      1     0.2621
+#1.2576      1, 15     0.2621
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.temp <- na.omit(data.temp)
@@ -391,7 +392,7 @@ m2azte <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.temp )
 anova(m1azte, m2azte)
-#4.2629      1    0.03895 
+#4.2629      1, 15    0.03895 
 
 
 #add results to master plot
@@ -536,7 +537,7 @@ m2txp <- lmer(range ~ 1+poly(ag_suit,1)+poly(log_elevation,3)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
 anova(m1txp , m2txp)
-#2e-04      1     0.9891
+#2e-04      1,12     0.9891
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.i <- na.omit(data.i)
@@ -547,7 +548,7 @@ m2txi<- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#6.4271      1    0.01124 
+#6.4271      1,10    0.01124 
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.v <- na.omit(data.v)
@@ -558,7 +559,7 @@ m2txv <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
 anova(m1txv, m2txv)
-#0.9901      1     0.3197
+#0.9901      1,16     0.3197
 
 
 
@@ -671,7 +672,7 @@ m2r.80 <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,
 	 data = data)
 anova(m1r, m2r)
 anova(m1r.80, m2r.80)
-
+#1.4484      1,15     0.2288
 summary(m1r.80)
 
 

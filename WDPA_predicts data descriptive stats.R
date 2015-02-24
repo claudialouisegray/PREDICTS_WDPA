@@ -68,6 +68,10 @@ spdf <- SpatialPointsDataFrame(spatial, PA_11_14)
 countries <- readOGR(dsn = "C:/GIS/Data/world_borders", "BORDERS_without_antarctica_moll")
 PAs_all <- readOGR(dsn = "C:/GIS/Data/WDPA/WDPAmollmergeJULY", "WDPAmollmergeJULY_terrestrial")
 PAs_in_study <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_PAs_moll")
+points <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_moll")
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 map.tif",
+	width = 25, height =20, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,1))
 par(mar=c(0.2,0.1,1.5,0.2))
@@ -75,12 +79,12 @@ par(mar=c(0.2,0.1,1.5,0.2))
 plot(countries, lty = NULL, border = "grey", col = "grey")
 plot(PAs_all, lty = NULL, border = rgb(0.4,0.7,0.5), col = rgb(0.4,0.7,0.5), add = T)
 plot(PAs_in_study, lty = NULL, border = rgb(0.1,0.4,0.2), col = rgb(0.1,0.4,0.2), add = T)
-plot(spatial, pch = 16, col = rgb(0.1,0.1,0.1,0.7), add = TRUE, cex = 1.5)
+plot(points, pch = 16, col = rgb(0.1,0.1,0.1,0.1), add = T, cex = 1)
+
+dev.off()
 
 
-
-
-
+### make border thickness less
 
 
 
@@ -1548,4 +1552,80 @@ M1 <- lmer(DoP ~ log_GIS_AREA + (log_GIS_AREA|Country), PA.multi)
 M2 <- lmer(DoP ~ 1 + (log_GIS_AREA|Country), PA.multi)
 anova(M1, M2)
 summary(M1)
+
+
+
+
+### are the PAs we have representative of the whole WDPA
+
+
+PAs_inc <- read.csv("N:/Documents/PREDICTS/WDPA analysis/WDPA_PA_11_14_no_sec_ind.csv", header = T)
+PAs_all <- read.csv("N:/Documents/PREDICTS/WDPA analysis/WDPA_07_14_terrestrial.csv", header = T)
+
+
+
+
+par(mfrow=c(1,2))
+PAs_inc$IUCN <- NA
+levels(PAs_inc$IUCN) <- c("I & II", "unknown", "III to VI")
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "Ia")] <- "I & II"
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "Ib")] <- "I & II"
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "II")] <- "I & II"
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "Not Reported")] <- "unknown"
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "III")] <- "III to VI"
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "VI")] <- "III to VI"
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "V")] <- "III to VI"
+PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "VI")] <- "III to VI"
+
+barplot(table(PAs_inc$IUCN), main = "PAs with PREDICTS data")
+
+PAs_all$IUCN <- NA
+levels(PAs_all$IUCN) <- c("I & II", "unknown", "III to VI")
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "Ia")] <- "I & II"
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "Ib")] <- "I & II"
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "II")] <- "I & II"
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "Not Reported")] <- "unknown"
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "III")] <- "III to VI"
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "VI")] <- "III to VI"
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "V")] <- "III to VI"
+PAs_all$IUCN[which(PAs_all$IUCN_CAT == "VI")] <- "III to VI"
+barplot(table(PAs_all$IUCN), main = "all WDPA")
+
+par(mfrow=c(1,2))
+PAs_inc$STATUS_YR[which(PAs_inc$STATUS_YR == 0 )] <- NA
+hist(PAs_inc$STATUS_YR, main = "PAs with PREDICTS data", xlab = "Status Year", xlim = c(1800, 2020), breaks = 15)
+
+PAs_all$STATUS_YR[which(PAs_all$STATUS_YR == 0 )] <- NA
+PAs_all$STATUS_YR[which(PAs_all$STATUS_YR == 1070 )] <- NA
+hist(PAs_all$STATUS_YR, main = "all WDPA", xlab = "Status Year", xlim = c(1800, 2020), breaks = 15)
+
+par(mfrow=c(1,2))
+hist(log(PAs_inc$GIS_AREA), main = "PAs with PREDICTS data", xlab = "Log(Area) km2", xlim = c(-25, 15), breaks = 15)
+hist(log(PAs_all$GIS_AREA), main = "all WDPA", xlab = "Log(Area) km2", xlim = c(-25, 15), breaks = 15)
+
+hist(PAs_inc$GIS_AREA, main = "PAs in study", xlab = "Area km2")
+hist(PAs_all$GIS_AREA, main = "all WDPA", xlab = "Area km2")
+
+names(PAs_all)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

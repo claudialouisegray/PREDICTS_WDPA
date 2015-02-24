@@ -76,6 +76,7 @@ m2r <- lmer(range ~ 1 +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data)
 anova(m1r, m2r)
+#0.4039      1     0.5251
 
 summary(m1r)
 exp(fixef(m1r)[2]) # 0.978
@@ -245,6 +246,7 @@ m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 anova(m3ri, m4ri)
+#4.6424      3,19     0.1999
 summary(m4ri)
 
 
@@ -398,7 +400,7 @@ m2aztr <- lmer(range ~ 1 +  poly(ag_suit,2)+poly(log_elevation,3)+poly(log_slope
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
 anova(m1aztr, m2aztr)
-#0.2274      1     0.6334
+#0.2274      1,13     0.6334
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.temp <- na.omit(data.temp)
@@ -409,7 +411,7 @@ m2azte <- lmer(range ~ 1 +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.temp )
 anova(m1azte, m2azte)
-#2.7593      1    0.09669 
+#2.7593      1,15    0.09669 
 
 
 #add results to master plot
@@ -554,7 +556,7 @@ m2txp <- lmer(range ~ 1+poly(ag_suit,1)+poly(log_elevation,3)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
 anova(m1txp , m2txp)
-#0.6285      1     0.4279
+#0.6285      1,12     0.4279
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.i <- na.omit(data.i)
@@ -565,7 +567,7 @@ m2txi<- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#1.2675      1     0.2602
+#1.2675      1,10     0.2602
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.v <- na.omit(data.v)
@@ -576,7 +578,7 @@ m2txv <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
 anova(m1txv, m2txv)
-#0.4311      1     0.5115
+#0.4311      1,16     0.5115
 
 
 

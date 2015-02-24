@@ -75,6 +75,7 @@ m2 <- glmer(Species_richness ~ 1 + log_slope + poly(ag_suit,3)+poly(log_elevatio
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 anova(m1, m2)
+#1.3253      1,13     0.2496
 
 summary(m1)
 # significant difference - now to plot the difference
@@ -238,7 +239,6 @@ m5i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 
-anova(m1i, m0i)
 anova(m2i, m3i)
 summary(m1i)
 
@@ -269,7 +269,7 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.land
 	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
-labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
+labels <- c("Unprotected", "III  - VI", "unknown", "I & II")
 
 levels(multiple.taxa.matched.landuse$IUCN_CAT)
 multiple.taxa.matched.landuse$IUCN_CAT <- relevel(multiple.taxa.matched.landuse$IUCN_CAT, "0")
@@ -405,7 +405,7 @@ m2ztr <- glmer(Species_richness ~ 1 + log_slope +poly(ag_suit,1)+poly(log_elevat
 	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.trop)
 anova(m1ztr, m2ztr)
-#0.1603      1     0.6889
+#0.1603      1,12     0.6889
 
 data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")] 
 data.temp <- na.omit(data.temp)
@@ -416,7 +416,7 @@ m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,1) 
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
 anova(m1zte, m2zte)
-# 1.4382      1     0.2304
+# 1.4382      1,12     0.2304
 
 
 #add results to master plot
@@ -550,7 +550,7 @@ m2txp <- glmer(Species_richness ~ 1+poly(ag_suit,1)+poly(log_elevation,2)+poly(l
 	+ (Within_PA|SS)+ (1|SSBS), family = "poisson", 
 	 data = data.p)
 anova(m1txp , m2txp)
-#0.3559      1     0.5508
+#0.3559      1,10     0.5508
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Species_richness")]
 data.i <- na.omit(data.i)
@@ -561,7 +561,7 @@ m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)+poly(log_slope,1) + ag
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 anova(m1txi, m2txi)
-#1.4926      1     0.2218
+#1.4926      1,10     0.2218
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")]
 data.v <- na.omit(data.v)
@@ -572,7 +572,7 @@ m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+ pol
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
 anova(m1txv, m2txv)
-#7e-04      1     0.9787
+#7e-04      1,14     0.9787
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100

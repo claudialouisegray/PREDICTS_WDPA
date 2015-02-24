@@ -8,13 +8,12 @@ library(influence.ME)
 
 # load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-#source("compare_randoms.R")
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 
 
 
-source("WDPA_predicts_prep_PA_11_14_for_analysis.R")
+source("prep_PA_11_14_for_analysis.R")
 
 
 
@@ -237,7 +236,7 @@ m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,3) + a
 	family = "poisson", data = data)
 
 anova(m1i, m0i) # ordinal doesnt make any difference
-anova(m2i, m3i)
+anova(m2i, m3i) # 11.088      3,21    0.01126
 summary(m3i)
 
 
@@ -397,7 +396,7 @@ m2ztr <- glmer(Species_richness ~ 1 + log_slope +poly(ag_suit,1)+poly(log_elevat
 	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.trop)
 anova(m1ztr, m2ztr)
-# 8.6201      1   0.003325 
+# 8.6201      1,12   0.003325 
 
 data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")] 
 data.temp <- na.omit(data.temp)
@@ -408,7 +407,7 @@ m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,2) 
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
 anova(m1zte, m2zte)
-# 2.6274      1      0.105
+# 2.6274      1,12      0.105
 
 
 #add results to master plot
@@ -541,8 +540,8 @@ m1txp <- glmer(Species_richness ~ Within_PA + poly(ag_suit,1)+poly(log_elevation
 m2txp <- glmer(Species_richness ~ 1+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.p)
-anova(m1txp , m2txp )
-#1.761      1     0.1845
+anova(m1txp , m2txp)
+#1.761      1,13     0.1845
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Species_richness")]
 data.i <- na.omit(data.i)
@@ -553,7 +552,7 @@ m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)+poly(log_slope,1) + ag
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 anova(m1txi, m2txi)
-#4.0067      1    0.04532
+#4.0067      1,10    0.04532
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")]
 data.v <- na.omit(data.v)
@@ -564,7 +563,7 @@ m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+ pol
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
 anova(m1txv, m2txv)
-#3.4677      1    0.06258
+#3.4677      1,13    0.06258
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100

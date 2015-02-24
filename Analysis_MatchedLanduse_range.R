@@ -28,12 +28,12 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
 
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 source("plotFactorInteraction.R")
 
 #load data
-source("WDPA_predicts_prep_matched.landuse_for_analysis.R")
+source("prep_matched.landuse_for_analysis.R")
 
 validate <- function(x) {
   par(mfrow = c(1,2))
@@ -263,21 +263,22 @@ XVr <- CrossValidate(range.model$model,-1, divFactor = "Predominant_habitat", fi
 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/range vs size and age vs taxon.tif",
-	width = 25, height = 20, units = "cm", pointsize = 12, res = 300)
+	width = 20, height = 15, units = "cm", pointsize = 12, res = 300)
 
 plotFactorInteraction(model = range.model2$model,
 responseVar = "Endemicity",
 data = range.model2$data,
 xvar = "AREA_DoP",
 xvar.order = c("small_young", "small_old", "large_young", "large_old"),  #this must be the levels of the factor in the order to be plotted, not including reference level
+xvar.labels = c("Small, Young", "Small, Old", "Large, Young", "Large, Old"),
 intvar = "taxon_of_interest",
 intvar.order = c("Invertebrates", "Vertebrates"),
 logLink = "n",
 xlab = "PA size and age class",
 ylab = "Relative endemicity %")
 
-text(0.7,8, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
-	adj = 0, cex = 0.8)
+#text(0.7,8, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
+#	adj = 0, cex = 0.8)
 
 
 dev.off()

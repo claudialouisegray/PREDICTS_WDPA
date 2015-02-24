@@ -285,7 +285,7 @@ XVr <- CrossValidate(log_abundance.model$model,-1, divFactor = "Predominant_habi
 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/abundance vs size and age vs taxon.tif",
-	width = 25, height =20, units = "cm", pointsize = 12, res = 300)
+	width = 20, height = 15, units = "cm", pointsize = 12, res = 300)
 
 plotFactorInteraction(model = log_abundance.model2$model,
 responseVar = "log_abundance",

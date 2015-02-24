@@ -9,6 +9,7 @@ plotFactorInteraction <- function (model,responseVar, data,
 				xvar = NULL,
 				intvar = NULL,
 				xvar.order = NULL,
+				xvar.labels = xvar.order,
 				intvar.order = NULL, 
 				logLink = "n",
 				seMultiplier=1.96,
@@ -16,7 +17,8 @@ plotFactorInteraction <- function (model,responseVar, data,
 				cex.txt = 0.5,
 				ref.text = "unprotected",
 				xlab = "",
-				ylab = ""){
+				ylab = "",
+				ylab.axis = c(-50,0,50,100)){
 
 # reference level must be set to age and size of 0
 trop.col <- rgb(0.9,0,0)
@@ -83,19 +85,15 @@ if(length(grep(":", names(fixef(model)))) > 0){
   if(responseVar == "Endemicity"){
    # convert to real values and get reciprocal
   intercept <- fixef(model)[1]
-  y1 <- 1/(y+intercept)
-  yplus1<-1/(yplus+intercept)
-  yminus1<-1/(yminus+intercept)
+  y1 <- 1/10^(y+intercept)
+  yplus1<-1/10^(yplus+intercept)
+  yminus1<-1/10^(yminus+intercept)
 
-  # then get difference between this and 1/intercept
-  #y <- y - 1/intercept
-  #yplus <- yplus - 1/intercept
-  #yminus <- yminus - 1/intercept
 
   # express this as a percentange of intercept, relative to 100
-  y <- 100*(y1/(1/intercept)) -100
-  yplus <- 100*yplus1/(1/intercept) -100
-  yminus <- 100*yminus1/(1/intercept) -100
+  y <- 100*y1/(1/10^(intercept)) -100
+  yplus <- 100*yplus1/(1/10^(intercept)) -100
+  yminus <- 100*yminus1/(1/10^(intercept)) -100
   }
 
 
@@ -121,35 +119,63 @@ if(length(grep(":", names(fixef(model)))) > 0){
   }
 
 
-xlims <- c(1, (length(xvar.order)+1)*(length(intvar.order)+1))
-ylims <- c(min(yminus)-10, max(yplus) + 10)
+xlims <- c(0.5, (length(xvar.order)+1)*(length(intvar.order)+1)+0.5)
+ylims <- c(-80,100)
+
+#if(responseVar == "Endemicity"){
+#	ylims <- c(min(yplus)-10, max(yminus) + 10)
+#	}else{
+#	ylims <- c(min(yminus)-10, max(yplus) + 10)
+#	}
+
+
 par(mar = c(8,4,1,2), mgp = c(3,0.6,0))
 plot(-1, -1, xlim = xlims, bty = "l",
 		ylim = ylims, xlab = "", ylab = ylab, cex.lab = 1.2, axes = F)
-axis(2,c(-50, 0, 50, 100), c(-50, 0, 50, 100))
+axis(2,ylab.axis, ylab.axis)
 mtext(side = 1, text = xlab, line =6, cex = 1.2)
+abline(h = 0, lty = 2, col = 1)
 
 shapes <- NULL
 #make shapes for plot
-if(intvar == "taxon_of_interest"){
-	shapes <- rep(17, length(yData$int))
-	}else if (intvar == "Zone"){
-	shapes <- rep(15, length(yData$int))
+if(is.null(intvar) == F){
+	if(intvar == "taxon_of_interest"){
+		shapes <- rep(17, length(yData$int))
+		}else if (intvar == "Zone"){
+		shapes <- rep(15, length(yData$int))
+		}else{
+		shapes <- as.numeric(yData$int) + 14
+	}
 	}else{
-	shapes <- as.numeric(yData$int) + 14
+	shapes <- c(1,rep(16,nrow(yData)-1))
+	}
+
+
+if(is.null(intvar) == F){
+	if(intvar == "taxon_of_interest"){
+		shapes[which(yData$x == "reference")] <- 24
+		}else if (intvar == "Zone"){
+		shapes[which(yData$x == "reference")] <- 22
+		}
+	}else{
+	shapes[which(yData$x == "reference")] <- 21
 	}
 
 colours <- NULL
 #make colours for plot
-if(intvar == "taxon_of_interest"){
-	colours[which(yData$int == "reference")]  <- p.col
-	colours[which(yData$int == "Invertebrates")]  <- i.col
-	colours[which(yData$int == "Vertebrates")]  <- v.col
-	}else if (intvar == "Zone"){
-	colours[which(yData$int == "reference")]  <- temp.col
-	colours[which(yData$int == "reference")]  <- trop.col
+if(is.null(intvar) == F){
+	if(intvar == "taxon_of_interest"){
+		colours[which(yData$int == "reference")]  <- p.col
+		colours[which(yData$int == "Invertebrates")]  <- i.col
+		colours[which(yData$int == "Vertebrates")]  <- v.col
+		}else if (intvar == "Zone"){
+		colours[which(yData$int == "reference")]  <- temp.col
+		colours[which(yData$int == "reference")]  <- trop.col
+		}else{
+		colours <- rep(1,length(yData$int))
+		}
 	}else{
-	colours <- rep(1,length(yData$int))
+	colours <- rep(1,nrow(yData))
 	}
 
 
@@ -160,6 +186,7 @@ for(L in c("reference",intvar.order)){
 		yplus[which(yData$int == L )], 
 		yminus[which(yData$int == L )],
 		col = colours[which(yData$int == L )],  
+		bg = "white",
 		pch = shapes[which(yData$int == L )],
 		errbar.col = colours[which(yData$int == L )], 
 		add = T, 
@@ -169,11 +196,17 @@ for(L in c("reference",intvar.order)){
 	}else{
 	text(mean(xPositions), max(ylims), L)
 	}
-	axis(1, p:(p -1 +length(y[which(yData$int == L )])), c(ref.text, xvar.order), 
+	axis(1, p:(p -1 +length(y[which(yData$int == L )])), c(ref.text, xvar.labels), 
 		las = 2, cex.axis = 1, tick = 0)
+	#put in points to cover up line
+	points(p,0,bg = "white", pch = shapes[which(yData$x == "reference" &yData$int == L)],
+		col = colours[which(yData$x == "reference" &yData$int == L)])
 	p <- p + length(y[which(yData$int == L )])
 	abline(v = p - 0.5, col = 8)
 }
+
+
+
 if(!is.null(intvar)){
 	nlabels <- aggregate(data[,c("SS")], by = list(xvar = data[,xvar], intvar = data[,intvar]), length)
 	}else{
@@ -181,7 +214,6 @@ if(!is.null(intvar)){
 	}
 
 text(1:max(xlims),min(ylims), nlabels$x)
-abline(h = 0, lty = 2, col = 1)
 
 }
 
