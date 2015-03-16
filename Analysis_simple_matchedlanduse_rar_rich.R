@@ -104,10 +104,9 @@ plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5),
 	yaxt = "n", xaxt = "n",
 	ylab = "Rarefied richness difference (% ± 95%CI)",
 	xlab = "")
-data <- multiple.taxa.matched.landuse[,c("Within_PA", "SSS", "Richness_rarefied")]
-data <- na.omit(data)
-text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
-text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+
+text(2,80, paste("n =", length(data$SS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,80, paste("n =", length(data$SS[which(data$Within_PA == "no")]), sep = " "))
 axis(1, c(1,2), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
@@ -120,7 +119,7 @@ dev.off()
 #keep points for master plot
 r.sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
-		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
+		n.site = c(length(data$SS[which(data$Within_PA == "no")]), length(data$SS[which(data$Within_PA == "yes")])))
 
 
 
@@ -219,12 +218,11 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
-data <- multiple.taxa.matched.landuse[,c("IUCN_CAT", "SSS", "Richness_rarefied")]
-data <- na.omit(data)
-text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
-text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
-text(3, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
-text(4, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
+
+text(1, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(3, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
+text(4, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "1.5")]), sep = " "))
 
 arrows(seq(2,length(points),1),CI[,1],
 	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
@@ -240,9 +238,9 @@ points
 
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
 		upper = CI[,1], lower = CI[,2],
-		n.site = c(length(data$SSS[which(data$IUCN_CAT == "4.5")]), 
-			length(data$SSS[which(data$IUCN_CAT == "7")]),
-			length(data$SSS[which(data$IUCN_CAT == "1.5")])))
+		n.site = c(length(data$SS[which(data$IUCN_CAT == "4.5")]), 
+			length(data$SS[which(data$IUCN_CAT == "7")]),
+			length(data$SS[which(data$IUCN_CAT == "1.5")])))
 r.sp.plot2 <- rbind(r.sp.plot1, IUCN.plot)
 
 
@@ -353,7 +351,8 @@ a.zone <- data.frame(label = c("Tropical", "Temperate"),
 				est = c(ztr.est, zte.est), 
 				upper = c(ztr.upper, zte.upper), 
 				lower = c(ztr.lower, zte.lower), 
-				n.site = c(nrow(data.trop), nrow(data.temp)))
+				n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]), 
+					nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
 r.sp.plot3 <- rbind(r.sp.plot2, a.zone)
 
 
@@ -509,13 +508,13 @@ txv.est <- exp(fixef(m1txv)[2])*100
 txv.upper <- exp(fixef(m1txv)[2] + 1.96* se.fixef(m1txv)[2])*100
 txv.lower <- exp(fixef(m1txv)[2] - 1.96* se.fixef(m1txv)[2])*100
 
-
-
 tax <- data.frame(label = c("Plants", "Inverts", "Verts"),
 				est = c(txp.est, txi.est, txv.est), 
 				upper = c(txp.upper, txi.upper, txv.upper), 
 				lower = c(txp.lower, txi.lower, txv.lower), 
-				n.site = c(nrow(data.p), nrow(data.i), nrow(data.v)))
+				n.site = c(nrow(data.p[which(data.p$Within_PA == "yes"),]), 
+					nrow(data.i[which(data.i$Within_PA == "yes"),]), 
+					nrow(data.v[which(data.v$Within_PA == "yes"),])))
 r.sp.plot <- rbind(r.sp.plot3, tax)
 
 

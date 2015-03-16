@@ -227,6 +227,51 @@ RS <-  character(0)
 # "log_abundance~poly(ag_suit,1)+taxon_of_interest+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
 
 
+log_abundance.best.random <- compare_randoms(matched.landuse, 
+				responseVar = "log_abundance",
+				keepVars = keepVars,
+				fixedFactors=fF,
+                         fixedTerms=fT,
+                       fixedInteractions=fI,
+                         otherRandoms=c("Predominant_habitat"),
+				fixed_RandomSlopes = RS,
+                          fitInteractions=FALSE,
+				verbose=TRUE)
+
+log_abundance.best.random$best.random
+
+# model select
+log_abundance.poly2 <- model_select(all.data  = matched.landuse, 
+			     responseVar = "log_abundance", 
+			     keepVars = keepVars,
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+                       fixedInteractions=fI,
+                       randomStruct = log_abundance.best.random$best.random,
+			     otherRandoms=c("Predominant_habitat"),
+                       verbose=TRUE)
+log_abundance.poly2$stats
+
+data <- log_abundance.poly2$data
+
+m0 <- lmer(log_abundance~AREA_DoP+taxon_of_interest+Zone+ (1|SS)+ (1|SSB)+(1|Predominant_habitat), data)
+m1 <- lmer(log_abundance~AREA_DoP+taxon_of_interest+Zone+ poly(log_slope,1)+(1|SS)+ (1|SSB)+(1|Predominant_habitat), data)
+m2 <- lmer(log_abundance~AREA_DoP+taxon_of_interest+Zone + poly(log_slope,2)+(1|SS)+ (1|SSB)+(1|Predominant_habitat), data)
+# table says slope should be linear, this says cubic more important
+
+m0 <- lmer(log_abundance~AREA_DoP+taxon_of_interest+Zone+ (1|SS)+ (1|SSB)+(1|Predominant_habitat), data)
+m1 <- lmer(log_abundance~AREA_DoP+taxon_of_interest+Zone+ poly(log_elevation,1)+(1|SS)+ (1|SSB)+(1|Predominant_habitat), data)
+m2 <- lmer(log_abundance~AREA_DoP+taxon_of_interest+Zone + poly(log_elevation,2)+(1|SS)+ (1|SSB)+(1|Predominant_habitat), data)
+# table says elevation cubic, this says should be linear
+
+anova(m1, m0)
+anova(m2, m0)
+anova(m2, m1)
+
+
+
+
 # add interactions 
 fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
 fT <- list()
@@ -244,18 +289,7 @@ gamm.model <- gamm4(log_abundance ~ Zone + taxon_of_interest + ag_suit + s(log_e
 anova(gamm.model$gam)
 plot(gamm.model$gam)
 
-log_abundance.best.random <- compare_randoms(matched.landuse, 
-				responseVar = "log_abundance",
-				keepVars = keepVars,
-				fixedFactors=fF,
-                         fixedTerms=fT,
-                       fixedInteractions=fI,
-                         otherRandoms=c("Predominant_habitat"),
-				fixed_RandomSlopes = RS,
-                          fitInteractions=FALSE,
-				verbose=TRUE)
 
-log_abundance.best.random$best.random
 
 # model select
 log_abundance.model2 <- model_select(all.data  = matched.landuse, 

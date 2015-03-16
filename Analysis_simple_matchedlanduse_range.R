@@ -172,10 +172,8 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-data <- matched.landuse[,c("Within_PA", "SSS", "range")]
-data <- na.omit(data)
-text(2,90, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
-text(1,90, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
+text(2,90, paste("n =", length(data$SS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,90, paste("n =", length(data$SS[which(data$Within_PA == "no")]), sep = " "))
 
 
 
@@ -186,7 +184,7 @@ dev.off()
 #get details for master plot
 r.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
-		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
+		n.site = c(length(data$SS[which(data$Within_PA == "no")]), length(data$SS[which(data$Within_PA == "yes")])))
 
 
 
@@ -302,12 +300,11 @@ abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
 
-data <- matched.landuse[,c("IUCN_CAT", "SSS", "range")]
-data <- na.omit(data)
-text(1, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
-text(2, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
-text(3, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
-text(4, 90, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
+
+text(1, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(3, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
+text(4, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "1.5")]), sep = " "))
 
 
 dev.off()
@@ -316,9 +313,9 @@ dev.off()
 
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
 		upper = CI[,1], lower = CI[,2],
-		n.site = c(length(data$SSS[which(data$IUCN_CAT == "1.5")]), 
-			length(data$SSS[which(data$IUCN_CAT == "4.5")]),
-			length(data$SSS[which(data$IUCN_CAT == "7")])))
+		n.site = c(length(data$SS[which(data$IUCN_CAT == "4.5")]), 
+			length(data$SS[which(data$IUCN_CAT == "7")]),
+			length(data$SS[which(data$IUCN_CAT == "1.5")])))
 r.plot2 <- rbind(r.plot1, IUCN.plot)
 
 
@@ -449,7 +446,8 @@ a.zone <- data.frame(label = c("Tropical", "Temperate"),
 				est = c(aztr.est, azte.est), 
 				upper = c(aztr.upper, azte.upper), 
 				lower = c(aztr.lower, azte.lower), 
-				n.site = c(nrow(data.trop), nrow(data.temp)))
+				n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]), 
+					nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
 r.plot3 <- rbind(r.plot2, a.zone)
 
 
@@ -629,7 +627,9 @@ tax <- data.frame(label = c("Plants", "Invertebrates", "Vertebrates"),
 				est = c(txp.est, txi.est, txv.est), 
 				upper = c(txp.upper, txi.upper, txv.upper), 
 				lower = c(txp.lower, txi.lower, txv.lower), 
-				n.site = c(nrow(data.p), nrow(data.i), nrow(data.v)))
+				n.site = c(nrow(data.p[which(data.p$Within_PA == "yes"),]),
+					nrow(data.i[which(data.i$Within_PA == "yes"),]), 
+					nrow(data.v[which(data.v$Within_PA == "yes"),])))
 r.plot <- rbind(r.plot3, tax)
 
 
