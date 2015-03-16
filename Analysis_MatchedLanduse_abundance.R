@@ -115,8 +115,33 @@ keepVars <- character(0)
 fI <- character(0)
 RS <-  c("log_bound_dist_km_PA_neg")
 
-# without block:log_abundance~poly(log_AREA.PA,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|Predominant_habitat)
-# with block: log_abundance~poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)"
+
+log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
+				fixedFactors=fF,
+                         fixedTerms=fT,
+                       fixedInteractions=fI,
+                         otherRandoms=c("Predominant_habitat"),
+				fixed_RandomSlopes = RS,
+                          fitInteractions=FALSE,
+				verbose=TRUE)
+
+
+log_abundance.best.random$best.random 
+
+
+# model select
+log_abundance.poly <- model_select(all.data  = matched.landuse, 
+			     responseVar = "log_abundance", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = log_abundance.best.random$best.random,
+			     otherRandoms=c("Predominant_habitat"),
+                       verbose=TRUE)
+
+
 # all 8 landuses in random:  log_abundance~poly(ag_suit,3)+poly(log_bound_dist_km_PA_neg,3)+poly(log_elevation,2)+poly(log_slope,2)+taxon_of_interest+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)
 
 # look at gamm
@@ -162,19 +187,6 @@ RS <-  c("log_bound_dist_km_PA_neg")
 #+taxon_of_interest:poly(log_bound_dist_km_PA_neg,3)+poly(ag_suit,3)+poly(log_slope,2)+poly(log_elevation,2)+(1+log_bound_dist_km_PA_neg|SS)+(1|SSB)+(1|Predominant_habitat)"
 
 
-
-
-log_abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
-				fixedFactors=fF,
-                         fixedTerms=fT,
-                       fixedInteractions=fI,
-                         otherRandoms=c("Predominant_habitat"),
-				fixed_RandomSlopes = RS,
-                          fitInteractions=FALSE,
-				verbose=TRUE)
-
-
-log_abundance.best.random$best.random 
  
 
 

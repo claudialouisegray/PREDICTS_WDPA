@@ -15,7 +15,15 @@ source("model_select.R")
 
 source("prep_PA_11_14_for_analysis.R")
 
+size <- aggregate(SSS ~ SS, PA_11_14, length)
+hist(size$SSS, breaks = 50, col = 8) # break after 5
+length(which(size$SSS <= 5)) # 19 out of 167
+length(which(size$SSS <= 10)) # 41 out of 167
+length(which(size$SSS <= 25)) # 89 out of 167
 
+to.keep <- size$SS[which(size$SSS > 10)]
+no.small <- subset(multiple.taxa.PA_11_14, SS %in% to.keep)
+nrow(no.small)
 
 
 
@@ -28,7 +36,7 @@ keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
 
-Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
+Species_richness.best.random <- compare_randoms(no.small, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -43,28 +51,29 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species
 Species_richness.best.random$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
 
-sp.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
+sp.model <- model_select(all.data  = no.small , 
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = "(Within_PA|SS) + (1|SSB) + (1|SSBS)",
+                       randomStruct = Species_richness.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
-# Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Within_PA+(Within_PA|SS)+(1|SSB)+(1|SSBS)
+# "Species_richness~poly(ag_suit,1)+poly(log_elevation,1)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
-data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
+data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
 data <- na.omit(data)
-m1 <- glmer(Species_richness ~ Within_PA + log_slope + poly(log_elevation,2) + ag_suit
+m1 <- glmer(Species_richness ~ Within_PA + log_slope + poly(log_elevation,1) + poly(ag_suit,1)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
-m2 <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,2) + ag_suit
+m2 <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,1)  + poly(ag_suit,1)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 anova(m1, m2)
+#7.9251      1   0.004875 
 
 
 # redo with non-orthogonal polynomials for predicting from rasters
@@ -125,8 +134,6 @@ exp(fixef(m1)[1] + fixef(m1)[2]-1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
 
 # plot
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model sp rich.tif",
-	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
 y <- as.numeric(fixef(m1)[2])
@@ -146,9 +153,10 @@ plot(points ~ c(1,2), ylim = c(80,150), xlim = c(0.5,2.5),
 	ylab = "Species richness difference (% ± 95%CI)",
 	xlab = "")
 
-
-text(2,80, paste("n =", length(data$SS[which(data$Within_PA == "yes")]), sep = " "))
-text(1,80, paste("n =", length(data$SS[which(data$Within_PA == "no")]), sep = " "))
+data <- no.small[,c("Within_PA", "SSS", "Species_richness", "log_elevation", "log_slope", "ag_suit")]
+data <- na.omit(data)
+text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
 
 
 axis(1, c(1,2), labels)
@@ -157,18 +165,18 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-dev.off()
+
 
 #keep points for master plot
 sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
-		n.site = c(length(data$SS[which(data$Within_PA == "no")]), length(data$SS[which(data$Within_PA == "yes")])))
+		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
 
 
 
 ### simple species richness with IUCN cat 
 
-multiple.taxa.PA_11_14$IUCN_CAT <- relevel(multiple.taxa.PA_11_14$IUCN_CAT, "0")
+no.small$IUCN_CAT <- relevel(no.small$IUCN_CAT, "0")
 
 # check polynomials for confounding variables
 fF <- c("IUCN_CAT") 
@@ -178,7 +186,7 @@ fI <- character(0)
 RS <-  c("IUCN_CAT")
 
 
-Species_richness.best.random.IUCN <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
+Species_richness.best.random.IUCN <- compare_randoms(no.small, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -193,7 +201,7 @@ Species_richness.best.random.IUCN <- compare_randoms(multiple.taxa.PA_11_14, "Sp
 Species_richness.best.random.IUCN$best.random # "(1+IUCN_CAT|SS)+ (1|SSBS)+ (1|SSB)"
 
 
-sp.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
+sp.model.IUCN <- model_select(all.data  = no.small, 
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
@@ -204,70 +212,41 @@ sp.model <- model_select(all.data  = multiple.taxa.PA_11_14,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
-# "Species_richness~IUCN_CAT+poly(ag_suit,1)+poly(log_elevation,3)+(IUCN_CAT|SS)+(1|SSB)+(1|SSBS)"
-# but, doesnt converge for elevation down to quadratic
+# "Species_richness~IUCN_CAT+poly(ag_suit,3)+poly(log_elevation,2)+(1+IUCN_CAT|SS)+(1|SSBS)+(1|SSB)"
+# doesnt converge with agsuit lower polynomial, try with both to check
 
-#check best random again after decided polynomials
-# check polynomials for confounding variables
-fF <- c("IUCN_CAT") 
-fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "3")
-keepVars <- list()
-fI <- character(0)
-RS <-  c("IUCN_CAT")
-
-Species_richness.best.random.IUCN2 <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
-				fitFamily = "poisson",
-				siteRandom = TRUE,
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
-
-Species_richness.best.random.IUCN2$best.random
-Species_richness.best.random.IUCN2$full.results
-
-data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
+data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
 data <- na.omit(data)
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "4.5")
 
-m2i <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,3) + ag_suit
+m2i <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,2) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
-m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,3) + ag_suit
+m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,2) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
-anova(m1i, m0i) # ordinal doesnt make any difference
-anova(m2i, m3i) # 11.088      3,21    0.01126
+
+m2i_ <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,2) + poly(ag_suit,3)
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = data)
+
+m3i_ <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,2) + poly(ag_suit,3)
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = data)
+
+anova(m2i, m3i) # 8.5208      3    0.03639
+anova(m2i_, m3i_) # 8.6802      3    0.03386 
 summary(m3i)
 
 
 
-
-#estimate of 4.5 relative to 1.5
-#set 1.5 as reference
-
-exp(fixef(m3i)[which(names(fixef(m3i)) == "IUCN_CAT1.5")])
-exp(fixef(m3i)[which(names(fixef(m3i)) == "IUCN_CAT1.5")]
-	+2*se.fixef(m3i)[which(names(fixef(m3i)) == "IUCN_CAT1.5")])
-exp(fixef(m3i)[which(names(fixef(m3i)) == "IUCN_CAT1.5")]
-	-2*se.fixef(m3i)[which(names(fixef(m3i)) == "IUCN_CAT1.5")])
-
-
 # plot 
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model sp rich IUCN.tif",
-	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
-
 
 labels <- c("Unprotected", "III  - VI", "unknown",  "I & II" )
 
-data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
+data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
 data <- na.omit(data)
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
@@ -297,8 +276,6 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
-
-
 text(1, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = " "))
 text(3, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
@@ -309,7 +286,7 @@ arrows(seq(2,length(points),1),CI[,1],
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
-dev.off()
+
 
 
 #add points for master plot
@@ -328,8 +305,8 @@ sp.plot2 <- rbind(sp.plot1, IUCN.plot)
 # simple species richness for Zone data
 
 
-sp.tropical <- subset(multiple.taxa.PA_11_14, Zone == "Tropical")
-sp.temperate <- subset(multiple.taxa.PA_11_14, Zone == "Temperate")
+sp.tropical <- subset(no.small, Zone == "Tropical")
+sp.temperate <- subset(no.small, Zone == "Temperate")
 
 # check polynomials for confounding variables
 fF <- c("Within_PA" ) 
@@ -350,7 +327,7 @@ Sp.best.random.trop <- compare_randoms(sp.tropical, "Species_richness",
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
-Sp.best.random.trop$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
+Sp.best.random.trop$best.random #
 
 Sp.best.random.temp <- compare_randoms(sp.temperate, "Species_richness",
 				fitFamily = "poisson",
@@ -364,7 +341,7 @@ Sp.best.random.temp <- compare_randoms(sp.temperate, "Species_richness",
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
-Sp.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
+Sp.best.random.temp$best.random #
 
 # get polynomial relationships
 sp.model.trop <- model_select(all.data  = sp.tropical, 
@@ -379,6 +356,7 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
                        verbose=TRUE)
 #"Species_richness~poly(ag_suit,1)+poly(log_elevation,3)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
+
 sp.model.temp <- model_select(all.data  = sp.temperate, 
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
@@ -389,31 +367,31 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
                        randomStruct = Sp.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"Species_richness~poly(log_elevation,1)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+#"Species_richness~poly(log_elevation,3)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 # run models
 data.trop <- sp.tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Species_richness")] 
 data.trop <- na.omit(data.trop)
-m1ztr <- glmer(Species_richness ~ Within_PA + log_slope + poly(ag_suit,1)+poly(log_elevation,3)
+m1ztr <- glmer(Species_richness ~ Within_PA + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson",
 	 data = data.trop)
-m2ztr <- glmer(Species_richness ~ 1 + log_slope +poly(ag_suit,1)+poly(log_elevation,3)
+m2ztr <- glmer(Species_richness ~ 1 + log_slope +poly(ag_suit,3)+poly(log_elevation,3)
 	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.trop)
 anova(m1ztr, m2ztr)
-# 8.6201      1,12   0.003325 
+# 7.0857      1    0.00777 
 
 data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")] 
 data.temp <- na.omit(data.temp)
-m1zte <- glmer(Species_richness ~ Within_PA +poly(log_slope,2) + poly(log_elevation,2) + ag_suit
+m1zte <- glmer(Species_richness ~ Within_PA +poly(log_slope,2) + poly(log_elevation,3) + ag_suit
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
-m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,2) + ag_suit
+m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,3) + ag_suit
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
 anova(m1zte, m2zte)
-# 2.6274      1,12      0.105
+# 1.2207      1     0.2692
 
 
 #add results to master plot
@@ -441,9 +419,9 @@ sp.plot3 <- rbind(sp.plot2, a.zone)
 
 # species richness and taxon
 
-plants <- subset(multiple.taxa.PA_11_14, taxon_of_interest == "Plants")
-inverts <- subset(multiple.taxa.PA_11_14, taxon_of_interest == "Invertebrates")
-verts <- subset(multiple.taxa.PA_11_14, taxon_of_interest == "Vertebrates")
+plants <- subset(no.small, taxon_of_interest == "Plants")
+inverts <- subset(no.small, taxon_of_interest == "Invertebrates")
+verts <- subset(no.small, taxon_of_interest == "Vertebrates")
 nrow(plants)
 nrow(inverts)
 nrow(verts)
@@ -467,7 +445,7 @@ best.random.p <- compare_randoms(plants, "Species_richness",
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
-best.random.p$best.random # "(1+Within_PA|SS)+ (1|SSB)"
+best.random.p$best.random # 
 
 best.random.i <- compare_randoms(inverts, "Species_richness",
 				fitFamily = "poisson",
@@ -480,7 +458,7 @@ best.random.i <- compare_randoms(inverts, "Species_richness",
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
-best.random.i$best.random # "(1+Within_PA|SS)+ (1|SSB)"
+best.random.i$best.random #
 
 best.random.v <- compare_randoms(verts, "Species_richness",
 				fitFamily = "poisson",
@@ -493,7 +471,7 @@ best.random.v <- compare_randoms(verts, "Species_richness",
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
-best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
+best.random.v$best.random #
 
 
 
@@ -510,7 +488,7 @@ model.p <- model_select(all.data  = plants,
                        randomStruct =best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+# "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 model.i <- model_select(all.data  = inverts, 
 			     responseVar = "Species_richness", 
@@ -522,7 +500,7 @@ model.i <- model_select(all.data  = inverts,
                        randomStruct =best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"Species_richness~poly(log_elevation,1)+poly(log_slope,1)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+# "Species_richness~poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 model.v <- model_select(all.data  = verts, 
@@ -535,7 +513,7 @@ model.v <- model_select(all.data  = verts,
                        randomStruct =best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+#"Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 # run models
@@ -548,29 +526,29 @@ m2txp <- glmer(Species_richness ~ 1+poly(ag_suit,1)+poly(log_elevation,2)+poly(l
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.p)
 anova(m1txp , m2txp)
-#1.761      1,13     0.1845
+# 1.6535      1     0.1985
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Species_richness")]
 data.i <- na.omit(data.i)
-m1txi <- glmer(Species_richness ~ Within_PA +poly(log_elevation,1)+poly(log_slope,1) +ag_suit
+m1txi <- glmer(Species_richness ~ Within_PA +poly(log_elevation,1)+poly(log_slope,1) + poly(ag_suit,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
-m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)+poly(log_slope,1) + ag_suit
+m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)+poly(log_slope,1) + poly(ag_suit,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 anova(m1txi, m2txi)
-#4.0067      1,10    0.04532
+#2.4033      1     0.1211
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")]
 data.v <- na.omit(data.v)
-m1txv <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,2)+ poly(log_slope,1)
+m1txv <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)+ poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
-m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+ poly(log_slope,1)
+m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+ poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
 anova(m1txv, m2txv)
-#3.4677      1,13    0.06258
+#3.5296      1    0.06028
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -603,7 +581,7 @@ sp.plot <- rbind(sp.plot3, tax)
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models sp rich.tif",
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models sp rich NoSmall.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)

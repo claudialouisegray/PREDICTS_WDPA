@@ -41,11 +41,13 @@ source("model_select.R")
 
 
 #load data for matched studies
+setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("prep_matched.landuse_for_analysis.R")
 data <- matched.landuse
 
 # or if using LUPA data
-source("rep_PA_11_14_for_analysis.R")
+setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
+source("prep_PA_11_14_for_analysis.R")
 data <- PA_11_14
 nrow(PA_11_14)
 
@@ -55,36 +57,135 @@ long.lat <- PA_11_14[,c("Longitd", "Latitud")]
 spatial <- SpatialPoints(long.lat)
 plot(spatial)
 
-PA.predicts$IUCN_CAT <- factor(PA.predicts$IUCN_CAT, ordered = F)
-PA.predicts$STATUS <- factor(PA.predicts$STATUS, ordered = F)
-PA.predicts$DESIG_TYPE <- factor(PA.predicts$DESIG_TYPE, ordered = F)
-
-
 spdf <- SpatialPointsDataFrame(spatial, PA_11_14)
 #writeOGR(obj = spdf, dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg", driver = "ESRI Shapefile")
 
 
+# create shapefile for matched.landuse data
+long.lat <- matched.landuse[,c("Longitd", "Latitud")]
+spatial <- SpatialPoints(long.lat)
+plot(spatial)
+
+
+spdf <- SpatialPointsDataFrame(spatial,matched.landuse)
+#writeOGR(obj = spdf, dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse", driver = "ESRI Shapefile")
+
+
+# create shapefile of sites in PA_11_14 but not in matched landuse
+additional <- PA_11_14[which(PA_11_14$SSS %in% matched.landuse$SSS == F),]
+nrow(additional)
+long.lat <- additional[,c("Longitd", "Latitud")]
+spatial <- SpatialPoints(long.lat)
+
+spdf <- SpatialPointsDataFrame(spatial,additional)
+#writeOGR(obj = spdf, dsn = "C:/GIS/PA_predicts_mapping", "additional", driver = "ESRI Shapefile")
+
 # map these
 countries <- readOGR(dsn = "C:/GIS/Data/world_borders", "BORDERS_without_antarctica_moll")
 PAs_all <- readOGR(dsn = "C:/GIS/Data/WDPA/WDPAmollmergeJULY", "WDPAmollmergeJULY_terrestrial")
-PAs_in_study <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_PAs_moll")
-points <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_moll")
+#PAs_LUPA <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_PAs_moll")
+#PAs_ML <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse_PAs_moll")
+points_LUPA <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_moll")
+points_ML <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse_moll")
+points_additional <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "additional_moll")
+lines <- readOGR("C:/GIS/Data/world_borders", "equator_tropics_moll")
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 map.tif",
+
+
+tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 map.tif",
 	width = 25, height =20, units = "cm", pointsize = 12, res = 300)
-
 par(mfrow = c(1,1))
 par(mar=c(0.2,0.1,1.5,0.2))
 
 plot(countries, lty = NULL, border = "grey", col = "grey")
-plot(PAs_all, lty = NULL, border = rgb(0.4,0.7,0.5), col = rgb(0.4,0.7,0.5), add = T)
-plot(PAs_in_study, lty = NULL, border = rgb(0.1,0.4,0.2), col = rgb(0.1,0.4,0.2), add = T)
-plot(points, pch = 16, col = rgb(0.1,0.1,0.1,0.1), add = T, cex = 1)
+plot(PAs_all, lty = NULL, border = rgb(0.4,0.7,0.5), col = rgb(0.4,0.7,0.5), add = T, lwd = 0.01)
+plot(lines, add = T, lty = 2)
+#plot(points_LUPA, pch = 21, col = rgb(0.1,0.1,0.1,0.5), bg = rgb(0.9,0.9,0.9,0.5), add = T, cex = 1)
+plot(points_additional, pch = 21, col = rgb(0.1,0.1,0.1,0.5), bg = rgb(0.9,0.9,0.9,0.5), add = T, cex = 1)
+plot(points_ML, pch = 16, col = rgb(0.1,0.1,0.1,0.5), add = T, cex = 1)
+
+dev.off()
+
+tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 map legend.tif",
+	width = 15, height =15, units = "cm", pointsize = 12, res = 300)
+plot(1~1, type = "n", axes = F, xlab = "", ylab = "")
+legend(0.75,1, cex = 1,
+	pch = c(16, 21,15), 
+	c("sites matched by land use", "sites not matched by land use", "protected areas"), 
+	pt.bg = rgb(0.9,0.9,0.9,0.5), col = c(rgb(0.1,0.1,0.1,0.5),rgb(0.1,0.1,0.1,0.5),rgb(0.4,0.7,0.5)))
+
+dev.off()
+
+### make border thickness less
+
+
+
+# histogram of points
+
+cols <- brewer.pal(8, "Paired")
+taxa.cols <- cols[c(4,2,8)]
+taxa.cols.ci <- c("#33A02C44", "#1F78B444", "#FF7F0044")
+taxa <- c("Plants", "Invertebrates", "Vertebrates")
+
+n.breaks <- 30
+
+ML_verts_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Vertebrates")], n.breaks)
+ML_inverts_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Invertebrates")], n.breaks)
+ML_plants_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Plants")], n.breaks)
+
+
+ML_verts_cut$breaks
+ML_inverts_cut$breaks
+ML_plants_cut$breaks
+
+LUPA_verts_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Vertebrates")], n.breaks)
+LUPA_inverts_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Invertebrates")], n.breaks)
+LUPA_plants_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Plants")], n.breaks)
+
+LUPA_verts_cut$breaks
+LUPA_inverts_cut$breaks
+LUPA_plants_cut$breaks
+
+LUPA_verts_cut$mids
+
+
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/latitudinal bar plot.tif",
+	width = 10, height =20, units = "cm", pointsize = 12, res = 300)
+
+par(mfrow = c(1,2))
+#add the zeros at the ends where breaks not made
+LUPA_cut <- rbind(LUPA_verts_cut$counts, c(0,LUPA_inverts_cut$counts,0), c(0,LUPA_plants_cut$counts,0,0))
+ML_cut <- rbind(c(0,ML_verts_cut$counts), c(0,ML_inverts_cut$counts,0), c(0,ML_plants_cut$counts,0,0))
+
+colSums(LUPA_cut)
+par(mar = c(4,2,2,0))
+barplot(LUPA_cut, beside = F, horiz = T, space = 0, col = rev(taxa.cols), border = NA,
+	main = "all sites", cex.main = 1.2,
+	ylim = c(-6,26), xlim = c(1350,0), cex.axis = 1, las = 2)
+#all breaks = c(seq(-75,-55,5), LUPA_verts_cut$breaks), at -5:25
+axis(2, seq(-4,24,2), seq(-70,70,10), cex.axis = 1)
+par(mar = c(4,0,2,2))
+barplot(ML_cut, beside = F, horiz = T, space = 0, col = rev(taxa.cols), border = NA,
+	main = "sites matched \n by landuse",  cex.main = 1.2, 
+	ylim = c(-6,26), xlim = c(0,1350), cex.axis = 1, las = 2)
+#axis(2, -6:23, c(seq(-75,-50,5) ML_verts_cut$breaks))
+abline(v = 0, col = 1)
 
 dev.off()
 
 
-### make border thickness less
+
+tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/latitudinal histogram legend.tif",
+	width = 15, height =15, units = "cm", pointsize = 12, res = 300)
+plot(1~1, type = "n", axes = F, xlab = "", ylab = "")
+legend(0.75,1, cex = 1,
+	c("Plants", "Invertebrates", "Vertebrates"), 
+	col = taxa.cols, pch = 15)
+
+dev.off()
+
+
+
 
 
 
@@ -1558,26 +1659,17 @@ summary(M1)
 
 ### are the PAs we have representative of the whole WDPA
 
+PAs_ML <- read.csv("N:/Documents/PREDICTS/WDPA analysis/WDPA_matched_landuse.csv", header = T)
+PAs_LUPA <- read.csv("N:/Documents/PREDICTS/WDPA analysis/WDPA_PA_11_14_no_sec_ind.csv", header = T)
+PAs_all <- read.csv("N:/Documents/PREDICTS/WDPA analysis/WDPA_07_14_no_biosphere_inscribed_adopted_terrestrial.csv", header = T)
+nrow(PAs_all)
+nrow(PAs_LUPA)
+nrow(PAs_ML)
 
-PAs_inc <- read.csv("N:/Documents/PREDICTS/WDPA analysis/WDPA_PA_11_14_no_sec_ind.csv", header = T)
-PAs_all <- read.csv("N:/Documents/PREDICTS/WDPA analysis/WDPA_07_14_terrestrial.csv", header = T)
+tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/WDPA_LUPA_matchedlanduse_PAstats.tif",
+	width = 20, height = 25, units = "cm", pointsize = 12, res = 300)
 
-
-
-
-par(mfrow=c(1,2))
-PAs_inc$IUCN <- NA
-levels(PAs_inc$IUCN) <- c("I & II", "unknown", "III to VI")
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "Ia")] <- "I & II"
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "Ib")] <- "I & II"
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "II")] <- "I & II"
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "Not Reported")] <- "unknown"
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "III")] <- "III to VI"
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "VI")] <- "III to VI"
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "V")] <- "III to VI"
-PAs_inc$IUCN[which(PAs_inc$IUCN_CAT == "VI")] <- "III to VI"
-
-barplot(table(PAs_inc$IUCN), main = "PAs with PREDICTS data")
+par(mfrow=c(4,3), mar = c(6,3,2,1))
 
 PAs_all$IUCN <- NA
 levels(PAs_all$IUCN) <- c("I & II", "unknown", "III to VI")
@@ -1589,40 +1681,150 @@ PAs_all$IUCN[which(PAs_all$IUCN_CAT == "III")] <- "III to VI"
 PAs_all$IUCN[which(PAs_all$IUCN_CAT == "VI")] <- "III to VI"
 PAs_all$IUCN[which(PAs_all$IUCN_CAT == "V")] <- "III to VI"
 PAs_all$IUCN[which(PAs_all$IUCN_CAT == "VI")] <- "III to VI"
-barplot(table(PAs_all$IUCN), main = "all WDPA")
+barplot(table(PAs_all$IUCN), main = "all WDPA", border = NA, xlab = "IUCN category")
 
-par(mfrow=c(1,2))
-PAs_inc$STATUS_YR[which(PAs_inc$STATUS_YR == 0 )] <- NA
-hist(PAs_inc$STATUS_YR, main = "PAs with PREDICTS data", xlab = "Status Year", xlim = c(1800, 2020), breaks = 15)
 
+PAs_LUPA$IUCN <- NA
+levels(PAs_LUPA$IUCN) <- c("I & II", "unknown", "III to VI")
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "Ia")] <- "I & II"
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "Ib")] <- "I & II"
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "II")] <- "I & II"
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "Not Reported")] <- "unknown"
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "III")] <- "III to VI"
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "VI")] <- "III to VI"
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "V")] <- "III to VI"
+PAs_LUPA$IUCN[which(PAs_LUPA$IUCN_CAT == "VI")] <- "III to VI"
+
+barplot(table(PAs_LUPA$IUCN), ylim = c(0,200),
+	main = "PAs with PREDICTS data \nall sites", border = NA, xlab = "IUCN category")
+
+
+PAs_ML$IUCN <- NA
+levels(PAs_ML$IUCN) <- c("I & II", "unknown", "III to VI")
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "Ia")] <- "I & II"
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "Ib")] <- "I & II"
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "II")] <- "I & II"
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "Not Reported")] <- "unknown"
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "III")] <- "III to VI"
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "VI")] <- "III to VI"
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "V")] <- "III to VI"
+PAs_ML$IUCN[which(PAs_ML$IUCN_CAT == "VI")] <- "III to VI"
+
+barplot(table(PAs_ML$IUCN), ylim = c(0,200),
+	main = "PAs with PREDICTS data \nsites matched by landuse", border = NA, xlab = "IUCN category")
+
+
+#plots for Year of PA
 PAs_all$STATUS_YR[which(PAs_all$STATUS_YR == 0 )] <- NA
 PAs_all$STATUS_YR[which(PAs_all$STATUS_YR == 1070 )] <- NA
-hist(PAs_all$STATUS_YR, main = "all WDPA", xlab = "Status Year", xlim = c(1800, 2020), breaks = 15)
+hist(PAs_all$STATUS_YR, main = "", 
+	xlab = "Status Year", xlim = c(1800, 2020), breaks = 15, col = 8, border = 8)
 
-par(mfrow=c(1,2))
-hist(log(PAs_inc$GIS_AREA), main = "PAs with PREDICTS data", xlab = "Log(Area) km2", xlim = c(-25, 15), breaks = 15)
-hist(log(PAs_all$GIS_AREA), main = "all WDPA", xlab = "Log(Area) km2", xlim = c(-25, 15), breaks = 15)
+PAs_LUPA$STATUS_YR[which(PAs_LUPA$STATUS_YR == 0 )] <- NA
+hist(PAs_LUPA$STATUS_YR, main = "", 
+	xlab = "Status Year", xlim = c(1800, 2020), ylim = c(0,85), breaks = 15, col = 8, border = 8)
 
-hist(PAs_inc$GIS_AREA, main = "PAs in study", xlab = "Area km2")
-hist(PAs_all$GIS_AREA, main = "all WDPA", xlab = "Area km2")
+PAs_ML$STATUS_YR[which(PAs_ML$STATUS_YR == 0 )] <- NA
+hist(PAs_ML$STATUS_YR, main = "", 
+	xlab = "Status Year", xlim = c(1800, 2020), ylim = c(0,85), breaks = 15, col = 8, border = 8)
+
+
+# Plots for Size of PA
+
+#hist(PAs_LUPA$GIS_AREA, main = "PAs in study", xlab = "Area km2")
+#hist(PAs_all$GIS_AREA, main = "all WDPA", xlab = "Area km2")
+
+
+hist(log(PAs_all$GIS_AREA), 	col = 8, border = 8, main = "", 
+	xlab = "Log(Area) km2", xlim = c(-30, 20), breaks = 15)
+hist(log(PAs_LUPA$GIS_AREA), col = 8, border = 8, main = "", 
+	xlab = "Log(Area) km2", xlim = c(-30, 20), ylim = c(0,60),breaks = 15)
+hist(log(PAs_ML$GIS_AREA), col = 8, border = 8, main = "", 
+	xlab = "Log(Area) km2", xlim = c(-30, 20),ylim = c(0,60), breaks = 15)
+
 
 names(PAs_all)
 
 
+# prop land use
+
+crop.PAs_ML <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/crop_matched_landuse_PAs.txt", header = T)
+pasture.PAs_ML <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/pasture_matched_landuse_PAs.txt", header = T)
+primary.PAs_ML <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/primary_matched_landuse_PAs.txt", header = T)
+secondary.PAs_ML <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/secondary_matched_landuse_PAs.txt", header = T)
+urban.PAs_ML <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/urban_matched_landuse_PAs.txt", header = T)
+
+crop.PAs_LUPA <- read.table("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/crop_PA_11_14nosecindveg_PAs.txt", header = T)
+pasture.PAs_LUPA <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/pasture_PA_11_14nosecindveg_PAs.txt", header = T)
+primary.PAs_LUPA <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/primary_PA_11_14nosecindveg_PAs.txt", header = T)
+secondary.PAs_LUPA <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/secondary_PA_11_14nosecindveg_PAs.txt", header = T)
+urban.PAs_LUPA <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/urban_PA_11_14nosecindveg_PAs.txt", header = T)
+
+crop.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/crop_WDPA.txt", header = T)
+pasture.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/pasture_WDPA.txt", header = T)
+primary.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/primary_WDPA.txt", header = T)
+secondary.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/secondary_WDPA.txt", header = T)
+urban.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/urban_WDPA.txt", header = T)
 
 
+landuses <- c("Primary", "Secondary", "Pasture", "Cropland", "Urban")
+LU.props <- expand.grid(landuse = landuses, PAs_ML = NA, PAs_LUPA = NA, PAs = NA)
+
+LU.props[which(landuses == "Cropland"), which(names(LU.props) == "PAs_ML")] <- 
+	sum(crop.PAs_ML$COUNT_*crop.PAs_ML$VALUE_)/(sum(crop.PAs_ML$COUNT_)*1000)
+LU.props[which(landuses == "Primary"), which(names(LU.props) == "PAs_ML")] <- 
+	sum(as.numeric(primary.PAs_ML$COUNT_*primary.PAs_ML$VALUE_))/(sum(primary.PAs_ML$COUNT_)*1000)
+LU.props[which(landuses == "Secondary"), which(names(LU.props) == "PAs_ML")] <- 
+	sum(as.numeric(secondary.PAs_ML$COUNT_*secondary.PAs_ML$VALUE_))/(sum(secondary.PAs_ML$COUNT_)*1000)
+LU.props[which(landuses == "Pasture"), which(names(LU.props) == "PAs_ML")] <- 
+	sum(as.numeric(pasture.PAs_ML$COUNT_*pasture.PAs_ML$VALUE_))/(sum(pasture.PAs_ML$COUNT_)*1000)
+LU.props[which(landuses == "Urban"), which(names(LU.props) == "PAs_ML")] <- 
+	sum(urban.PAs_ML$COUNT_*urban.PAs_ML$VALUE_)/(sum(urban.PAs_ML$COUNT_)*1000)
+
+LU.props[which(landuses == "Cropland"), which(names(LU.props) == "PAs_LUPA")] <- 
+	sum(crop.PAs_LUPA$COUNT_*crop.PAs_LUPA$VALUE_)/(sum(crop.PAs_LUPA$COUNT_)*1000)
+LU.props[which(landuses == "Primary"), which(names(LU.props) == "PAs_LUPA")] <- 
+	sum(primary.PAs_LUPA$COUNT_*primary.PAs_LUPA$VALUE_)/(sum(primary.PAs_LUPA$COUNT_)*1000)
+LU.props[which(landuses == "Secondary"), which(names(LU.props) == "PAs_LUPA")] <- 
+	sum(secondary.PAs_LUPA$COUNT_*secondary.PAs_LUPA$VALUE_)/(sum(secondary.PAs_LUPA$COUNT_)*1000)
+LU.props[which(landuses == "Pasture"), which(names(LU.props) == "PAs_LUPA")] <- 
+	sum(pasture.PAs_LUPA$COUNT_*pasture.PAs_LUPA$VALUE_)/(sum(pasture.PAs_LUPA$COUNT_)*1000)
+LU.props[which(landuses == "Urban"), which(names(LU.props) == "PAs_LUPA")] <- 
+	sum(urban.PAs_LUPA$COUNT_*urban.PAs_LUPA$VALUE_)/(sum(urban.PAs_LUPA$COUNT_)*1000)
+
+LU.props[which(landuses == "Cropland"), which(names(LU.props) == "PAs")] <- 
+	sum(crop.PAs$COUNT_*crop.PAs$VALUE_)/(sum(crop.PAs$COUNT_)*1000)
+LU.props[which(landuses == "Primary"), which(names(LU.props) == "PAs")] <- 
+	sum(as.numeric(primary.PAs$COUNT_*primary.PAs$VALUE_))/(sum(primary.PAs$COUNT_)*1000)
+LU.props[which(landuses == "Secondary"), which(names(LU.props) == "PAs")] <- 
+	sum(as.numeric(secondary.PAs$COUNT_*secondary.PAs$VALUE_))/(sum(secondary.PAs$COUNT_)*1000)
+LU.props[which(landuses == "Pasture"), which(names(LU.props) == "PAs")] <- 
+	sum(as.numeric(pasture.PAs$COUNT_*pasture.PAs$VALUE_))/(sum(pasture.PAs$COUNT_)*1000)
+LU.props[which(landuses == "Urban"), which(names(LU.props) == "PAs")] <- 
+	sum(urban.PAs$COUNT_*urban.PAs$VALUE_)/(sum(urban.PAs$COUNT_)*1000)
 
 
+col.key <- data.frame(Predominant_habitat = c("Primary Vegetation",
+                                               "Mature secondary vegetation",
+                                                "Intermediate secondary vegetation",
+                                                "Young secondary vegetation",
+								"Plantation forest",
+								"Cropland",
+								"Pasture",
+								"Urban"),
+                                           col=c("#66A61E90","#14765990","#1B9E7790","#8ecfbc90","#7570B390",
+                                                 "#E6AB0290","#D95F0290","#E7298A90"))
+col.key$col <- as.character(col.key$col)
 
 
+barplot(LU.props$PAs, names.arg = LU.props$landuse,ylim = c(0,0.55),
+	main = "", col = col.key$col[c(1,3,6,7,8)], border = NA, las = 2)
+barplot(LU.props$PAs_LUPA, names.arg = LU.props$landuse, ylim = c(0,0.55),
+	main = "", col = col.key$col[c(1,3,6,7,8)], border = NA, las = 2)
+barplot(LU.props$PAs_ML, names.arg = LU.props$landuse, ylim = c(0,0.55),
+	main = "", col = col.key$col[c(1,3,6,7,8)], border = NA, las = 2)
 
-
-
-
-
-
-
-
+dev.off()
 
 
 

@@ -1,7 +1,7 @@
 #names(pairwise_log_abundance)
 #pairwise_log_abundance$IUCN_CAT_number <- factor(pairwise_log_abundance$IUCN_CAT_number)
 
-#dataset <- matched.landuse.s
+#dataset <- PA_11_14
 #responseVar <- "log_abundance"
 #fitFamily <- "gaussian"
 #fixedFactors= fF
@@ -78,6 +78,7 @@ compare_randoms <-function(dataset,responseVar,fixedFactors=character(0),
   }
   
   if (length(keepVars)>0){
+   fixedStruct<-paste(fixedStruct,"+")
     for (i in 1:length(keepVars)){
       term<-paste("poly(",names(keepVars)[i],
                   ",",keepVars[i],")",sep="")

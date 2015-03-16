@@ -30,12 +30,12 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
 
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 source("plotLU.R")
 
 #load data
-source("WDPA_predicts_prep_PA_11_14_for_analysis.R")
+source("prep_PA_11_14_for_analysis.R")
 
 validate <- function(x) {
   par(mfrow = c(1,2))
@@ -207,6 +207,146 @@ range.model <- model_select(all.data  = PA_11_14,
                        randomStruct = best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
+
+
+
+###combine secondary for land use estimate
+
+#make new datasets
+PA_11_14_sec <- PA_11_14
+PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+PA_11_14_sec$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+
+multiple.taxa.PA_11_14_sec <- multiple.taxa.PA_11_14
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+
+#make a factor and set primary as reference
+PA_11_14_sec$Predominant_habitat <- factor(PA_11_14_sec$Predominant_habitat)
+PA_11_14_sec$Predominant_habitat <- relevel(PA_11_14_sec$Predominant_habitat, "Primary Vegetation")
+
+#also need to make new LUPA
+PA_11_14_sec$LUPA <- factor(paste(PA_11_14_sec$PA, PA_11_14_sec$Predominant_habitat))
+
+
+#check non linear relationships
+
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- character(0)
+fI <- character(0)
+RS <-  c("Within_PA")
+#"range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+Predominant_habitat+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSB)"
+
+
+# add interactions
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <- character(0)
+keepVars <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "3") 
+fI <- c("Within_PA:Predominant_habitat")
+RS <-  c("Within_PA")
+#"range~Predominant_habitat+taxon_of_interest+Zone+Within_PA:Predominant_habitat+Within_PA+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
+ 
+
+#other interactions to add
+#fI <- c("Within_PA:poly(ag_suit,3)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,1)",
+#	"Within_PA:taxon_of_interest", "Within_PA:Zone")
+
+
+
+range.best.random <- compare_randoms(PA_11_14_sec, "range",
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=c("Predominant_habitat"),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+
+range.best.random$best.random #
+ 
+
+# model select
+
+range.model <- model_select(all.data  = PA_11_14_sec, 
+			     responseVar = "range",
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = range.best.random$best.random,
+			     otherRandoms=c("Predominant_habitat"),
+                       verbose=TRUE)
+
+
+validate(range.model$model) #ok
+
+
+# recreate model without orthogonal polynomials so that values can be used in prediction
+
+range.model$final.call
+data <- PA_11_14_sec[,c("range", "Within_PA", "Predominant_habitat", "LUPA",
+	"log_slope", "log_elevation", "ag_suit",
+	"Zone", "taxon_of_interest", "SS", "SSB", "SSBS")]
+data <- na.omit(data)
+
+r.m <- lmer(range~Predominant_habitat+Within_PA+Zone+taxon_of_interest
+	+ Within_PA:Predominant_habitat
+	+ ag_suit + I(ag_suit^2) + I(ag_suit^3)
+	+ log_elevation+ I(log_elevation^2)
+	+ log_slope + I(log_slope^2) + I(log_slope^3)
+	+ (1+Within_PA|SS)+(1|SSB), data = data, 
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+summary(r.m)
+length(fixef(r.m))
+length(fixef(range.model$model))
+
+
+# get endemicity estimates relative to reference
+
+y1 <- 10 ^(as.numeric(fixef(r.m)[1]))
+e.y1 <- 1/y1
+y2 <- 10^(as.numeric(fixef(r.m)[pos]) + as.numeric(fixef(r.m)[1]))
+e.y2 <- 1/y2
+
+#as a percentage of outside 
+e.relative <- e.y2/e.y1*100
+
+se <- as.numeric(se.fixef(r.m)[pos])
+y2plus <- 10^(as.numeric(fixef(r.m)[pos]) + as.numeric(fixef(r.m)[1])+ se*1.96)
+e.y2plus <- 1/y2plus
+e.relative.plus <- e.y2plus/e.y1*100
+
+y2minus <- 10^(as.numeric(fixef(r.m)[pos]) + as.numeric(fixef(r.m)[1])- se*1.96)
+e.y2minus <- 1/y2minus
+e.relative.minus <- e.y2minus/e.y1*100
+
+points <- c(100, e.relative)
+CI <- cbind(e.relative.plus, e.relative.minus)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

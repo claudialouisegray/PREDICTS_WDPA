@@ -30,13 +30,13 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
 
-source("compare_randoms_lmer - with poly.R")
+source("compare_randoms.R")
 source("model_select.R")
 source("plotLU.R")
 source("plotFactorInteraction.R")
 
 #load data
-source("WDPA_predicts_prep_PA_11_14_for_analysis.R")
+source("prep_PA_11_14_for_analysis.R")
 
 validate <- function(x) {
   par(mfrow = c(1,2))
@@ -75,11 +75,6 @@ RS <-  c("Within_PA")
 
 
 
-fI <- c("Within_PA:poly(ag_suit,2)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,1)",
-	"Within_PA:taxon_of_interest", "Within_PA:Zone")
-
-
-
 Richness_rarefied.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
@@ -100,6 +95,19 @@ best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
 # model select
 
+Richness_rarefied.poly <- model_select(all.data  = multiple.taxa.PA_11_14, 
+			     responseVar = "Richness_rarefied",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = Richness_rarefied.best.random$best.random,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
 Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
 			     responseVar = "Richness_rarefied",
 			     fitFamily = "poisson",
@@ -113,7 +121,7 @@ Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
-
+Richness_rarefied.model$final.call
 validate(Richness_rarefied.model$model) #ok
 res <- data.frame(est = fixef(Richness_rarefied.model$model), se = se.fixef(Richness_rarefied.model$model))
 write.csv(res, "Richness_rarefied.model.LUPA.estimates.30.01.2015.csv")
@@ -214,7 +222,7 @@ Richness_rarefied.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Richne
 Richness_rarefied.best.random$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
 # model select
-Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
+Richness_rarefied.model.LU3 <- model_select(all.data  = multiple.taxa.PA_11_14, 
 			     responseVar = "Richness_rarefied",
 			     fitFamily = "poisson",
 			     siteRandom = TRUE, 
@@ -228,6 +236,126 @@ Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14,
                        verbose=TRUE)
 
 
+
+
+
+
+
+###combine secondary for land use estimate
+
+#make new datasets
+PA_11_14_sec <- PA_11_14
+PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+PA_11_14_sec$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary vegetation", PA_11_14_sec$Predominant_habitat)
+
+multiple.taxa.PA_11_14_sec <- multiple.taxa.PA_11_14
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Young secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Intermediate secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- gsub("Mature secondary vegetation", "Secondary vegetation", multiple.taxa.PA_11_14_sec$Predominant_habitat)
+
+#make a factor and set primary as reference
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- factor(multiple.taxa.PA_11_14_sec$Predominant_habitat)
+multiple.taxa.PA_11_14_sec$Predominant_habitat <- relevel(multiple.taxa.PA_11_14_sec$Predominant_habitat, "Primary Vegetation")
+
+#also need to make new LUPA
+multiple.taxa.PA_11_14_sec$LUPA <- factor(paste(multiple.taxa.PA_11_14_sec$PA, multiple.taxa.PA_11_14_sec$Predominant_habitat))
+
+
+
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- character(0)
+fI <- character(0)
+RS <-  c("Within_PA")
+# "Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Predominant_habitat+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+
+
+# add interactions
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <-character(0)
+keepVars <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "1")
+fI <- c("Within_PA:Predominant_habitat")
+RS <-  c("Within_PA")
+#
+Richness_rarefied.best.random <- compare_randoms(multiple.taxa.PA_11_14_sec, "Richness_rarefied",
+				fitFamily = "poisson",
+				siteRandom = TRUE,
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+
+Richness_rarefied.best.random$best.random #(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)
+ 
+best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
+
+
+# model select
+
+Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14_sec, 
+			     responseVar = "Richness_rarefied",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = Richness_rarefied.best.random$best.random ,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+Richness_rarefied.model$stats
+summary(Richness_rarefied.model$model)
+# PA is not retained in the model. 
+# So doesnt really make sense to do this?
+# or get estimates for model where it is retained?
+
+# recreate model without orthogonal polynomials so that values can be used in prediction
+
+Richness_rarefied.model$final.call
+
+data <- multiple.taxa.PA_11_14_sec[,c("Richness_rarefied", "Within_PA", "Predominant_habitat", "LUPA",
+	"log_slope", "log_elevation", "ag_suit",
+	"Zone", "taxon_of_interest", "SS", "SSB", "SSBS")]
+data <- na.omit(data)
+
+r.sp.m <- glmer(Richness_rarefied~Predominant_habitat+Zone
+	+ ag_suit + I(ag_suit^2) + I(ag_suit^3)
+	+ log_elevation + I(log_elevation^2) + I(log_elevation^3)
+	+ log_slope 
+	+ (1+Within_PA|SS)+(1|SSBS)+(1|SSB), data = data, family = poisson,
+	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+fixef(r.sp.m)
+fixef(Richness_rarefied.model$model)
+
+
+#to plot need LUPA model as easy way to get standard errors for each landuse
+# LUPA is the same as LU + PA + LU:PA
+# LUPA vs just LU and PA
+
+LUPA.sp3 <- glmer(Richness_rarefied~taxon_of_interest+Zone+LUPA
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+LUPA.sp4 <- glmer(Richness_rarefied~Predominant_habitat+taxon_of_interest+PA+Zone
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+anova(LUPA.sp3, LUPA.sp4)
+
+#normal
+LUPA.sp5 <- glmer(Richness_rarefied~taxon_of_interest+Zone+Predominant_habitat+PA+PA:Predominant_habitat
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+LUPA.sp6 <- glmer(Richness_rarefied~taxon_of_interest+Zone+Predominant_habitat+PA
+		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+PA|SS)+(1|SSBS)+(1|SSB),
+		data = data, family = "poisson")
+anova(LUPA.sp5, LUPA.sp6)
 
 
 
