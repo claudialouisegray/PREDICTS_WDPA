@@ -37,7 +37,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-#Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
 
 Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
 				fitFamily = "poisson",
@@ -64,18 +63,19 @@ s.model <- model_select(all.data  = multiple.taxa.matched.landuse,
                        randomStruct = Species_richness.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
+s.model$final.call
+#Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
 
 data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
 data <- na.omit(data)
-m1 <- glmer(Species_richness ~ Within_PA + log_slope +poly(ag_suit,3)+poly(log_elevation,2)
+m1 <- glmer(Species_richness ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
-m2 <- glmer(Species_richness ~ 1 + log_slope + poly(ag_suit,3)+poly(log_elevation,2)
+m2 <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 anova(m1, m2)
-#1.3253      1,13     0.2496
+#1.2811      1     0.2577
 
 summary(m1)
 # significant difference - now to plot the difference
@@ -223,42 +223,26 @@ m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-#tried this m3i with Nelder_Mead - also convergence warnings
-
-#doesnt converge with ordinal data either
-m4i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse_ord,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m5i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse_ord,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-
-
 anova(m2i, m3i)
-summary(m1i)
 
-m5i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = multiple.taxa.matched.landuse,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-anova(m5i, m6i)
 
-m7i <- glmer(Species_richness ~ 1  + log_slope + log_elevation + ag_suit
-	+ (1|SS) + (1|SSB) + (1|SSBS), 
+m7i <- glmer(Species_richness ~ 1  
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m8i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (1|SS) + (1|SSB) + (1|SSBS), 
+m8i <- glmer(Species_richness ~ IUCN_CAT 
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 anova(m7i, m8i)
+#1.7963      3     0.6158
+#very similar
 
+fixef(m3i)
+fixef(m8i)
+
+
+summary(m1i)
 
 # plot 
 
@@ -271,7 +255,7 @@ labels <- c("Unprotected", "III  - VI", "unknown", "I & II")
 levels(multiple.taxa.matched.landuse$IUCN_CAT)
 multiple.taxa.matched.landuse$IUCN_CAT <- relevel(multiple.taxa.matched.landuse$IUCN_CAT, "0")
 
-m4i <- glmer(Species_richness ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m4i <- glmer(Species_richness ~ IUCN_CAT 
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = multiple.taxa.matched.landuse,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
@@ -295,8 +279,6 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 	xlab = "")
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
-
-
 
 text(1, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = " "))
@@ -372,7 +354,8 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
                        randomStruct = Sp.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"Species_richness~poly(ag_suit,1)+poly(log_elevation,3)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+sp.model.trop$final.call
+#"Species_richness~poly(ag_suit,3)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 
@@ -386,7 +369,8 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
                        randomStruct = Sp.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"Species_richness~poly(log_elevation,1)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+sp.model.temp$final.call
+#"Species_richness~poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 
@@ -394,25 +378,25 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
 # run models
 data.trop <- sp.tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Species_richness")] 
 data.trop <- na.omit(data.trop)
-m1ztr <- glmer(Species_richness ~ Within_PA + log_slope + poly(ag_suit,1)+poly(log_elevation,3)
+m1ztr <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson",
 	 data = data.trop)
-m2ztr <- glmer(Species_richness ~ 1 + log_slope +poly(ag_suit,1)+poly(log_elevation,3)
+m2ztr <- glmer(Species_richness ~ 1  +poly(ag_suit,3)+poly(log_elevation,3)
 	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.trop)
 anova(m1ztr, m2ztr)
-#0.1603      1,12     0.6889
+#0.0186      1     0.8914
 
 data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")] 
 data.temp <- na.omit(data.temp)
-m1zte <- glmer(Species_richness ~ Within_PA +poly(log_slope,2) + poly(log_elevation,1) + ag_suit
+m1zte <- glmer(Species_richness ~ Within_PA + poly(log_elevation,1) 
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
-m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,1) + ag_suit
+m2zte <- glmer(Species_richness ~ 1  + poly(log_elevation,1) 
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
 anova(m1zte, m2zte)
-# 1.4382      1,12     0.2304
+# 1.7009      1     0.1922
 
 
 #add results to master plot
@@ -509,6 +493,7 @@ model.p <- model_select(all.data  = plants,
                        randomStruct =best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.p$final.call
 # "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+(1+Within_PA|SS)+(1|SSBS)"
 
 model.i <- model_select(all.data  = inverts, 
@@ -521,6 +506,7 @@ model.i <- model_select(all.data  = inverts,
                        randomStruct =best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.i$final.call
 #"Species_richness~poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
@@ -534,42 +520,43 @@ model.v <- model_select(all.data  = verts,
                        randomStruct =best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.v$final.call
 #"Species_richness~poly(ag_suit,3)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 # run models
 data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Species_richness")]
 data.p <- na.omit(data.p)
-m1txp <- glmer(Species_richness ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
+m1txp <- glmer(Species_richness ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,2)
 	+ (Within_PA|SS)+  (1|SSBS), family = "poisson", 
 	 data = data.p)
-m2txp <- glmer(Species_richness ~ 1+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
+m2txp <- glmer(Species_richness ~ 1+poly(ag_suit,1)+poly(log_elevation,2)
 	+ (Within_PA|SS)+ (1|SSBS), family = "poisson", 
 	 data = data.p)
 anova(m1txp , m2txp)
-#0.3559      1,10     0.5508
+#0.4928      1     0.4827
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Species_richness")]
 data.i <- na.omit(data.i)
-m1txi <- glmer(Species_richness ~ Within_PA +poly(log_elevation,1)+poly(log_slope,1) +ag_suit
+m1txi <- glmer(Species_richness ~ Within_PA +poly(log_elevation,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
-m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)+poly(log_slope,1) + ag_suit
+m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 anova(m1txi, m2txi)
-#1.4926      1,10     0.2218
+#1.9061      1     0.1674
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")]
 data.v <- na.omit(data.v)
-m1txv <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)+ poly(log_slope,1)
+m1txv <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
-m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+ poly(log_slope,1)
+m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
 anova(m1txv, m2txv)
-#7e-04      1,14     0.9787
+#0.001      1     0.9751
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100

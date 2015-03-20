@@ -37,7 +37,7 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-#Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
+
 
 
 r.sp.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
@@ -65,6 +65,8 @@ r.sp.model <- model_select(all.data  = multiple.taxa.matched.landuse,
                        randomStruct = "(Within_PA|SS) + (1|SSB) + (1|SSBS)",
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.sp.model$final.call
+#Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
 r.sp.model$stats # p <0.005
 
 data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Richness_rarefied")]

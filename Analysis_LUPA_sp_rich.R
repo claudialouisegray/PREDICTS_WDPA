@@ -208,18 +208,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
-# "Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <-character(0)
-keepVars <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "1")
-fI <- c("Within_PA:Predominant_habitat")
-RS <-  c("Within_PA")
-#"Species_richness~Predominant_habitat+taxon_of_interest+Within_PA+Zone+Within_PA:Predominant_habitat
-	#+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
 Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14_sec, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
@@ -240,6 +228,31 @@ best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
 # model select
 
+Species_richness.poly <- model_select(all.data  = multiple.taxa.PA_11_14_sec, 
+			     responseVar = "Species_richness",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = Species_richness.best.random$best.random ,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+Species_richness.poly$final.call
+# "Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+
+Species_richness.model$stats
+summary(Species_richness.model$model)
+
+# add interactions
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <-character(0)
+keepVars <- list("ag_suit" = "3", "log_elevation" = "2")
+fI <- c("Within_PA:Predominant_habitat")
+RS <-  c("Within_PA")
+
 Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14_sec, 
 			     responseVar = "Species_richness",
 			     fitFamily = "poisson",
@@ -253,11 +266,10 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14_sec,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
-Species_richness.model$stats
-summary(Species_richness.model$model)
+Species_richness.model$final.call
 
 
-### get model with reference = in for comparison to Sams
+### get model with reference = in for comparison to Sams coefficients
 data <- Species_richness.model$data
 nrow(data)
 data$Within_PA <- relevel(data$Within_PA, "yes")
@@ -268,12 +280,20 @@ summary(m)
 vcov(m)
 
 
-### get LUPA model for estimates
+#to plot need LUPA model as easy way to get standard errors for each landuse for plotting
+#Tim Newbold, 12/02/15
+#In other words, your two models should contain either:
+#LU + PA + LU:PA, or
+#LUPA
+
+# LUPA is the same as LU + PA + LU:PA
+# LUPA vs just LU and PA
 data <- multiple.taxa.PA_11_14_sec[,c("Species_richness", "Within_PA", "Predominant_habitat", "LUPA",
 	"log_slope", "log_elevation", "ag_suit",
 	"Zone", "taxon_of_interest", "SS", "SSB", "SSBS")]
 data <- na.omit(data)
 nrow(data)
+
 data$LUPA <- relevel(data$LUPA, "no Primary Vegetation")
 m2 <- glmer(Species_richness~+taxon_of_interest+Zone
 	+LUPA+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
@@ -305,31 +325,6 @@ fixef(Species_richness.model$model)
 
 
 
-#to plot need LUPA model as easy way to get standard errors for each landuse
-#Tim Newbold, 12/02/15
-#In other words, your two models should contain either:
-#LU + PA + LU:PA, or
-#LUPA
-
-# LUPA is the same as LU + PA + LU:PA
-# LUPA vs just LU and PA
-
-LUPA.sp3 <- glmer(Species_richness~taxon_of_interest+Zone+LUPA
-		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB),
-		data = data, family = "poisson")
-LUPA.sp4 <- glmer(Species_richness~Predominant_habitat+taxon_of_interest+Within_PA+Zone
-		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB),
-		data = data, family = "poisson")
-anova(LUPA.sp3, LUPA.sp4)
-
-#normal
-LUPA.sp5 <- glmer(Species_richness~taxon_of_interest+Zone+Predominant_habitat+PA+PA:Predominant_habitat
-		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB),
-		data = data, family = "poisson")
-LUPA.sp6 <- glmer(Species_richness~taxon_of_interest+Zone+Predominant_habitat+Within_PA
-		+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB),
-		data = data, family = "poisson")
-anova(LUPA.sp5, LUPA.sp6)
 
 
 

@@ -151,6 +151,10 @@ m0 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ (
 m1 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB), data)
 m2 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA + poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB), data)
 
+
+summary(m0)
+summary(m1)
+
 m0 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+(1+Within_PA|SS)+(1|SSB), data)
 m1 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSB),data)
 m2 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA + poly(log_elevation,2)+(1+Within_PA|SS)+(1|SSB), data)
@@ -159,7 +163,7 @@ m0 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+(1
 m1 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(ag_suit,1)+(1+Within_PA|SS)+(1|SSB),data)
 m2 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(ag_suit,2)+(1+Within_PA|SS)+(1|SSB), data)
 
-
+# so here, comparison to model without slope suggests to keep the same as lowest p value from table
 
 ###combine secondary for land use estimate
 
