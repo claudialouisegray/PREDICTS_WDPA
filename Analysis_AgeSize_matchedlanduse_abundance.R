@@ -19,23 +19,17 @@ library(gamm4)
 library(scatterplot3d)
 library(rgl)
 
-
 #setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
 #setwd("N:/Documents/PREDICTS/WDPA analysis")
-
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
-
-
 # load functions
-
 source("compare_randoms.R")
 source("model_select.R")
-source("plotLU.R")
 source("plotFactorInteraction.R")
 
 #load data
-source("prep_PA_11_14_for_analysis.R")
+source("prep_matched.landuse_for_analysis.R")
 
 validate <- function(x) {
   par(mfrow = c(1,2))
@@ -44,21 +38,21 @@ validate <- function(x) {
   par(mfrow = c(1,1))
 }
 
-
-
 construct_call<-function(responseVar,fixedStruct,randomStruct){
   return(paste(responseVar,"~",fixedStruct,"+",randomStruct,sep=""))
 }
 
+nrow(matched.landuse) #5015
 
-length(unique(PA_11_14$SSS[which(PA_11_14$Within_PA == "yes")]))
-length(unique(PA_11_14$SSS[which(PA_11_14$Within_PA == "no")]))
+
+
+
 
 ### age/size analysis
 
- PA_11_14$taxon_of_interest <- relevel(PA_11_14$taxon_of_interest, "Invertebrates")
 
-xyplot(log_abundance ~ taxon_of_interest|AREA_DoP, PA_11_14)
+
+xyplot(log_abundance ~ taxon_of_interest|AREA_DoP, matched.landuse)
 
 
 fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
@@ -66,27 +60,10 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- character(0)
 fI <- character(0)
 RS <-  character(0)
-# "log_abundance~AREA_DoP+poly(log_elevation,1)+taxon_of_interest+Zone+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
+# "log_abundance~poly(ag_suit,1)+taxon_of_interest+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
 
 
-# add interactions 
-fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
-fT <- list()
-keepVars <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
-fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
-RS <-  character(0)
-#log_abundance~taxon_of_interest+AREA_DoP:taxon_of_interest+AREA_DoP+poly(ag_suit,1)+poly(log_slope,1)+poly(log_elevation,1)+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
-
-
-
-
-# check gamm
-gamm.model <- gamm4(log_abundance ~ Zone + taxon_of_interest + ag_suit + s(log_elevation) + s(log_slope)+ Within_PA,
-	random = ~(1+Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat), data =  PA_11_14)
-anova(gamm.model$gam)
-plot(gamm.model$gam)
-
-log_abundance.best.random <- compare_randoms(PA_11_14, 
+log_abundance.best.random <- compare_randoms(matched.landuse, 
 				responseVar = "log_abundance",
 				keepVars = keepVars,
 				fixedFactors=fF,
@@ -100,7 +77,30 @@ log_abundance.best.random <- compare_randoms(PA_11_14,
 log_abundance.best.random$best.random
 
 # model select
-log_abundance.model2 <- model_select(all.data  = PA_11_14, 
+log_abundance.poly <- model_select(all.data  = matched.landuse, 
+			     responseVar = "log_abundance", 
+			     keepVars = keepVars,
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+                       fixedInteractions=fI,
+                       randomStruct = log_abundance.best.random$best.random,
+			     otherRandoms=c("Predominant_habitat"),
+                       verbose=TRUE)
+log_abundance.poly$stats
+log_abundance.poly$final.call
+#"log_abundance~poly(ag_suit,1)+taxon_of_interest+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
+
+
+# add interactions 
+fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
+fT <- list()
+keepVars <- list("ag_suit" = "1")
+fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
+RS <-  character(0)
+
+# model select
+log_abundance.model<- model_select(all.data  = matched.landuse, 
 			     responseVar = "log_abundance", 
 			     keepVars = keepVars,
 			     alpha = 0.05,
@@ -111,13 +111,14 @@ log_abundance.model2 <- model_select(all.data  = PA_11_14,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
+#"log_abundance~taxon_of_interest+AREA_DoP:taxon_of_interest+AREA_DoP+poly(ag_suit,1)+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
+log_abundance.model$stats
+write.csv(log_abundance.model$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/age size bins/ab.model.age.size.stats.20.03.2014.csv")
 
-write.csv(log_abundance.model2$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/age size bins/ab.model.LUPA.age.size.stats.10.02.2014.csv")
 
-log_abundance.model2$stats
-validate(log_abundance.model2$model) #ok
-summary(log_abundance.model2$model)
-log_abundance.model2$warnings
+validate(log_abundance.model$model) #ok
+summary(log_abundance.model$model)
+log_abundance.model$warnings
 
 
 
@@ -138,12 +139,12 @@ XVr <- CrossValidate(log_abundance.model$model,-1, divFactor = "Predominant_habi
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 abundance vs size and age vs taxon.tif",
-	width = 25, height =20, units = "cm", pointsize = 12, res = 300)
+tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/abundance vs size and age vs taxon.tif",
+	width = 20, height = 15, units = "cm", pointsize = 12, res = 300)
 
-plotFactorInteraction(model = log_abundance.model2$model,
+plotFactorInteraction(model = log_abundance.model$model,
 responseVar = "log_abundance",
-data = log_abundance.model2$data,
+data = log_abundance.model$data,
 xvar = "AREA_DoP",
 xvar.order = c("small_young", "small_old", "large_young", "large_old"), 
 #this must be the levels of the factor in the order to be plotted, not including reference level
@@ -153,33 +154,8 @@ logLink = "e",
 xlab = "PA size and age class",
 ylab = "Relative abundance %")
 
-text(0.7,90, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
-	adj = 0, cex = 0.8)
+#text(0.7,90, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
+#	adj = 0, cex = 0.8)
 
 dev.off()
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 abundance vs size and age vs zone.tif",
-	width = 25, height =20, units = "cm", pointsize = 12, res = 300)
-
-plotFactorInteraction(model = log_abundance.model2$model,
-responseVar = "log_abundance",
-data = log_abundance.model2$data,
-xvar = "AREA_DoP",
-xvar.order = c("small_young", "small_old", "large_young", "large_old"), 
-#this must be the levels of the factor in the order to be plotted, not including reference level
-intvar = "Zone",
-intvar.order = c("Tropical"),
-logLink = "e",
-xlab = "PA size and age class",
-ylab = "Relative abundance %")
-
-text(0.7,90, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
-	adj = 0, cex = 0.8)
-
-dev.off()
-
-
-table(data$AREA_DoP, data$taxon_of_interest)
-
 
