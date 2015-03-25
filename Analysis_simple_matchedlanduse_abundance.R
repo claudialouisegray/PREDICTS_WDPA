@@ -16,7 +16,7 @@ source("model_select.R")
 
 #load data
 source("prep_matched.landuse_for_analysis.R")
-
+nrow(matched.landuse)
 
 
 #make ordinal datasets
@@ -38,7 +38,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-#"log_abundance~poly(log_elevation,1)+(Within_PA|SS)+(1|SSB)"
 
 abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
 				fixedFactors=fF,
@@ -61,19 +60,22 @@ ab.model <- model_select(all.data  = matched.landuse,
                        randomStruct = "(Within_PA|SS) + (1|SSB)",
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model$final.call
+#"log_abundance~poly(ag_suit,1)+poly(log_elevation,1)+(Within_PA|SS)+(1|SSB)"
 ab.model$stats # p <0.015
 
 data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "log_abundance")]
 data <- na.omit(data)
 
 
-m1a <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation + ag_suit
+m1a <- lmer(log_abundance ~ Within_PA + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = matched.landuse)
-m2a <- lmer(log_abundance ~ 1 + log_slope + log_elevation + ag_suit
+m2a <- lmer(log_abundance ~ 1  + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = matched.landuse)
 anova(m1a, m2a)
+#0.4421      1     0.5061
 
 summary(m1a)
 exp(fixef(m1a)[2]) 
@@ -134,7 +136,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
-#doesnt converge with nonlinear terms
 
 
 abundance.best.random.IUCN <- compare_randoms(matched.landuse, "log_abundance",
@@ -161,6 +162,9 @@ ab.model.IUCN <- model_select(all.data  = matched.landuse,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.IUCN$stats # p <0.015
+ ab.model.IUCN$warnings
+ ab.model.IUCN$final.call
+#"log_abundance~poly(ag_suit,1)+(IUCN_CAT|SS)+(1|SSB)"
 
 data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "log_abundance")]
 data <- na.omit(data)
@@ -168,25 +172,27 @@ data <- na.omit(data)
 
 
 #converges
-m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+m3ai <- lmer(log_abundance ~ 1 + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = matched.landuse,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+m4ai <- lmer(log_abundance ~ IUCN_CAT  + ag_suit
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = matched.landuse,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-
-#try ordinal
-m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = matched.landuse_ord,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = matched.landuse_ord,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 anova(m3ai, m4ai)
+#  0.2327      3     0.9721
+
+#try ordinal
+m3ai <- lmer(log_abundance ~ 1  + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse_ord,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m4ai <- lmer(log_abundance ~ IUCN_CAT  + ag_suit
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = matched.landuse_ord,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+
 
 
 summary(m2ai)
@@ -205,7 +211,7 @@ levels.IUCN <- levels(matched.landuse$IUCN_CAT)
 
 matched.landuse$IUCN_CAT <- relevel(matched.landuse$IUCN_CAT, "0")
 
-m4ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m4ai <- lmer(log_abundance ~ IUCN_CAT + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB), 
 	 data = matched.landuse)
 
@@ -302,6 +308,7 @@ ab.model.trop <- model_select(all.data  = tropical,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.trop$stats
+ab.model.trop$final.call
 #"log_abundance~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
 ab.model.temp <- model_select(all.data  = temperate, 
@@ -313,7 +320,8 @@ ab.model.temp <- model_select(all.data  = temperate,
                        randomStruct = ab.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-##log_abundance~poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
+ab.model.temp$final.call
+#"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
 
 
 # run models
@@ -326,18 +334,18 @@ m2aztr <- lmer(log_abundance ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+poly(lo
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
 anova(m1aztr, m2aztr)
-#<0.0001      1,16          0.99
+#<0.0001      1         0.99
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.temp <- na.omit(data.temp)
-m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) + log_elevation + ag_suit
+m1azte <- lmer(log_abundance ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
-m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) + log_elevation + ag_suit
+m2azte <- lmer(log_abundance ~ 1 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
 anova(m1azte, m2azte)
-#0.9398      1,11     0.3323
+#0.0049      1     0.9443
 
 
 #add results to master plot
@@ -467,25 +475,25 @@ anova(m1txp , m2txp)
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.i <- na.omit(data.i)
-m1txi <- lmer(log_abundance ~ Within_PA +log_slope + log_elevation + ag_suit
+m1txi <- lmer(log_abundance ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+m2txi<- lmer(log_abundance ~ 1 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#0.7399      1,10     0.3897
+#0.9774      1     0.3229
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.v <- na.omit(data.v)
-m1txv <- lmer(log_abundance ~ Within_PA + log_elevation +  poly(ag_suit,3)+poly(log_slope,2)
+m1txv <- lmer(log_abundance ~ Within_PA +  poly(ag_suit,3)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
-m2txv <- lmer(log_abundance ~ 1 + log_elevation +  poly(ag_suit,3)+poly(log_slope,2)
+m2txv <- lmer(log_abundance ~ 1 +  poly(ag_suit,3)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
 anova(m1txv, m2txv)
-#1.4614      1,13     0.2267
+#1.3755      1     0.2409
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100

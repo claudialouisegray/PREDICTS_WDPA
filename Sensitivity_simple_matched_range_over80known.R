@@ -24,18 +24,47 @@ nrow(PA_11_14)
 over.80 <- subset(PA_11_14, PropWithData_Geographic_range_log10_square_km > 0.8)
 nrow(over.80)
 
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+
+r.best.random <- compare_randoms(over.80, "range",
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+r.best.random$best.random 
+
+r.model <- model_select(all.data  = over.80, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = r.best.random$best.random ,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+#"range~poly(ag_suit,3)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSB)"
+
 data <- over.80[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "range")]
 data <- na.omit(data)
 
-m1r.80 <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+m1r.80 <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data)
-m2r.80 <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+m2r.80 <- lmer(range ~ 1 +poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data)
-anova(m1r, m2r)
 anova(m1r.80, m2r.80)
-#1.4484      1,15     0.2288
+#1.3731      1     0.2413
 summary(m1r.80)
 
 
@@ -109,11 +138,8 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
-# "range~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)+(IUCN_CAT|SS)+(1|SSB)"
 
-
-
-r.best.random.IUCN <- compare_randoms(over.80, "log_abundance",
+r.best.random.IUCN <- compare_randoms(over.80, "range",
 				fixedFactors=fF,
                         fixedTerms=fT,
 			     	keepVars = keepVars,
@@ -135,16 +161,17 @@ r.model.IUCN <- model_select(all.data  = over.80,
                        randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
 			     otherRandoms=character(0),
                        verbose=TRUE)
+# "range~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)+(IUCN_CAT|SS)+(1|SSB)"
 
 data <- over.80[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "range")]
 data <- na.omit(data)
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
 
-m3ri <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)
+m3ri <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = data)
-m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)
+m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = data)
 
@@ -158,7 +185,7 @@ m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 
 anova(m3ri, m4ri)
 summary(m4ri)
-#4.6488      3     0.1994
+#4.6671      3     0.1979
 
 
 #PLOT
@@ -275,7 +302,7 @@ r.model.trop <- model_select(all.data  = tropical,
                        randomStruct =r.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"range~poly(ag_suit,2)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
+#"range~poly(log_elevation,1)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
 
 
 r.model.temp <- model_select(all.data  = temperate, 
@@ -293,14 +320,14 @@ r.model.temp <- model_select(all.data  = temperate,
 # run models
 data.trop <- tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.trop <- na.omit(data.trop)
-m1aztr <- lmer(range ~ Within_PA +  poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
+m1aztr <- lmer(range ~ Within_PA +  poly(log_elevation,1)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
-m2aztr <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
+m2aztr <- lmer(range ~ 1 + poly(log_elevation,1)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
 anova(m1aztr, m2aztr)
-#0.0014      1     0.9703
+#0.0092      1     0.9234
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.temp <- na.omit(data.temp)
@@ -421,7 +448,8 @@ r.model.p <- model_select(all.data  = plants,
                        randomStruct =r.best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"range~poly(log_elevation,2)+(1+Within_PA|SS)"
+r.model.p$final.call
+#"range~poly(log_elevation,2)+(1|SS)"
 
 r.model.i <- model_select(all.data  = inverts, 
 			     responseVar = "range", 
@@ -432,6 +460,7 @@ r.model.i <- model_select(all.data  = inverts,
                        randomStruct =r.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.i$final.call
 # "range~poly(log_elevation,2)+Within_PA+(1|SS)+(1|SSB)"
 
 
@@ -451,25 +480,25 @@ r.model.v <- model_select(all.data  = verts,
 # run models
 data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.p <- na.omit(data.p)
-m1txp <- lmer(range ~ Within_PA +poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB), 
+m1txp <- lmer(range ~ Within_PA +poly(log_elevation,2)
+	+ (1|SS)+ (1|SSB), 
 	 data = data.p)
-m2txp <- lmer(range ~ 1+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB), 
+m2txp <- lmer(range ~ 1++poly(log_elevation,2)
+	+ (1|SS)+ (1|SSB), 
 	 data = data.p)
 anova(m1txp , m2txp)
-#0.8814      1     0.3478
+#1.2979      1     0.2546
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.i <- na.omit(data.i)
-m1txi <- lmer(range ~ Within_PA +poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB), 
+m1txi <- lmer(range ~ Within_PA +poly(log_elevation,2)
+	+ (1|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(range ~ 1 +poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB), 
+m2txi<- lmer(range ~ 1 +poly(log_elevation,2)
+	+ (1|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#3.5897      1    0.05814 
+#7.9978      1   0.004683
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.v <- na.omit(data.v)

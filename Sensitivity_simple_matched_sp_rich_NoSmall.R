@@ -62,74 +62,19 @@ sp.model <- model_select(all.data  = no.small ,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
+sp.model$final.call
 # "Species_richness~poly(ag_suit,1)+poly(log_elevation,1)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
 data <- na.omit(data)
-m1 <- glmer(Species_richness ~ Within_PA + log_slope + poly(log_elevation,1) + poly(ag_suit,1)
+m1 <- glmer(Species_richness ~ Within_PA + poly(log_elevation,1) + poly(ag_suit,1)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
-m2 <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,1)  + poly(ag_suit,1)
+m2 <- glmer(Species_richness ~ 1 + poly(log_elevation,1)  + poly(ag_suit,1)
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 anova(m1, m2)
-#7.9251      1   0.004875 
-
-
-# redo with non-orthogonal polynomials for predicting from rasters
-
-m1.est <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + I(log_elevation^2) + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
-fixef(m1.est)
-fixef(m1)
-
-### plotting
-# PREDICTS plots for landuse - the y axis is % difference
-# this is obtained by
-# getting estimates and lower and upper CI values
-y <- fixef(m1)[2]
-se <- se.fixef(m1)[2]  
-yplus <- y + se*1.96
-yminus <- y - se*1.96
-
-# then backtransform and turn into percentage in one step
-y <-(exp(y)*100)-100 
-yplus<-(exp(yplus)*100)-100
-yminus<-(exp(yminus)*100)-100
-
-### need to understand this step ###
-# this approach indicates that the exp backtransformed coefficient for inside PA 
-# is actually a proportion of the outside PA value
-#(when the to the intercept is outside PA) 
-# rather than a number of species units that should be added on to the backtransformed value for the intercept
-# I thought that where outside PA is the reference value,
-# the coefficient for inside PA is added on to get the absolute value for inside PA
-# i.e. the absolute value of species richness outside a PA would be
-intercept <-fixef(m1)[1]
-exp(intercept)
-# in a PA it would be 
-y <- fixef(m1)[2]
-exp(intercept+y)
-
-# Then, the percentage difference would be
-exp(intercept+y)/exp(intercept)*100 - 100
-
-#upper and lower would be
-exp(fixef(m1)[1] + fixef(m1)[2]+1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
-exp(fixef(m1)[1] + fixef(m1)[2]-1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
-
-# ! its the same as the approach above. Excellent.
-
-# but then, when the binomial family is used, the intercept + y as a percentage of intercept has to be used:
-# this is from plot_lu_effects
-# intercept<-fixef(model)['(Intercept)']
-#   y<-(((1/(1+exp(-(intercept+y))))/(1/(1+exp(-(intercept)))))*100)-100
-#   yplus<-(((1/(1+exp(-(intercept+yplus))))/(1/(1+exp(-(intercept)))))*100)-100
-#   yminus<-(((1/(1+exp(-(intercept+yminus))))/(1/(1+exp(-(intercept)))))*100)-100
-
-
-
+#7.9735      1   0.004747 
 
 
 # plot
@@ -212,6 +157,8 @@ sp.model.IUCN <- model_select(all.data  = no.small,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
+sp.model.IUCN$final.call
+sp.model.IUCN$warnings
 # "Species_richness~IUCN_CAT+poly(ag_suit,3)+poly(log_elevation,2)+(1+IUCN_CAT|SS)+(1|SSBS)+(1|SSB)"
 # doesnt converge with agsuit lower polynomial, try with both to check
 
@@ -219,27 +166,27 @@ data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "
 data <- na.omit(data)
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "4.5")
 
-m2i <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,2) + ag_suit
+m2i <- glmer(Species_richness ~ 1  + poly(log_elevation,2) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
-m3i <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,2) + ag_suit
+m3i <- glmer(Species_richness ~ IUCN_CAT  + poly(log_elevation,2) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
 
-m2i_ <- glmer(Species_richness ~ 1 + log_slope + poly(log_elevation,2) + poly(ag_suit,3)
+m2i_ <- glmer(Species_richness ~ 1 +  poly(log_elevation,2) + poly(ag_suit,3)
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
-m3i_ <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,2) + poly(ag_suit,3)
+m3i_ <- glmer(Species_richness ~ IUCN_CAT + poly(log_elevation,2) + poly(ag_suit,3)
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
-anova(m2i, m3i) # 8.5208      3    0.03639
-anova(m2i_, m3i_) # 8.6802      3    0.03386 
+anova(m2i, m3i) # 8.6853      3    0.03378
+anova(m2i_, m3i_) # 8.8317      3    0.03161
 summary(m3i)
-
+#use linear
 
 
 # plot 
@@ -250,7 +197,7 @@ data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "
 data <- na.omit(data)
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m1i <- glmer(Species_richness ~ IUCN_CAT + log_slope + poly(log_elevation,3) + ag_suit
+m1i <- glmer(Species_richness ~ IUCN_CAT +  poly(log_elevation,2) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
@@ -354,6 +301,7 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
                        randomStruct = Sp.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+sp.model.trop$final.call
 #"Species_richness~poly(ag_suit,1)+poly(log_elevation,3)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
@@ -367,31 +315,32 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
                        randomStruct = Sp.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+sp.model.temp$final.call
 #"Species_richness~poly(log_elevation,3)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 # run models
 data.trop <- sp.tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Species_richness")] 
 data.trop <- na.omit(data.trop)
-m1ztr <- glmer(Species_richness ~ Within_PA + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
+m1ztr <- glmer(Species_richness ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson",
 	 data = data.trop)
-m2ztr <- glmer(Species_richness ~ 1 + log_slope +poly(ag_suit,3)+poly(log_elevation,3)
+m2ztr <- glmer(Species_richness ~ 1  +poly(ag_suit,1)+poly(log_elevation,3)
 	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.trop)
 anova(m1ztr, m2ztr)
-# 7.0857      1    0.00777 
+# 6.8177      1   0.009026 
 
 data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")] 
 data.temp <- na.omit(data.temp)
-m1zte <- glmer(Species_richness ~ Within_PA +poly(log_slope,2) + poly(log_elevation,3) + ag_suit
+m1zte <- glmer(Species_richness ~ Within_PA +poly(log_slope,2) + poly(log_elevation,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
-m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,3) + ag_suit
+m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
 anova(m1zte, m2zte)
-# 1.2207      1     0.2692
+# 1.2289      1     0.2676
 
 
 #add results to master plot
@@ -488,6 +437,7 @@ model.p <- model_select(all.data  = plants,
                        randomStruct =best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.p$final.call
 # "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 model.i <- model_select(all.data  = inverts, 
@@ -500,6 +450,7 @@ model.i <- model_select(all.data  = inverts,
                        randomStruct =best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.i$final.call
 # "Species_richness~poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
@@ -513,6 +464,7 @@ model.v <- model_select(all.data  = verts,
                        randomStruct =best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.v$final.call
 #"Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
@@ -530,25 +482,25 @@ anova(m1txp , m2txp)
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Species_richness")]
 data.i <- na.omit(data.i)
-m1txi <- glmer(Species_richness ~ Within_PA +poly(log_elevation,1)+poly(log_slope,1) + poly(ag_suit,1)
+m1txi <- glmer(Species_richness ~ Within_PA +poly(log_slope,1) 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
-m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)+poly(log_slope,1) + poly(ag_suit,1)
+m2txi<- glmer(Species_richness ~ 1 +poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 anova(m1txi, m2txi)
-#2.4033      1     0.1211
+#2.8366      1    0.09214
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")]
 data.v <- na.omit(data.v)
-m1txv <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)+ poly(log_slope,1)
+m1txv <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,2)+ poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
-m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+ poly(log_slope,1)
+m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+ poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
 anova(m1txv, m2txv)
-#3.5296      1    0.06028
+#3.5278      1    0.06035
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -578,6 +530,9 @@ sp.plot <- rbind(sp.plot3, tax)
 
 
 # master plot
+
+
+#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - sp rich nosmall.RData")
 
 
 
@@ -610,7 +565,7 @@ points(sp.plot$est ~ c(1:nrow(sp.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(sp.plot),65, sp.plot$n.site)
+text(1:nrow(sp.plot),65, sp.plot$n.site, srt = 180)
 axis(1, c(1:nrow(sp.plot)), sp.plot$label, cex.axis = 1.5, las = 2, tick = 0)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 

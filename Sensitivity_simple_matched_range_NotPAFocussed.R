@@ -33,18 +33,47 @@ no.PA.focussed <- PA_11_14[pos,]
 nrow(no.PA.focussed)
 
 
+fF <- c("Within_PA") 
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("Within_PA")
+
+r.best.random <- compare_randoms(no.PA.focussed, "range",
+				fixedFactors=fF,
+                        fixedTerms=fT,
+			     	keepVars = keepVars,
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+r.best.random$best.random 
+
+r.model <- model_select(no.PA.focussed, 
+			     responseVar = "range", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = r.best.random$best.random ,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+#"range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
 data <- no.PA.focussed[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "range")]
 data <- na.omit(data)
 
-m1r <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+m1r <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data)
-m2r <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+m2r <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data)
 anova(m1r, m2r)
-#1.8348      1     0.1756
+#1.7118      1     0.1908
 summary(m1r)
 
 
@@ -98,7 +127,8 @@ text(1,70, paste("n =", length(data$SS[which(data$Within_PA == "no")]), sep = " 
 #get details for master plot
 r.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
-		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
+		n.site = c(length(data$SS[which(data$Within_PA == "no")]), 
+			length(data$SS[which(data$Within_PA == "yes")])))
 
 
 
@@ -116,12 +146,8 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
-# "range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(IUCN_CAT|SS)+(1|SSB)"
-> 
 
-
-
-r.best.random.IUCN <- compare_randoms(no.PA.focussed, "log_abundance",
+r.best.random.IUCN <- compare_randoms(no.PA.focussed, "range",
 				fixedFactors=fF,
                         fixedTerms=fT,
 			     	keepVars = keepVars,
@@ -143,6 +169,9 @@ r.model.IUCN <- model_select(all.data  = no.PA.focussed,
                        randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.IUCN$final.call
+# "range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(IUCN_CAT|SS)+(1|SSB)"
+
 
 data <- no.PA.focussed[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "range")]
 data <- na.omit(data)
@@ -155,15 +184,6 @@ m3ri <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
 m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = data)
-
-#ordinal - gives same significance
-m3ri <- lmer(range ~ 1 +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_14_ord)
-m4ri <- lmer(range ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_14_ord)
-
 anova(m3ri, m4ri)
 summary(m4ri)
 #2.3671      3     0.4998
@@ -279,6 +299,7 @@ r.model.trop <- model_select(all.data  = tropical,
                        randomStruct =r.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.trop$final.call
 #"range~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -291,6 +312,7 @@ r.model.temp <- model_select(all.data  = temperate,
                        randomStruct = r.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.temp$final.call
 #"range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -425,6 +447,7 @@ r.model.p <- model_select(all.data  = plants,
                        randomStruct =r.best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.p$final.call
 #"range~poly(ag_suit,3)+poly(log_elevation,3)+(1+Within_PA|SS)"
 
 r.model.i <- model_select(all.data  = inverts, 
@@ -436,6 +459,7 @@ r.model.i <- model_select(all.data  = inverts,
                        randomStruct =r.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.i$final.call
 # "range~poly(log_elevation,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -449,6 +473,7 @@ r.model.v <- model_select(all.data  = verts,
                        randomStruct =r.best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.v$final.call
 # "range~poly(ag_suit,2)+poly(log_elevation,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -456,25 +481,25 @@ r.model.v <- model_select(all.data  = verts,
 # run models
 data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.p <- na.omit(data.p)
-m1txp <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)
+m1txp <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
-m2txp <- lmer(range ~ 1+poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)
+m2txp <- lmer(range ~ 1+poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
 anova(m1txp , m2txp)
-#0.0059      1     0.9386
+#0.0012      1      0.972
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.i <- na.omit(data.i)
-m1txi <- lmer(range ~ Within_PA +poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
+m1txi <- lmer(range ~ Within_PA +poly(log_elevation,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(range ~ 1 +poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)
+m2txi<- lmer(range ~ 1 +poly(log_elevation,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#4.8135      1    0.02824 
+#5.0276      1    0.02495 
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
 data.v <- na.omit(data.v)
@@ -544,6 +569,8 @@ r.plot <- rbind(r.plot3, tax)
 
 # master plot
 
+#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - range noPAfocussed.RData")
+
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models endemicity noPAfocussed.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
@@ -573,9 +600,11 @@ points(r.plot$est ~ c(1:nrow(r.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(r.plot),65, r.plot$n.site)
+text(1:nrow(r.plot),65, r.plot$n.site, srt = 180)
 axis(1, c(1:nrow(r.plot)), r.plot$label, cex.axis = 1.5, las = 2, tick = 0 )
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
 
 dev.off()
+
+save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - range noPAfocussed.RData")

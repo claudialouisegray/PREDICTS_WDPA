@@ -60,15 +60,16 @@ ab.model <- model_select(all.data  = no.small,
                        randomStruct = abundance.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+#"log_abundance~Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
-m1a <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation + ag_suit
+m1a <- lmer(log_abundance ~ Within_PA
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data =  no.small)
-m2a <- lmer(log_abundance ~ 1 + log_slope + log_elevation + ag_suit
+m2a <- lmer(log_abundance ~ 1 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data =  no.small)
 anova(m1a, m2a)
-#6.6684      1   0.009814 
+#4.5626      1    0.03268 
 
 summary(m1a)
 exp(fixef(m1a)[2]) # 1.147
@@ -123,7 +124,7 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
-# cant converge with nonlinear terms
+
 
 abundance.best.random.IUCN <- compare_randoms(no.small, "log_abundance",
 				fixedFactors=fF,
@@ -146,17 +147,31 @@ ab.model.IUCN <- model_select(all.data  = no.small,
                        randomStruct = abundance.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
-
+# convergence issues with nonlinear terms
+# check starting with all linear
+fF <- c("IUCN_CAT") 
+fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
+keepVars <- list()
+fI <- character(0)
+RS <-  c("IUCN_CAT")
+ab.model.IUCN <- model_select(all.data  = no.small, 
+			     responseVar = "log_abundance", 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       randomStruct = abundance.best.random.IUCN$best.random,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
 
 # both these converge
 no.small$IUCN_CAT <- relevel(no.small$IUCN_CAT, "4.5")
 
-m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+m3ai <- lmer(log_abundance ~ 1 
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = no.small,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+m4ai <- lmer(log_abundance ~ IUCN_CAT 
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = no.small,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
@@ -172,7 +187,7 @@ m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
 
 
 anova(m3ai, m4ai)
-#5.3636      3      0.147
+#3.9211      3     0.2701
 summary(m4ai)
 validate(m2ai)
 
@@ -183,7 +198,7 @@ labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
 
 no.small$IUCN_CAT <- relevel(no.small$IUCN_CAT, "0")
 
-m4ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m4ai <- lmer(log_abundance ~ IUCN_CAT 
 	+ (IUCN_CAT|SS) + (1|SSB), 
 	 data = no.small)
 summary(m4ai)
@@ -310,14 +325,14 @@ anova(m1aztr, m2aztr)
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.temp <- na.omit(data.temp)
-m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) + log_elevation + ag_suit
+m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
-m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) + log_elevation + ag_suit
+m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
 anova(m1azte, m2azte)
-#2.4262      1     0.1193
+#0.9848      1      0.321
 
 
 #add results to master plot
@@ -438,36 +453,36 @@ ab.model.v <- model_select(all.data  = verts,
 # run models
 data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.p <- na.omit(data.p)
-m1txp <- lmer(log_abundance ~ Within_PA +poly(ag_suit,1)+poly(log_elevation,1)+poly(log_slope,3)
+m1txp <- lmer(log_abundance ~ Within_PA +poly(log_elevation,1)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
-m2txp <- lmer(log_abundance ~ 1+poly(ag_suit,1)+poly(log_elevation,1)+poly(log_slope,3)
+m2txp <- lmer(log_abundance ~ 1 +poly(log_elevation,1)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
 anova(m1txp , m2txp)
-# 0.6499      1     0.4202
+# 0.6432      1     0.4225
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.i <- na.omit(data.i)
-m1txi <- lmer(log_abundance ~ Within_PA +log_slope + log_elevation + ag_suit
+m1txi <- lmer(log_abundance ~ Within_PA +log_slope 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+m2txi<- lmer(log_abundance ~ 1 +log_slope 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#2.7506      1    0.09722 
+#2.7887      1    0.09493
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.v <- na.omit(data.v)
-m1txv <- lmer(log_abundance ~ Within_PA + log_elevation +  poly(ag_suit,3)+poly(log_slope,2)
+m1txv <- lmer(log_abundance ~ Within_PA +  poly(ag_suit,3)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
-m2txv <- lmer(log_abundance ~ 1 + log_elevation +  poly(ag_suit,3)+poly(log_slope,2)
+m2txv <- lmer(log_abundance ~ 1  +  poly(ag_suit,3)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
 anova(m1txv, m2txv)
-#5.2556      1    0.02188
+#5.28      1    0.02157
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -495,6 +510,10 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 
 # master plot
+
+#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - abundance nosmall.RData")
+
+
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models abundance NoSmall.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
@@ -525,7 +544,7 @@ points(ab.plot$est ~ c(1:nrow(ab.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(ab.plot),65, ab.plot$n.site)
+text(1:nrow(ab.plot),65, ab.plot$n.site, srt = 180)
 #axis(1, c(1:nrow(ab.plot)), ab.plot$label, cex.axis = 1.5, las = 2)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 

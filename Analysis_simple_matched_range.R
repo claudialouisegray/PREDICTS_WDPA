@@ -26,7 +26,7 @@ keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
 
-r.best.random <- compare_randoms(PA_11_14, "log_abundance",
+r.best.random <- compare_randoms(PA_11_14, "range",
 				fixedFactors=fF,
                         fixedTerms=fT,
 			     	keepVars = keepVars,
@@ -185,7 +185,7 @@ keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
 
-r.best.random.IUCN <- compare_randoms(PA_11_14, "log_abundance",
+r.best.random.IUCN <- compare_randoms(PA_11_14, "range",
 				fixedFactors=fF,
                         fixedTerms=fT,
 			     	keepVars = keepVars,

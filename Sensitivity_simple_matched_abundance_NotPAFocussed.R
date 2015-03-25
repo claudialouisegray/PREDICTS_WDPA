@@ -68,23 +68,19 @@ ab.model <- model_select(all.data  = no.PA.focussed,
                        randomStruct = abundance.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model$final.call
 #"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
 
 
-m1a <- lmer(log_abundance ~ Within_PA + log_slope + log_elevation + ag_suit
+m1a <- lmer(log_abundance ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data =  no.PA.focussed)
-m2a <- lmer(log_abundance ~ 1 + log_slope + log_elevation + ag_suit
+m2a <- lmer(log_abundance ~ 1 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data =  no.PA.focussed)
 anova(m1a, m2a)
-#3.9087      1    0.04804
+#2.1842      1     0.1394
 
-summary(m1a)
-exp(fixef(m1a)[2]) # 1.147
-
-#no need to redo as no non-linear terms
-fixef(m1a)
 
 # plot
 
@@ -133,7 +129,7 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
-#"log_abundance~1+(1+IUCN_CAT|SS)+(1|SSB)"
+
 
 abundance.best.random.IUCN <- compare_randoms(no.PA.focussed, "log_abundance",
 				fixedFactors=fF,
@@ -156,33 +152,24 @@ ab.model.IUCN <- model_select(all.data  = no.PA.focussed,
                        randomStruct = abundance.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
-
+ab.model.IUCN$final.call
+#"log_abundance~1+(1+IUCN_CAT|SS)+(1|SSB)"
 
 # both these converge
 no.PA.focussed$IUCN_CAT <- relevel(no.PA.focussed$IUCN_CAT, "4.5")
 
-m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+m3ai <- lmer(log_abundance ~ 1 
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = no.PA.focussed,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
+m4ai <- lmer(log_abundance ~ IUCN_CAT 
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = no.PA.focussed,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-
-#with ordinal - gives exactly the same results when compared ord vs not ordinal with other responses 
-#but coefficients v different
-m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = no.PA.focussed_ord)
-m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = no.PA.focussed_ord)
 
 
 anova(m3ai, m4ai)
-#4.4288      3     0.2187
+#2.8774      3     0.4109
 summary(m4ai)
 validate(m2ai)
 
@@ -193,7 +180,7 @@ labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
 
 no.PA.focussed$IUCN_CAT <- relevel(no.PA.focussed$IUCN_CAT, "0")
 
-m4ai <- lmer(log_abundance ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m4ai <- lmer(log_abundance ~ IUCN_CAT 
 	+ (IUCN_CAT|SS) + (1|SSB), 
 	 data = no.PA.focussed)
 summary(m4ai)
@@ -309,25 +296,25 @@ ab.model.temp <- model_select(all.data  = temperate,
 # run models
 data.trop <- tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.trop <- na.omit(data.trop)
-m1aztr <- lmer(log_abundance ~ Within_PA + poly(log_slope,1) + poly(log_elevation,2)+ ag_suit
+m1aztr <- lmer(log_abundance ~ Within_PA  + poly(log_elevation,2)+ ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
-m2aztr <- lmer(log_abundance ~ 1 + poly(log_slope,1) + poly(log_elevation,2) + ag_suit
+m2aztr <- lmer(log_abundance ~ 1  + poly(log_elevation,2) + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
 anova(m1aztr, m2aztr)
-#4.0177      1    0.04503
+#4.0676      1    0.04371 
 
 data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.temp <- na.omit(data.temp)
-m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) + log_elevation + ag_suit
+m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
-m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) + log_elevation + ag_suit
+m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
 anova(m1azte, m2azte)
-#2.1346      1      0.144
+#0.3193      1      0.572
 
 
 #add results to master plot
@@ -415,6 +402,7 @@ ab.model.p <- model_select(all.data  = plants,
                        randomStruct =ab.best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.p$final.call
 # "log_abundance~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)+(1+Within_PA|SS)"
 
 
@@ -427,6 +415,7 @@ ab.model.i <- model_select(all.data  = inverts,
                        randomStruct =ab.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.i$final.call
 #"log_abundance~poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -439,6 +428,7 @@ ab.model.v <- model_select(all.data  = verts,
                        randomStruct =ab.best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.v$final.call
 #"log_abundance~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -458,14 +448,14 @@ anova(m1txp , m2txp)
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.i <- na.omit(data.i)
-m1txi <- lmer(log_abundance ~ Within_PA +log_slope + log_elevation + ag_suit
+m1txi <- lmer(log_abundance ~ Within_PA +log_slope
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
+m2txi<- lmer(log_abundance ~ 1 +log_slope
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 anova(m1txi, m2txi)
-#1.3392      1     0.2472
+#1.3486      1     0.2455
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
 data.v <- na.omit(data.v)
@@ -505,6 +495,11 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 # master plot
 
+
+#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - abundance noPAfocussed.RData")
+
+
+
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models abundance noPAfocussed.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
@@ -534,7 +529,7 @@ points(ab.plot$est ~ c(1:nrow(ab.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(ab.plot),65, ab.plot$n.site)
+text(1:nrow(ab.plot),65, ab.plot$n.site, srt = 180)
 #axis(1, c(1:nrow(ab.plot)), ab.plot$label, cex.axis = 1.5, las = 2)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 

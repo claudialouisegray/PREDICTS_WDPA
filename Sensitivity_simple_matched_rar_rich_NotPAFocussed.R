@@ -75,10 +75,10 @@ r.sp.model$final.call
 data <- no.PA.focussed[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Richness_rarefied")]
 data <- na.omit(data)
 nrow(data)
-m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
+m3 <- glmer(Richness_rarefied ~ Within_PA +  poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
-m4 <- glmer(Richness_rarefied ~ 1 + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
+m4 <- glmer(Richness_rarefied ~ 1 +  poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 anova(m3, m4)
@@ -162,45 +162,25 @@ r.sp.model.IUCN <- model_select(all.data  = no.PA.focussed,
                        verbose=TRUE)
 r.sp.model.IUCN$final.call
 r.sp.model.IUCN$warnings
-
-#"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(1+IUCN_CAT|SS)+(1|SSBS)"
-
-
 r.sp.model.IUCN$stats 
+#"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(1+IUCN_CAT|SS)+(1|SSBS)"
 
 data <- no.PA.focussed[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "SSS",
 		 "Richness_rarefied", "Source_ID", "IUCN_CAT", "Zone", "taxon_of_interest")]
 data <- na.omit(data)
 
-
 # null doesnt converge with the non linear confounding variables.  Test as non-linear.
 # convergence issues with m5i but estimates sensible and similar to earlier. 
-m5i <- glmer(Richness_rarefied ~ 1 + log_slope +poly(ag_suit,3)+poly(log_elevation,3)
+m5i <- glmer(Richness_rarefied ~ 1 +poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
 	family = "poisson", data = data,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT  + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)),
 	family = "poisson", data = data)
-
-summary(m5i)
-
-# try with ordinal data
-m5i <- glmer(Richness_rarefied ~ 1 + log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = no.PA.focussed_ord,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)),
-	family = "poisson", data = no.PA.focussed_ord)
-
 anova(m5i, m6i)
-#2.3293      3     0.5069
-
-summary(m6i)
-
+#2.362      3     0.5007
 
 
 
@@ -213,9 +193,9 @@ levels.IUCN <- levels(no.PA.focussed$IUCN_CAT)
 
 no.PA.focussed$IUCN_CAT <- relevel(no.PA.focussed$IUCN_CAT, "0")
 
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT +poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = no.PA.focussed,
+	family = "poisson", data = data,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 pos <- c(grep("4.5", names(fixef(m6i))),grep("7", names(fixef(m6i))),grep("1.5", names(fixef(m6i))))
@@ -328,30 +308,28 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
 sp.model.temp$final.call
 # "Richness_rarefied~poly(ag_suit,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
-
-
 # run models
 data.trop <- sp.tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Richness_rarefied")] 
 data.trop <- na.omit(data.trop)
-m1ztr <- glmer(Richness_rarefied ~ Within_PA + poly(log_slope,3) + poly(ag_suit,1)+poly(log_elevation,1)
+m1ztr <- glmer(Richness_rarefied ~ Within_PA + poly(log_slope,3) + poly(ag_suit,1)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson",
 	 data = data.trop)
-m2ztr <- glmer(Richness_rarefied ~ 1 + poly(log_slope,3) + poly(ag_suit,1)+poly(log_elevation,1)
+m2ztr <- glmer(Richness_rarefied ~ 1 + poly(log_slope,3) + poly(ag_suit,1)
 	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.trop)
 anova(m1ztr, m2ztr)
-# 1.4244      1     0.2327
+# 1.5659      1     0.2108
 
 data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")] 
 data.temp <- na.omit(data.temp)
-m1zte <- glmer(Richness_rarefied ~ Within_PA +poly(log_slope,1) + poly(log_elevation,1) + poly(ag_suit,3)
+m1zte <- glmer(Richness_rarefied ~ Within_PA  + poly(ag_suit,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
-m2zte <- glmer(Richness_rarefied ~ 1 + poly(log_slope,1) + poly(log_elevation,1) + poly(ag_suit,3)
+m2zte <- glmer(Richness_rarefied ~ 1  + poly(ag_suit,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
 anova(m1zte, m2zte)
-# 0.0226      1     0.8806
+# 0.1027      1     0.7486
 
 
 #add results to master plot
@@ -484,36 +462,36 @@ model.v$final.call
 # run models
 data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Richness_rarefied")]
 data.p <- na.omit(data.p)
-m1txp <- glmer(Richness_rarefied ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,3)+poly(log_slope,1)
+m1txp <- glmer(Richness_rarefied ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), family = "poisson", 
 	 data = data.p)
-m2txp <- glmer(Richness_rarefied ~ 1+poly(ag_suit,1)+poly(log_elevation,3)+poly(log_slope,1)
+m2txp <- glmer(Richness_rarefied ~ 1+poly(ag_suit,1)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.p)
 anova(m1txp , m2txp)
-#0.7455      1     0.3879
+#0.8933      1     0.3446
 
 data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Richness_rarefied")]
 data.i <- na.omit(data.i)
-m1txi <- glmer(Richness_rarefied ~ Within_PA +poly(log_elevation,1)+poly(log_slope,1) +poly(ag_suit,1)
+m1txi <- glmer(Richness_rarefied ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
-m2txi<- glmer(Richness_rarefied ~ 1 +poly(log_elevation,1)+poly(log_slope,1) +poly(ag_suit,1)
+m2txi<- glmer(Richness_rarefied ~ 1 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 anova(m1txi, m2txi)
-#0.0145      1     0.9042
+#0.1508      1     0.6977
 
 data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")]
 data.v <- na.omit(data.v)
-m1txv <- glmer(Richness_rarefied ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,1)+ poly(log_slope,1)
+m1txv <- glmer(Richness_rarefied ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
-m2txv <- glmer(Richness_rarefied ~ 1 + poly(ag_suit,1)+poly(log_elevation,1)+ poly(log_slope,1)
+m2txv <- glmer(Richness_rarefied ~ 1 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
 anova(m1txv, m2txv)
-#0.3543      1     0.5517
+#0.1581      1     0.6909
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -545,6 +523,8 @@ r.sp.plot <- rbind(r.sp.plot3, tax)
 # master plot
 
 
+#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich noPAfocussed.RData")
+
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich noPAfocussed.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
@@ -575,7 +555,7 @@ points(r.sp.plot$est ~ c(1:nrow(r.sp.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(r.sp.plot),65, r.sp.plot$n.site)
+text(1:nrow(r.sp.plot),65, r.sp.plot$n.site, srt = 180)
 #axis(1, c(1:nrow(r.sp.plot)), r.sp.plot$label, cex.axis = 1.5, las = 2)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 
