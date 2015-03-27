@@ -174,6 +174,56 @@ anova(m3ai, m4ai)
 summary(m4ai)
 
 
+# get p values for individual comparisons
+
+studies <- unique(PA_11_14$SS[which(PA_11_14$IUCN_CAT == "1.5")])
+o.pos <- which(PA_11_14$Within_PA == "no" & PA_11_14$SS %in% studies)
+i.pos <- which(PA_11_14$IUCN_CAT == "1.5")
+data1 <- droplevels(PA_11_14[c(o.pos, i.pos),])
+
+m3ai <- lmer(log_abundance ~ 1 
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = data1,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m4ai <- lmer(log_abundance ~ IUCN_CAT 
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = data1,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+anova(m3ai, m4ai)
+
+studies <- unique(PA_11_14$SS[which(PA_11_14$IUCN_CAT == "4.5")])
+o.pos <- which(PA_11_14$Within_PA == "no" & PA_11_14$SS %in% studies)
+i.pos <- which(PA_11_14$IUCN_CAT == "4.5")
+data1 <- droplevels(PA_11_14[c(o.pos, i.pos),])
+
+m3ai <- lmer(log_abundance ~ 1 
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = data1,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m4ai <- lmer(log_abundance ~ IUCN_CAT 
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = data1,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+anova(m3ai, m4ai)
+
+
+studies <- unique(PA_11_14$SS[which(PA_11_14$IUCN_CAT == "7")])
+o.pos <- which(PA_11_14$Within_PA == "no" & PA_11_14$SS %in% studies)
+i.pos <- which(PA_11_14$IUCN_CAT == "7")
+data1 <- droplevels(PA_11_14[c(o.pos, i.pos),])
+
+m3ai <- lmer(log_abundance ~ 1 
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = data1,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+m4ai <- lmer(log_abundance ~ IUCN_CAT 
+	+ (IUCN_CAT|SS)+ (1|SSB), 
+	 data = data1,
+	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
+anova(m3ai, m4ai)
+
+
+
 # plot 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance IUCN.tif",
@@ -492,6 +542,9 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 # master plot
 
+load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - abundance.RData")
+
+
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models abundance.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
@@ -521,7 +574,7 @@ points(ab.plot$est ~ c(1:nrow(ab.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(ab.plot),65, ab.plot$n.site)
+text(1:nrow(ab.plot),65, ab.plot$n.site, srt = 180)
 #axis(1, c(1:nrow(ab.plot)), ab.plot$label, cex.axis = 1.5, las = 2)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 

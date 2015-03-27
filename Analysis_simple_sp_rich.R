@@ -225,7 +225,7 @@ fixef(m3i)
 #coefficients are similar for both models
 
 anova(m2i, m3i) # 10.785      3    0.01294
-summary(m3i)
+summary(m2i)
 
 # look at differences between strictest categories and others
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "1.5")
@@ -609,7 +609,7 @@ points(sp.plot$est ~ c(1:nrow(sp.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(sp.plot),65, sp.plot$n.site)
+text(1:nrow(sp.plot),65, sp.plot$n.site, srt = 180)
 axis(1, c(1:nrow(sp.plot)), sp.plot$label, cex.axis = 1.5, las = 2, tick = 0)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 

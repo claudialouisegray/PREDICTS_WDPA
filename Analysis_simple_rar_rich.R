@@ -108,7 +108,7 @@ dev.off()
 #keep points for master plot
 r.sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
-		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
+		n.site = c(length(data$SS[which(data$Within_PA == "no")]), length(data$SS[which(data$Within_PA == "yes")])))
 
 
 
@@ -538,7 +538,7 @@ r.sp.plot <- rbind(r.sp.plot3, tax)
 
 # master plot
 
-
+load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich.RData")
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
@@ -569,7 +569,7 @@ points(r.sp.plot$est ~ c(1:nrow(r.sp.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(r.sp.plot),65, r.sp.plot$n.site)
+text(1:nrow(r.sp.plot),65, r.sp.plot$n.site, srt = 180)
 #axis(1, c(1:nrow(r.sp.plot)), r.sp.plot$label, cex.axis = 1.5, las = 2)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 
@@ -578,6 +578,6 @@ dev.off()
 
 
 
-save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich")
+save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich.RData")
 
 
