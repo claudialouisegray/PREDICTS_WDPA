@@ -130,6 +130,18 @@ PA_11_14$IUCN_CAT  <- factor(PA_11_14$IUCN_CAT)
 #make response variables
 PA_11_14$log_abundance <- log(PA_11_14$Total_abundance +1)
 PA_11_14$range <- PA_11_14$CWM_Geographic_range_log10_square_km
+PA_11_14$range <- PA_11_14$CWM_Geographic_range_log10_square_km
+PA_11_14$mass <- PA_11_14$CWM_Mass_log10_g 
+PA_11_14$veg <- PA_11_14$CWM_Vegetative_height_log10_m
+PA_11_14$vol <- PA_11_14$CWM_Length_derived_volume_3log10_mm
+
+
+pos <- which(PA_11_14$CWM_Adult_wet_mass_log10_g >0 & PA_11_14$CWM_Maximum_wet_mass_log10_g >0) 
+length(pos)
+#View(PA_11_14[pos,c("CWM_Adult_wet_mass_log10_g","CWM_Maximum_wet_mass_log10_g", "CWM_Mass_log10_g")])
+#studies that have both reptiles and birds/mammals
+unique(PA_11_14[pos,"SS"])
+
 
 #set reference levels
 PA_11_14 <- droplevels(PA_11_14)

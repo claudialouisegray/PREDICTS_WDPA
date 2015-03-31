@@ -207,16 +207,14 @@ matched.landuse$IUCN.PA[which(matched.landuse$Within_PA == "no")] <- "0"
 
 
 #make response variables
+matched.landuse$log_abundance <- log(matched.landuse$Total_abundance +1)
 matched.landuse$range <- matched.landuse$CWM_Geographic_range_log10_square_km
-matched.landuse$mass <- matched.landuse$CWM_Mass_log10_g  ### UPDATE
+matched.landuse$mass <- matched.landuse$CWM_Mass_log10_g  
 matched.landuse$veg <- matched.landuse$CWM_Vegetative_height_log10_m
 matched.landuse$vol <- matched.landuse$CWM_Length_derived_volume_3log10_mm
 
 pos <- which(matched.landuse$CWM_Adult_wet_mass_log10_g >0 & matched.landuse$CWM_Maximum_wet_mass_log10_g >0) 
 length(pos)
-
-matched.landuse$log_abundance <- log(matched.landuse$Total_abundance +1)
-matched.landuse$log_sp_rich <- log(matched.landuse$Species_richness+1)
 
 
 

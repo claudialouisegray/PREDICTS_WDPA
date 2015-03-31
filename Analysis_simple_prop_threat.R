@@ -100,10 +100,6 @@ true.y <- 1/(1+exp(-(intercept+y)))
 true.yplus <- 1/(1+exp(-(intercept+yplus)))
 true.yminus <- 1/(1+exp(-(intercept+yminus)))
 
-# this is code from plot_lu_effects -
-# why is it backtranformed absolute value of non-ref level/back transformed value of ref variable?
-# because!!!
-# dont want the percentage of the difference, want it as 100+x percent. (Tims code then -100 at the end to get difference). 
 
 y<-((true.y/true.intercept)*100)
 yplus<-((true.yplus/true.intercept)*100)

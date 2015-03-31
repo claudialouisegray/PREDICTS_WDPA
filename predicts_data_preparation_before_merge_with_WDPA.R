@@ -161,6 +161,11 @@ diversity$Mass_log10_g <- NA
 diversity$Mass_log10_g[which(diversity$Adult_wet_mass_log10_g>0)] <- diversity$Adult_wet_mass_log10_g[which(diversity$Adult_wet_mass_log10_g>0)]
 diversity$Mass_log10_g[which(diversity$Maximum_wet_mass_log10_g>0)] <- diversity$Maximum_wet_mass_log10_g[which(diversity$Maximum_wet_mass_log10_g>0)]
 
+# There are two studies which have both reptiles and birds/mammals 
+# c("DL1_2009__Woinarski 2", "HP1_2010__Bicknell 1")
+# These show up after CWM values are calculated as having different CWM mass values to either CWM based on maximum wet mass or adult wet mass
+
+
 
 traits <- c('Adult_wet_mass_log10_g',
             'Geographic_range_log10_square_km',
