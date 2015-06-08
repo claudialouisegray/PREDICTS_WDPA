@@ -115,17 +115,23 @@
     diversity$studyMinSiteAbund<-studyMinSiteAbund$Measurement[match(
       diversity$SS,studyMinSiteAbund$SS)]
     
+#get list giving min abundance for the study each site is in where RSR calculation is suitable
+# then list of measurements for each observation where RSR calculation is suitable
     sample.n <- split(diversity$studyMinSiteAbund[diversity$Is_RSR_suitable], 
                       droplevels(diversity$SSS[diversity$Is_RSR_suitable]))
     values <- split(diversity$Measurement[diversity$Is_RSR_suitable],
                     droplevels(diversity$SSS[diversity$Is_RSR_suitable]))
     
     rsrich[site.rsr.suitable]<-mapply(function(vals,samp){
-      sp<-as.character(1:length(vals))
-      ind<-rep(sp,vals)
+      #make vector as long as the number of species at each site in the list
+	sp<-as.character(1:length(vals))
+	#make vector where the number for each species at each site in the list is repeated as many times as that species occurred
+      #i.e. a vector of what the individuals at that site was
+	ind<-rep(sp,vals)
       if (length(ind)==0){
         sr<-0
       } else {
+	#take a random sample of the individuals that is equal to the minimum site level abundance of that study
         rare.sp<-sample(ind,samp[1])
         sr<-length(table(rare.sp))
       }
