@@ -5,6 +5,7 @@ library(lme4)
 library(yarg)
 library(roquefort)
 library(influence.ME)
+library(multcomp)
 
 # load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
@@ -13,8 +14,7 @@ source("model_select.R")
 
 source("prep_PA_11_14_for_analysis.R")
 
-#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - sp rich.RData")
-
+### load RData file
 
 
 ### model species richness
@@ -52,79 +52,17 @@ sp.model <- model_select(all.data  = multiple.taxa.PA_11_14,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 sp.model$final.call
+sp.model$stats
 # Species_richness~poly(ag_suit,1)+poly(log_elevation,1)+Within_PA+(Within_PA|SS)+(1|SSB)+(1|SSBS)
 
-data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Species_richness")]
-data <- na.omit(data)
+data = sp.model$data
+
 m1 <- glmer(Species_richness ~ Within_PA + poly(log_elevation,1) + ag_suit
 	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
-m2 <- glmer(Species_richness ~ 1 + poly(log_elevation,1) + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
-anova(m1, m2)
-
-
-# redo with non-orthogonal polynomials for predicting from rasters
-
-m1.est <- glmer(Species_richness ~ Within_PA + log_slope + log_elevation + I(log_elevation^2) + ag_suit
-	+ (Within_PA|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
-fixef(m1.est)
-fixef(m1)
-
-### plotting
-# PREDICTS plots for landuse - the y axis is % difference
-# this is obtained by
-# getting estimates and lower and upper CI values
-y <- fixef(m1)[2]
-se <- se.fixef(m1)[2]  
-yplus <- y + se*1.96
-yminus <- y - se*1.96
-
-# then backtransform and turn into percentage in one step
-y <-(exp(y)*100)-100 
-yplus<-(exp(yplus)*100)-100
-yminus<-(exp(yminus)*100)-100
-
-### need to understand this step ###
-# this approach indicates that the exp backtransformed coefficient for inside PA 
-# is actually a proportion of the outside PA value
-#(when the to the intercept is outside PA) 
-# rather than a number of species units that should be added on to the backtransformed value for the intercept
-# I thought that where outside PA is the reference value,
-# the coefficient for inside PA is added on to get the absolute value for inside PA
-# i.e. the absolute value of species richness outside a PA would be
-intercept <-fixef(m1)[1]
-exp(intercept)
-# in a PA it would be 
-y <- fixef(m1)[2]
-exp(intercept+y)
-
-# Then, the percentage difference would be
-exp(intercept+y)/exp(intercept)*100 - 100
-
-#upper and lower would be
-exp(fixef(m1)[1] + fixef(m1)[2]+1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
-exp(fixef(m1)[1] + fixef(m1)[2]-1.96*se.fixef(m1)[2])/exp(fixef(m1)[1])*100
-
-# ! its the same as the approach above. Excellent.
-
-# but then, when the binomial family is used, the intercept + y as a percentage of intercept has to be used:
-# this is from plot_lu_effects
-# intercept<-fixef(model)['(Intercept)']
-#   y<-(((1/(1+exp(-(intercept+y))))/(1/(1+exp(-(intercept)))))*100)-100
-#   yplus<-(((1/(1+exp(-(intercept+yplus))))/(1/(1+exp(-(intercept)))))*100)-100
-#   yminus<-(((1/(1+exp(-(intercept+yminus))))/(1/(1+exp(-(intercept)))))*100)-100
-
-
-
 
 
 # plot
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model sp rich.tif",
-	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
 y <- as.numeric(fixef(m1)[2])
@@ -155,7 +93,7 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-dev.off()
+
 
 #keep points for master plot
 sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
@@ -201,54 +139,46 @@ sp.model.IUCN <- model_select(all.data  = multiple.taxa.PA_11_14,
                        randomStruct = Species_richness.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+sp.model.IUCN$stats
 sp.model.IUCN$final.call
+sp.model.IUCN$warnings
+
 # "Species_richness~IUCN_CAT+poly(ag_suit,1)+poly(log_elevation,3)+(IUCN_CAT|SS)+(1|SSB)+(1|SSBS)"
 # but, doesnt converge for elevation down to quadratic
-# compare cubic and linear
 
-data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
-data <- na.omit(data)
-
-m2i <- glmer(Species_richness ~ 1 + poly(log_elevation,1) + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
-#doesnt converge with cubic - use linear elevation relationship
+# compare cubic and linear models manually to see if it makes a difference
 
 m3ii <- glmer(Species_richness ~ IUCN_CAT + poly(log_elevation,3) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
+	family = "poisson", data = sp.model.IUCN$data)
 m3i <- glmer(Species_richness ~ IUCN_CAT  + poly(log_elevation,1) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
+	family = "poisson", data = sp.model.IUCN$data)
+anova(m3ii, m3i) # borderline, not sig difference
+fixef(m3ii)
 fixef(m3i)
-fixef(m3i)
-#coefficients are similar for both models
+#coefficients are similar for both models, i.e. form of relationship with elevation not critical so use stats table as above 
 
-anova(m2i, m3i) # 10.785      3    0.01294
-summary(m2i)
-
-# look at differences between strictest categories and others
-data$IUCN_CAT <- relevel(data$IUCN_CAT, "1.5")
-m3i <- glmer(Species_richness ~ IUCN_CAT  + poly(log_elevation,1) + ag_suit
+#double check elevation does need to be in the model
+m3iii <- glmer(Species_richness ~ IUCN_CAT  + poly(log_elevation,1) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
-summary(m3i)
+	family = "poisson", data = sp.model.IUCN$data)
+m3iv <- glmer(Species_richness ~ IUCN_CAT  + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+	family = "poisson", data = sp.model.IUCN$data)
+anova(m3iii, m3iv)
 
-
+#use stats table
 
 # plot 
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model sp rich IUCN.tif",
-	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
 labels <- c("Unprotected", "III  - VI", "unknown",  "I & II" )
 
-data <- multiple.taxa.PA_11_14[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Species_richness")]
-data <- na.omit(data)
+data <- sp.model.IUCN$data
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m1i <- glmer(Species_richness ~ IUCN_CAT + poly(log_elevation,1) + ag_suit
+m1i <- glmer(Species_richness ~ IUCN_CAT + poly(log_elevation,3) + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
@@ -274,8 +204,6 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
-
-
 text(1, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = " "))
 text(3, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
@@ -285,8 +213,6 @@ arrows(seq(2,length(points),1),CI[,1],
 	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
-
-dev.off()
 
 
 #add points for master plot
@@ -303,7 +229,6 @@ sp.plot2 <- rbind(sp.plot1, IUCN.plot)
 
 
 # simple species richness for Zone data
-
 
 sp.tropical <- subset(multiple.taxa.PA_11_14, Zone == "Tropical")
 sp.temperate <- subset(multiple.taxa.PA_11_14, Zone == "Temperate")
@@ -354,6 +279,7 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
                        randomStruct = Sp.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+sp.model.trop$stats
 #"Species_richness~poly(ag_suit,1)+poly(log_elevation,3)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 sp.model.temp <- model_select(all.data  = sp.temperate, 
@@ -366,32 +292,21 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
                        randomStruct = Sp.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+sp.model.temp$stats
 #"Species_richness~poly(log_elevation,1)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
-# run models
-data.trop <- sp.tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Species_richness")] 
-data.trop <- na.omit(data.trop)
+# run models for plots
+data.trop <- sp.model.trop$data
+data.temp <- sp.model.temp$data
+
 m1ztr <- glmer(Species_richness ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson",
-	 data = data.trop)
-m2ztr <- glmer(Species_richness ~ 1  +poly(ag_suit,1)+poly(log_elevation,3)
-	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
-	 data = data.trop)
-anova(m1ztr, m2ztr)
-# 8.7687      1   0.003064
+	 data = sp.model.trop$data)
 
-data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")] 
-data.temp <- na.omit(data.temp)
 m1zte <- glmer(Species_richness ~ Within_PA +poly(log_slope,2) + poly(log_elevation,2) 
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
-	 data = data.temp)
-m2zte <- glmer(Species_richness ~ 1 + poly(log_slope,2) + poly(log_elevation,2)
-	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
-	 data = data.temp)
-anova(m1zte, m2zte)
-# 2.6042      1     0.1066
-
+	 data =  sp.model.temp$data)
 
 #add results to master plot
 ztr.est <- exp(fixef(m1ztr)[2])*100
@@ -402,18 +317,13 @@ zte.est <- exp(fixef(m1zte)[2])*100
 zte.upper <- exp(fixef(m1zte)[2] + 1.96* se.fixef(m1zte)[2])*100
 zte.lower <- exp(fixef(m1zte)[2] - 1.96* se.fixef(m1zte)[2])*100
 
-a.zone <- data.frame(label = c("Tropical", "Temperate"),
+a.zone <- data.frame(label = c("tropical", "temperate"),
 				est = c(ztr.est, zte.est), 
 				upper = c(ztr.upper, zte.upper), 
 				lower = c(ztr.lower, zte.lower), 
 				n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]), 
 					nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
 sp.plot3 <- rbind(sp.plot2, a.zone)
-
-
-
-
-
 
 
 # species richness and taxon
@@ -472,10 +382,6 @@ best.random.v <- compare_randoms(verts, "Species_richness",
 				verbose=TRUE)
 best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
-
-
-
-
 # get polynomial relationships
 model.p <- model_select(all.data  = plants, 
 				fitFamily = "poisson",
@@ -487,6 +393,7 @@ model.p <- model_select(all.data  = plants,
                        randomStruct =best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.p$stats
 #"Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 model.i <- model_select(all.data  = inverts, 
@@ -499,8 +406,8 @@ model.i <- model_select(all.data  = inverts,
                        randomStruct =best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.i$stats
 #"Species_richness~poly(log_elevation,1)+poly(log_slope,1)+Within_PA+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
 
 model.v <- model_select(all.data  = verts, 
 			     responseVar = "Species_richness", 
@@ -512,8 +419,12 @@ model.v <- model_select(all.data  = verts,
                        randomStruct =best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.v$stats
 #"Species_richness~poly(ag_suit,3)+poly(log_elevation,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
+data.p <- model.p$data
+data.i <- model.i$data
+data.v <- model.v$data
 
 # run models
 data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Species_richness")]
@@ -521,33 +432,14 @@ data.p <- na.omit(data.p)
 m1txp <- glmer(Species_richness ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), family = "poisson", 
 	 data = data.p)
-m2txp <- glmer(Species_richness ~ 1+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.p)
-anova(m1txp , m2txp)
-#1.761      1,13     0.1845
 
-data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Species_richness")]
-data.i <- na.omit(data.i)
 m1txi <- glmer(Species_richness ~ Within_PA +poly(log_elevation,1)+poly(log_slope,1) 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
-m2txi<- glmer(Species_richness ~ 1 +poly(log_elevation,1)+poly(log_slope,1) 
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.i)
-anova(m1txi, m2txi)
-#4.0646      1    0.04379
 
-data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Species_richness")]
-data.v <- na.omit(data.v)
 m1txv <- glmer(Species_richness ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,2)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
-m2txv <- glmer(Species_richness ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.v)
-anova(m1txv, m2txv)
-#3.3799      1      0.066
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -564,7 +456,7 @@ txv.lower <- exp(fixef(m1txv)[2] - 1.96* se.fixef(m1txv)[2])*100
 
 
 
-tax <- data.frame(label = c("Plants", "Inverts", "Verts"),
+tax <- data.frame(label = c("plants", "inverts", "verts"),
 				est = c(txp.est, txi.est, txv.est), 
 				upper = c(txp.upper, txi.upper, txv.upper), 
 				lower = c(txp.lower, txi.lower, txv.lower), 
@@ -580,7 +472,7 @@ sp.plot <- rbind(sp.plot3, tax)
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models sp rich.tif",
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models sp rich.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
@@ -662,7 +554,7 @@ vals <- data.frame(name =  c("b.sp", "b.sp.max", "b.sp.min",
 for(b in vals$b.vals){
 
 benefit <- as.numeric(b)		# percentage increase in metric in PAs
-PA.pct <- 14.7 				# percentage of total land area in PAs
+PA.pct <- 14.6 				# percentage of total land area in PAs
 # global loss of biodiversity (from Newbold et al)
 if(vals$metric[which(vals$b.vals == b)] == "sp.rich"){
 	global.loss <- 0.136			
@@ -711,60 +603,17 @@ vals
 
 
 
-### how much area needed to get effectiveness of 90 if benefit doesnt increase
-### PA.abs and NPA.abs must change
-### then if total loss is the same, what is the area needed
-
-#given
-#est = 1-(1-PA.abs)/(1-NPA.abs)
-#NPA.abs = PA.abs*NPA.rel
-#then
-#est = 1-(1-PA.abs)/(1-PA.abs*NPA.rel)
-#est*(1-PA.abs*NPA.rel) = (1-PA.abs*NPA.rel)-(1-PA.abs)
-#est - est*PA.abs*NPA.rel = 1 - PA.abs*NPA.rel - 1 + PA.abs
-#est - est*PA.abs*NPA.rel =  - PA.abs*NPA.rel  + PA.abs
-#est =  - PA.abs*NPA.rel  + PA.abs + est*PA.abs*NPA.rel
-#est = PA.abs(- NPA.rel  + 1 + est*NPA.rel)
-#est/(- NPA.rel  + 1 + est*NPA.rel) = PA.abs
-
-est <- vals$est[which(vals$name == "b.spIUCN1")]
-benefit <- exp(fixef(m1)[2]) -1
-NPA.rel <- 1-benefit
-PA.abs <- est/(- NPA.rel  + 1 + est*NPA.rel)
-PA.abs
-PA.abs*NPA.rel
-
-# so if higher effectiveness for same benefit, both PA and NPA abs must increase.
-# how do we get current global loss given these scenarios?
-
-#then given 
-#global.int = (1 - PA.pct/100)*PA.abs*NPA.rel + (PA.pct/100)*PA.abs
-#global.int == PA.abs*NPA.rel - (PA.pct/100)*PA.abs*NPA.rel  + (PA.pct/100)*PA.abs
-#global.int = PA.abs*NPA.rel - (PA.pct/100)*(PA.abs*NPA.rel - PA.abs)
-#(PA.pct/100)*(PA.abs*NPA.rel - PA.abs) = PA.abs*NPA.rel - global.int
-#(PA.pct/100) = (PA.abs*NPA.rel - global.int)/(PA.abs*NPA.rel - PA.abs)
-
-## nb checked that these work by using 
-#est <- vals$est[which(vals$name == "b.sp")]
-
-100*(PA.abs*NPA.rel - global.int)/(PA.abs*NPA.rel - PA.abs)
-# we must unprotect everything, + another 10% of the planet. 
-# this is not a useful figure. 
-
-# with current equations, if area is increased, effectiveness goes down
-# because PAs must have been doing less well if more of the planet is in them, given observed global loss 
-
-
-
-# need to work out, if all PAs were IUCN cat 1 and still 14.7%, instead of what we have
+### working out area needed to achieve similar level of global biodiversity to increasing all existing to cat I-II
+# method:
+# if all PAs were IUCN cat 1 and still 14.6%, instead of what we have
 # what would global loss be
 # then how much area do we need to get this, given current benefit of PAs
 
 # NPA abs remains the same as in normal benefit scenario
-NPA.abs <- vals$NPA.abs[which(vals$name == "b.sp")]
+NPA.abs <- vals$NPA.abs[which(vals$name == c("b.sp"))]
 # total area protected remains the same
-PA.pct <- 14.7
-# NPA.rel becomes 1-benefit of protection in IUCN category
+PA.pct <- 14.6
+# NPA.rel becomes 1-benefit of protection in IUCN category I - II
 pos <- which(names(fixef(m1i))== "IUCN_CAT1.5")
 NPA.rel <- 1 - (exp(fixef(m1i)[pos])-1)
 
@@ -795,7 +644,7 @@ NPA.rel <- 1 - (exp(fixef(m1i)[pos])-1)
 
 
 
-save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - sp rich.RData")
+#save.image("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/RData files/8 landuses/simple models - sp rich.RData")
 
 
 

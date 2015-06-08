@@ -61,24 +61,6 @@ keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
-# "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <-character(0)
-keepVars <- list("ag_suit" = "1", "log_elevation" = "2", "log_slope" = "1")
-fI <- c("Within_PA:Predominant_habitat")
-RS <-  c("Within_PA")
-#Species_richness~Predominant_habitat+taxon_of_interest+Within_PA+Zone+Within_PA:Predominant_habitat+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
-
-
-fI <- c("Within_PA:poly(ag_suit,2)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,1)",
-	"Within_PA:taxon_of_interest", "Within_PA:Zone")
-
-
-
 Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
@@ -92,7 +74,7 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species
 				verbose=TRUE)
 
 
-Species_richness.best.random$best.random #
+Species_richness.best.random$best.random #"(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
  
 best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
@@ -111,6 +93,39 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14,
                        randomStruct = best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+
+# "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
+
+
+
+# add interactions
+fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
+fT <-character(0)
+keepVars <- list("ag_suit" = "1", "log_elevation" = "2", "log_slope" = "1")
+fI <- c("Within_PA:Predominant_habitat")
+RS <-  c("Within_PA")
+#Species_richness~Predominant_habitat+taxon_of_interest+Within_PA+Zone+Within_PA:Predominant_habitat+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
+
+#other ints I could add
+#fI <- c("Within_PA:poly(ag_suit,2)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,1)",
+#	"Within_PA:taxon_of_interest", "Within_PA:Zone")
+
+
+Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
+			     responseVar = "Species_richness",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+			     keepVars = keepVars,
+                       fixedInteractions=fI,
+                       randomStruct = best.random,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+
+
 
 
 validate(Species_richness.model$model) #ok
@@ -319,6 +334,8 @@ sp.m <- glmer(Species_richness~Predominant_habitat+Within_PA+Zone+taxon_of_inter
 	+ (1+Within_PA|SS)+(1|SSBS)+(1|SSB), data = data, family = poisson,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 summary(sp.m)
+
+
 #check results the same
 fixef(sp.m)
 fixef(Species_richness.model$model)
@@ -429,7 +446,7 @@ b.sp <-  response_in/response_out -1
 
 
 benefit <- as.numeric(b.sp)		# percentage increase in metric in PAs
-PA.pct <- 14.7 				# percentage of total land area in PAs
+PA.pct <- 14.6 				# percentage of total land area in PAs
 # global loss of biodiversity (from Newbold et al)
 global.loss <- 0.136
 

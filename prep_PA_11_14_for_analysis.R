@@ -4,7 +4,8 @@
 ### LOAD DATA on confounding variables
 
 
-setwd("N:/Documents/PREDICTS/WDPA analysis/matching data")
+
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/matching data")
 
 
 access <- read.table("bfer_1km_acc50k_moll_11_14.txt", header = T, sep = ",")
@@ -38,7 +39,7 @@ slope.1 <- slope[,c("SSS", "MEAN")]
 
 ### Load PA_11_14 dataset 
 
-setwd("N:/Documents/PREDICTS/WDPA analysis")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
 
 PA_11_14<- read.csv("PA_11_2014.csv")
 nrow(PA_11_14) #7077

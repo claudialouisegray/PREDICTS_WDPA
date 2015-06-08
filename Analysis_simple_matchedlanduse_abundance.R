@@ -19,17 +19,6 @@ source("prep_matched.landuse_for_analysis.R")
 nrow(matched.landuse)
 
 
-#make ordinal datasets
-
-matched.landuse_ord <- matched.landuse
-matched.landuse_ord$IUCN_CAT <- factor(matched.landuse_ord$IUCN_CAT, ordered = T, 
-	levels = c("0", "4.5", "7", "1.5"))
-
-multiple.taxa.matched.landuse_ord <- multiple.taxa.matched.landuse
-multiple.taxa.matched.landuse_ord$IUCN_CAT <- factor(multiple.taxa.matched.landuse_ord$IUCN_CAT, ordered = T, 
-	levels = c("0", "4.5", "7", "1.5"))
-
-
 
 ### model abundance
 
@@ -61,33 +50,19 @@ ab.model <- model_select(all.data  = matched.landuse,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model$final.call
+ab.model$stats 
 #"log_abundance~poly(ag_suit,1)+poly(log_elevation,1)+(Within_PA|SS)+(1|SSB)"
-ab.model$stats # p <0.015
-
-data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "log_abundance")]
-data <- na.omit(data)
 
 
+data <- ab.model$data
+
+# model for plot
 m1a <- lmer(log_abundance ~ Within_PA + log_elevation + ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
-m2a <- lmer(log_abundance ~ 1  + log_elevation + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = matched.landuse)
-anova(m1a, m2a)
-#0.4421      1     0.5061
-
-summary(m1a)
-exp(fixef(m1a)[2]) 
-
+	 data = data)
 
 
 # plot
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.landuse abundance.tif",
-	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
-
 
 labels <- c("Unprotected", "Protected")
 y <- as.numeric(fixef(m1a)[2])
@@ -116,7 +91,7 @@ points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 text(2,80, paste("n =", length(data$SS[which(data$Within_PA == "yes")]), sep = " "))
 text(1,80, paste("n =", length(data$SS[which(data$Within_PA == "no")]), sep = " "))
 
-dev.off()
+
 
 #get details for master plot
 ab.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
@@ -162,58 +137,21 @@ ab.model.IUCN <- model_select(all.data  = matched.landuse,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.IUCN$stats # p <0.015
- ab.model.IUCN$warnings
- ab.model.IUCN$final.call
+ab.model.IUCN$warnings
+ab.model.IUCN$final.call
 #"log_abundance~poly(ag_suit,1)+(IUCN_CAT|SS)+(1|SSB)"
 
-data <- matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "log_abundance")]
-data <- na.omit(data)
-
-
-
-#converges
-m3ai <- lmer(log_abundance ~ 1 + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = matched.landuse,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT  + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = matched.landuse,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-anova(m3ai, m4ai)
-#  0.2327      3     0.9721
-
-#try ordinal
-m3ai <- lmer(log_abundance ~ 1  + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = matched.landuse_ord,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT  + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = matched.landuse_ord,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-
-
-
-summary(m2ai)
-validate(m2ai)
-
+data <- ab.model.IUCN$data
 
 # plot 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.landuse abundance IUCN.tif",
-	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
-
-
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
-
-levels.IUCN <- levels(matched.landuse$IUCN_CAT)
 
 matched.landuse$IUCN_CAT <- relevel(matched.landuse$IUCN_CAT, "0")
 
 m4ai <- lmer(log_abundance ~ IUCN_CAT + ag_suit
 	+ (IUCN_CAT|SS) + (1|SSB), 
-	 data = matched.landuse)
+	 data = data)
 
 pos <- c(grep("4.5", names(fixef(m4ai))),grep("7", names(fixef(m4ai))),grep("1.5", names(fixef(m4ai))))
 y <- as.numeric(fixef(m4ai)[pos])
@@ -245,7 +183,6 @@ text(2, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = "
 text(3, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
 text(4, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "1.5")]), sep = " "))
 
-dev.off()
 
 
 #add to master plot details
@@ -320,33 +257,23 @@ ab.model.temp <- model_select(all.data  = temperate,
                        randomStruct = ab.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.temp$stats
 ab.model.temp$final.call
 #"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
 
 
 # run models
-data.trop <- tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.trop <- na.omit(data.trop)
+
+data.trop <- ab.model.trop$data
+data.temp <- ab.model.temp$data
+
 m1aztr <- lmer(log_abundance ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
-m2aztr <- lmer(log_abundance ~ 1 + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.trop)
-anova(m1aztr, m2aztr)
-#<0.0001      1         0.99
 
-data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.temp <- na.omit(data.temp)
 m1azte <- lmer(log_abundance ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
-m2azte <- lmer(log_abundance ~ 1 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = temperate)
-anova(m1azte, m2azte)
-#0.0049      1     0.9443
-
 
 #add results to master plot
 aztr.est <- exp(fixef(m1aztr)[2])*100
@@ -433,6 +360,7 @@ ab.model.p <- model_select(all.data  = plants,
                        randomStruct =ab.best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.p$stats
 #log_abundance~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)+(1+Within_PA|SS)
 
 
@@ -445,6 +373,7 @@ ab.model.i <- model_select(all.data  = inverts,
                        randomStruct =ab.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.i$stats
 #"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -457,43 +386,27 @@ ab.model.v <- model_select(all.data  = verts,
                        randomStruct =ab.best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.v$stats
 #"log_abundance~poly(ag_suit,3)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
 
 
 
 # run models
-data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.p <- na.omit(data.p)
+data.p <- ab.model.p$data
+data.i <- ab.model.i$data
+data.v <- ab.model.v$data
+
 m1txp <- lmer(log_abundance ~ Within_PA +poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
-m2txp <- lmer(log_abundance ~ 1+poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.p)
-anova(m1txp , m2txp)
-# 0.5774      1,13     0.4473
 
-data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.i <- na.omit(data.i)
 m1txi <- lmer(log_abundance ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(log_abundance ~ 1 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.i)
-anova(m1txi, m2txi)
-#0.9774      1     0.3229
 
-data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.v <- na.omit(data.v)
 m1txv <- lmer(log_abundance ~ Within_PA +  poly(ag_suit,3)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
-m2txv <- lmer(log_abundance ~ 1 +  poly(ag_suit,3)+poly(log_slope,2)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.v)
-anova(m1txv, m2txv)
-#1.3755      1     0.2409
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -522,7 +435,7 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 # master plot
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models matchedlanduse abundance.tif",
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models matchedlanduse abundance.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)

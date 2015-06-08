@@ -11,10 +11,7 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
 
-
-
 source("prep_PA_11_14_for_analysis.R")
-
 
 to.drop <- c("AR1_2005__Davis",
 	"DI1_2004__Naidoo",
@@ -60,22 +57,14 @@ r.model <- model_select(no.PA.focussed,
                        randomStruct = r.best.random$best.random ,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
+r.model$stats
 #"range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
-data <- no.PA.focussed[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "range")]
-data <- na.omit(data)
+data <- r.model$data
 
 m1r <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data)
-m2r <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data)
-anova(m1r, m2r)
-#1.7118      1     0.1908
-summary(m1r)
-
 
 
 # convert to normal range first, then get percentage
@@ -101,9 +90,6 @@ e.relative.plus <- e.y2plus/e.y1*100
 y2minus <- 10^(as.numeric(fixef(m1r)[2]) + as.numeric(fixef(m1r)[1]) - se*1.96)
 e.y2minus <- 1/y2minus
 e.relative.minus <- e.y2minus/e.y1*100
-
-
-
 
 points <- c(100, e.relative)
 CI <- c(e.relative.plus, e.relative.minus)
@@ -134,12 +120,7 @@ r.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points,
 
 
 
-
-
-
-
 ### range and IUCN category
-
 
 fF <- c("IUCN_CAT") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
@@ -159,7 +140,6 @@ r.best.random.IUCN <- compare_randoms(no.PA.focussed, "range",
 
 r.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
 
-
 r.model.IUCN <- model_select(all.data  = no.PA.focussed, 
 			     responseVar = "range", 
 			     alpha = 0.05,
@@ -169,36 +149,19 @@ r.model.IUCN <- model_select(all.data  = no.PA.focussed,
                        randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.IUCN$warnings
+r.model.IUCN$stats
 r.model.IUCN$final.call
 # "range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)+(IUCN_CAT|SS)+(1|SSB)"
 
-
-data <- no.PA.focussed[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "range")]
-data <- na.omit(data)
-data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
-
-
-m3ri <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data)
-m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data)
-anova(m3ri, m4ri)
-summary(m4ri)
-#2.3671      3     0.4998
-
-
-#PLOT
-
+#plot
 
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II" )
 
-data <- no.PA.focussed[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "range")]
-data <- na.omit(data)
+data <- r.model.IUCN$data
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,1)
 	+ (IUCN_CAT|SS)+ (1|SSB), 
 	 data = data)
 
@@ -234,13 +197,10 @@ arrows(c(2,3,4),CI[,1],c(2,3,4),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
-
 text(1, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "1.5")]), sep = " "))
 text(3, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = " "))
 text(4, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
-
-
 
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
 		upper = CI[,1], lower = CI[,2],
@@ -263,7 +223,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-
 
 r.best.random.trop <- compare_randoms(tropical, "range",
 				fixedFactors=fF,
@@ -299,6 +258,7 @@ r.model.trop <- model_select(all.data  = tropical,
                        randomStruct =r.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.trop$stats
 r.model.trop$final.call
 #"range~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
@@ -312,33 +272,22 @@ r.model.temp <- model_select(all.data  = temperate,
                        randomStruct = r.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.temp$stats
 r.model.temp$final.call
 #"range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
 
-# run models
-data.trop <- tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
-data.trop <- na.omit(data.trop)
+# run models for plot
+data.trop <- r.model.trop$data
+data.temp <- r.model.temp$data
+
 m1aztr <- lmer(range ~ Within_PA +  poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
-m2aztr <- lmer(range ~ 1 + poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.trop)
-anova(m1aztr, m2aztr)
-#0.4729      1     0.4917
 
-data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
-data.temp <- na.omit(data.temp)
 m1azte <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.temp )
-m2azte <- lmer(range ~ 1 + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.temp )
-anova(m1azte, m2azte)
-#2.7121      1    0.09959
-
 
 #add results to master plot
 y1 <- 10^(fixef(m1aztr)[1])
@@ -355,7 +304,6 @@ y.lower <- 10^(fixef(m1aztr)[1] + fixef(m1aztr)[2]- 1.96*se)
 e.y.lower <- 1/y.lower
 aztr.lower <- e.y.lower/e.y1*100
 
-
 y1 <- 10^(fixef(m1azte)[1])
 e.y1 <- 1/y1
 y2 <- 10^(fixef(m1azte)[1] + fixef(m1azte)[2])
@@ -369,7 +317,6 @@ azte.upper <- e.y.upper/e.y1*100
 y.lower <- 10^(fixef(m1azte)[1] + fixef(m1azte)[2]- 1.96*se)
 e.y.lower <- 1/y.lower
 azte.lower <- e.y.lower/e.y1*100
-
 
 a.zone <- data.frame(label = c("Tropical", "Temperate"),
 				est = c(aztr.est, azte.est), 
@@ -398,7 +345,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-
 
 r.best.random.p <- compare_randoms(plants, "range",
 				fixedFactors=fF,
@@ -433,10 +379,6 @@ r.best.random.v <- compare_randoms(verts, "range",
 				verbose=TRUE)
 r.best.random.v$best.random 
 
-
-
-
-
 # get polynomial relationships
 r.model.p <- model_select(all.data  = plants, 
 			     responseVar = "range", 
@@ -447,6 +389,7 @@ r.model.p <- model_select(all.data  = plants,
                        randomStruct =r.best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.p$stats
 r.model.p$final.call
 #"range~poly(ag_suit,3)+poly(log_elevation,3)+(1+Within_PA|SS)"
 
@@ -459,10 +402,9 @@ r.model.i <- model_select(all.data  = inverts,
                        randomStruct =r.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.i$stats
 r.model.i$final.call
 # "range~poly(log_elevation,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
-
-
 
 r.model.v <- model_select(all.data  = verts, 
 			     responseVar = "range", 
@@ -473,48 +415,28 @@ r.model.v <- model_select(all.data  = verts,
                        randomStruct =r.best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.model.v$stats
 r.model.v$final.call
 # "range~poly(ag_suit,2)+poly(log_elevation,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
 
 
 # run models
-data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
-data.p <- na.omit(data.p)
+data.p <- r.model.p$data
+data.i <- r.model.i$data
+data.v <- r.model.v$data
+
 m1txp <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
-m2txp <- lmer(range ~ 1+poly(ag_suit,3)+poly(log_elevation,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.p)
-anova(m1txp , m2txp)
-#0.0012      1      0.972
 
-data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
-data.i <- na.omit(data.i)
 m1txi <- lmer(range ~ Within_PA +poly(log_elevation,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(range ~ 1 +poly(log_elevation,2)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.i)
-anova(m1txi, m2txi)
-#5.0276      1    0.02495 
 
-data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "range")]
-data.v <- na.omit(data.v)
 m1txv <- lmer(range ~ Within_PA + poly(ag_suit,2)+poly(log_elevation,3)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
-m2txv <- lmer(range ~ 1 + poly(ag_suit,2)+poly(log_elevation,3)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.v)
-anova(m1txv, m2txv)
-#0.2697      1     0.6035
-
-
-
-
 
 
 #add results to master plot
@@ -569,9 +491,7 @@ r.plot <- rbind(r.plot3, tax)
 
 # master plot
 
-#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - range noPAfocussed.RData")
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models endemicity noPAfocussed.tif",
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models endemicity noPAfocussed.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
@@ -606,5 +526,3 @@ axis(2, c(80,100,120,140), c(80,100,120,140))
 
 
 dev.off()
-
-save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - range noPAfocussed.RData")

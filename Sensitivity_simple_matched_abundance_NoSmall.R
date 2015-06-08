@@ -25,8 +25,6 @@ no.small <- subset(PA_11_14, SS %in% to.keep)
 nrow(no.small)
 
 
-
-
 ### model abundance
 
 # check polynomials
@@ -50,7 +48,6 @@ abundance.best.random <- compare_randoms(no.small, "log_abundance",
 
 abundance.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 
-
 ab.model <- model_select(all.data  = no.small, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
@@ -60,22 +57,12 @@ ab.model <- model_select(all.data  = no.small,
                        randomStruct = abundance.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model$stats
 #"log_abundance~Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
-m1a <- lmer(log_abundance ~ Within_PA
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data =  no.small)
-m2a <- lmer(log_abundance ~ 1 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data =  no.small)
-anova(m1a, m2a)
-#4.5626      1    0.03268 
+data <- ab.model$data
 
-summary(m1a)
-exp(fixef(m1a)[2]) # 1.147
-
-#no need to redo as no non-linear terms
-fixef(m1a)
+m1a <- lmer(log_abundance ~ Within_PA + (Within_PA|SS)+ (1|SSB), data =  data)
 
 # plot
 
@@ -114,13 +101,9 @@ ab.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points,
 			length(data$SSS[which(data$Within_PA == "yes")])))
 
 
-
-
-
-
 # model abundance and IUCN_category
 fF <- c("IUCN_CAT") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
@@ -148,59 +131,35 @@ ab.model.IUCN <- model_select(all.data  = no.small,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 # convergence issues with nonlinear terms
-# check starting with all linear
-fF <- c("IUCN_CAT") 
-fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
-keepVars <- list()
-fI <- character(0)
-RS <-  c("IUCN_CAT")
-ab.model.IUCN <- model_select(all.data  = no.small, 
-			     responseVar = "log_abundance", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct = abundance.best.random.IUCN$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+# convergence issues with starting with linear terms
 
+#test without confounding variables
 # both these converge
-no.small$IUCN_CAT <- relevel(no.small$IUCN_CAT, "4.5")
-
+data <- ab.model.IUCN$data
 m3ai <- lmer(log_abundance ~ 1 
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = no.small,
+	 data = data,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 m4ai <- lmer(log_abundance ~ IUCN_CAT 
 	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = no.small,
+	 data = data,
 	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
-#with ordinal - gives exactly the same results when compared ord vs not ordinal with other responses 
-#but coefficients v different
-m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = no.small_ord)
-m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = no.small_ord)
-
-
 anova(m3ai, m4ai)
-#3.9211      3     0.2701
-summary(m4ai)
-validate(m2ai)
+#4.9139      3     0.1782
 
+ab.model.IUCN$stats # similar, so can use stats table
+ab.model.IUCN$final.call
 
 # plot 
 
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
 
-no.small$IUCN_CAT <- relevel(no.small$IUCN_CAT, "0")
+data <- ab.model.IUCN$data
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m4ai <- lmer(log_abundance ~ IUCN_CAT 
-	+ (IUCN_CAT|SS) + (1|SSB), 
-	 data = no.small)
+m4ai <- lmer(log_abundance ~ IUCN_CAT + (IUCN_CAT|SS) + (1|SSB), 
+	 data = data)
 summary(m4ai)
 
 
@@ -296,6 +255,7 @@ ab.model.trop <- model_select(all.data  = tropical,
                        randomStruct =ab.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.trop$stats
 # "log_abundance~poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -308,31 +268,21 @@ ab.model.temp <- model_select(all.data  = temperate,
                        randomStruct = ab.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.temp$stats
 #"log_abundance~poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
 
 
-# run models
-data.trop <- tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.trop <- na.omit(data.trop)
+# run models for plot
+data.trop <- ab.model.trop$data
+data.temp <- ab.model.temp$data
+
 m1aztr <- lmer(log_abundance ~ Within_PA + poly(log_slope,2) + poly(log_elevation,2)+ ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
-m2aztr <- lmer(log_abundance ~ 1 + poly(log_slope,2) + poly(log_elevation,2) + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.trop)
-anova(m1aztr, m2aztr)
-#4.2645      1    0.03892
 
-data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.temp <- na.omit(data.temp)
 m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
-m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = temperate)
-anova(m1azte, m2azte)
-#0.9848      1      0.321
 
 
 #add results to master plot
@@ -351,8 +301,6 @@ a.zone <- data.frame(label = c("Tropical", "Temperate"),
 				n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]),
 					 nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
 ab.plot3 <- rbind(ab.plot2, a.zone)
-
-
 
 
 
@@ -407,9 +355,6 @@ ab.best.random.v <- compare_randoms(verts, "log_abundance",
 ab.best.random.v$best.random #
 
 
-
-
-
 # get polynomial relationships
 ab.model.p <- model_select(all.data  = plants, 
 			     responseVar = "log_abundance", 
@@ -420,9 +365,8 @@ ab.model.p <- model_select(all.data  = plants,
                        randomStruct =ab.best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.p$stats
 # "log_abundance~poly(log_elevation,1)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
-
-
 
 ab.model.i <- model_select(all.data  = inverts, 
 			     responseVar = "log_abundance", 
@@ -433,8 +377,8 @@ ab.model.i <- model_select(all.data  = inverts,
                        randomStruct =ab.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.i$stats
 #"log_abundance~poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
-
 
 ab.model.v <- model_select(all.data  = verts, 
 			     responseVar = "log_abundance", 
@@ -445,44 +389,26 @@ ab.model.v <- model_select(all.data  = verts,
                        randomStruct =ab.best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.v$stats
 #"log_abundance~poly(ag_suit,3)+poly(log_slope,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 
+# run models for plot
+data.p <- ab.model.p$data
+data.i <- ab.model.i$data
+data.v <- ab.model.v$data
 
-
-# run models
-data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.p <- na.omit(data.p)
 m1txp <- lmer(log_abundance ~ Within_PA +poly(log_elevation,1)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
-m2txp <- lmer(log_abundance ~ 1 +poly(log_elevation,1)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.p)
-anova(m1txp , m2txp)
-# 0.6432      1     0.4225
 
-data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.i <- na.omit(data.i)
 m1txi <- lmer(log_abundance ~ Within_PA +log_slope 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(log_abundance ~ 1 +log_slope 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.i)
-anova(m1txi, m2txi)
-#2.7887      1    0.09493
 
-data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.v <- na.omit(data.v)
 m1txv <- lmer(log_abundance ~ Within_PA +  poly(ag_suit,3)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
-m2txv <- lmer(log_abundance ~ 1  +  poly(ag_suit,3)+poly(log_slope,2)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.v)
-anova(m1txv, m2txv)
-#5.28      1    0.02157
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -515,7 +441,7 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models abundance NoSmall.tif",
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models abundance NoSmall.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)

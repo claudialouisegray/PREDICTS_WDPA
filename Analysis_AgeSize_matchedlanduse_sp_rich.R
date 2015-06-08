@@ -18,16 +18,9 @@ library(gamm4)
 library(scatterplot3d)
 library(rgl)
 
-
-#setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
-#setwd("N:/Documents/PREDICTS/WDPA analysis")
-
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
-
-
 # load functions
-
 source("compare_randoms.R")
 source("model_select.R")
 source("plotFactorInteraction.R")
@@ -41,28 +34,21 @@ validate <- function(x) {
   hist(resid(x))
   par(mfrow = c(1,1))
 }
-
-
-
 construct_call<-function(responseVar,fixedStruct,randomStruct){
   return(paste(responseVar,"~",fixedStruct,"+",randomStruct,sep=""))
 }
-
-
 
 
 ### Size and Age analysis
 
 xyplot(Species_richness ~ taxon_of_interest|AREA_DoP, multiple.taxa.matched.landuse)
 
-
-#run with no interactions first to see which variables have nonlinear relationships
 fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- character(0)
-fI <- character(0)
+fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
 RS <-  character(0)
-Species_richness.best.random2 <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
+Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -74,10 +60,9 @@ Species_richness.best.random2 <- compare_randoms(multiple.taxa.matched.landuse, 
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
+Species_richness.best.random$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
-Species_richness.best.random2$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
- 
-Species_richness.poly <- model_select(all.data  = multiple.taxa.matched.landuse, 
+Species_richness.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
 			     responseVar = "Species_richness",
 			     fitFamily = "poisson",
 			     siteRandom = TRUE, 
@@ -86,52 +71,24 @@ Species_richness.poly <- model_select(all.data  = multiple.taxa.matched.landuse,
                        fixedTerms= fT,
 			     keepVars = keepVars,
                        fixedInteractions=fI,
-                       randomStruct ="(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)",
+                       randomStruct =Species_richness.best.random$best.random ,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
-Species_richness.poly$final.call
-#Species_richness~AREA_DoP+poly(ag_suit,3)+poly(log_elevation,2)+taxon_of_interest+Zone+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
-
-
-
-# model select
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
-fT <- list()
-keepVars <- list("ag_suit" = "3",  "log_elevation" = "2")
-fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
-RS <-  character(0)
-
-Species_richness.model2 <- model_select(all.data  = multiple.taxa.matched.landuse, 
-			     responseVar = "Species_richness",
-			     fitFamily = "poisson",
-			     siteRandom = TRUE, 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       fixedInteractions=fI,
-                       randomStruct ="(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)",
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
-Species_richness.model2$final.call
+Species_richness.model$final.call
 #Species_richness~AREA_DoP+taxon_of_interest+Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,2)+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
+summary(Species_richness.model$model)
+Species_richness.model$stats
 
 
-summary(Species_richness.model2$model)
-write.csv(Species_richness.model2$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/age size bins/sprich.model.age.size.stats.10.02.2014.csv")
-
-
+### plot
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/sp rich vs size and age.tif",
 	width = 9, height = 15, units = "cm", pointsize = 12, res = 300)
 
-
-plotFactorInteraction(model = Species_richness.model2$model,
+plotFactorInteraction(model = Species_richness.model$model,
 responseVar = "Species_richness",
-data = Species_richness.model2$data,
+data = Species_richness.model$data,
 xvar = "AREA_DoP",
 xvar.order = c("small_young", "small_old", "large_young", "large_old"), #this must be the levels of the factor in the order to be plotted, not including reference level
 xvar.labels = c("Small, Young", "Small, Old", "Large, Young", "Large, Old"),

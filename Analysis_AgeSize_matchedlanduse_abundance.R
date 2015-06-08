@@ -19,8 +19,6 @@ library(gamm4)
 library(scatterplot3d)
 library(rgl)
 
-#setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
-#setwd("N:/Documents/PREDICTS/WDPA analysis")
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
@@ -45,23 +43,15 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 nrow(matched.landuse) #5015
 
 
-
-
-
 ### age/size analysis
 
-
-
 xyplot(log_abundance ~ taxon_of_interest|AREA_DoP, matched.landuse)
-
 
 fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- character(0)
-fI <- character(0)
+fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
 RS <-  character(0)
-# "log_abundance~poly(ag_suit,1)+taxon_of_interest+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
-
 
 log_abundance.best.random <- compare_randoms(matched.landuse, 
 				responseVar = "log_abundance",
@@ -77,29 +67,6 @@ log_abundance.best.random <- compare_randoms(matched.landuse,
 log_abundance.best.random$best.random
 
 # model select
-log_abundance.poly <- model_select(all.data  = matched.landuse, 
-			     responseVar = "log_abundance", 
-			     keepVars = keepVars,
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-                       fixedInteractions=fI,
-                       randomStruct = log_abundance.best.random$best.random,
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
-log_abundance.poly$stats
-log_abundance.poly$final.call
-#"log_abundance~poly(ag_suit,1)+taxon_of_interest+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
-
-
-# add interactions 
-fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
-fT <- list()
-keepVars <- list("ag_suit" = "1")
-fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
-RS <-  character(0)
-
-# model select
 log_abundance.model<- model_select(all.data  = matched.landuse, 
 			     responseVar = "log_abundance", 
 			     keepVars = keepVars,
@@ -111,31 +78,21 @@ log_abundance.model<- model_select(all.data  = matched.landuse,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
-#"log_abundance~taxon_of_interest+AREA_DoP:taxon_of_interest+AREA_DoP+poly(ag_suit,1)+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
 log_abundance.model$stats
-write.csv(log_abundance.model$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/age size bins/ab.model.age.size.stats.20.03.2014.csv")
+log_abundance.model$final.call
+#"log_abundance~poly(ag_suit,1)+taxon_of_interest+AREA_DoP:taxon_of_interest+AREA_DoP+(1|SS)+(1|SSB)+(1|Predominant_habitat)"
 
 
 validate(log_abundance.model$model) #ok
 summary(log_abundance.model$model)
 log_abundance.model$warnings
 
-
-
 summary(log_abundance.model2$model)
 fT <- list("DoP.PA" = "1", "log_AREA.PA" = "3", "ag_suit" = "1", log_elevation = "1")
 
 XV <- CrossValidate(log_abundance.model2$model,10, divFactor = "SS", fitFamily = "gaussian", data= log_abundance.model2$data, 
 	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = "(1+Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat)")
-# all significant estimates seem acceptably similar
-XV
-#isnt what I really want this process but the whole model select, and the upper and lower p values? 
 
-XVr <- CrossValidate(log_abundance.model$model,-1, divFactor = "Predominant_habitat", fitFamily = "gaussian", data= log_abundance.model$data, 
-	fixedFactors = fF, fixedTerms = fT, fixedInteractions = fI, randomStruct = "(1+Within_PA|SS)+ (1|SSB) + (1|Predominant_habitat)")
-# but if you dropped a whole land use it wouldnt be that surprising if the results changed? 
-
-#glmmR.wikidot/faq
 
 
 

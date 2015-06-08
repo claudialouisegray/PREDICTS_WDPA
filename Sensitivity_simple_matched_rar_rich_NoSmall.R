@@ -11,8 +11,7 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
 
-
-
+#load data
 source("prep_PA_11_14_for_analysis.R")
 
 size <- aggregate(SSS ~ SS, PA_11_14, length)
@@ -27,7 +26,7 @@ nrow(no.small)
 
 
 
-# rarefied richness
+### model rarefied richness
 
 # check polynomials for confounding variables
 fF <- c("Within_PA") 
@@ -36,7 +35,7 @@ keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
 
-T
+
 r.sp.best.random <- compare_randoms(no.small, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
@@ -61,26 +60,17 @@ r.sp.model <- model_select(all.data  = no.small,
                        randomStruct = r.sp.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-r.sp.model$stats  # pvalues <0.008
+r.sp.model$warnings
+r.sp.model$stats  
 r.sp.model$final.call
 #"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSBS)"
-r.sp.model$warnings
 
-data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Richness_rarefied")]
-data <- na.omit(data)
-nrow(data)
+data <- r.sp.model$data
 m3 <- glmer(Richness_rarefied ~ Within_PA  + poly(ag_suit,3)+poly(log_elevation,1)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
-m4 <- glmer(Richness_rarefied ~ 1  + poly(ag_suit,3)+poly(log_elevation,1)
-	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
-anova(m3, m4)
-#0.8223      1     0.3645
 
-
-#no sig difference
-
+#plot
 
 labels <- c("Unprotected", "Protected")
 y <- as.numeric(fixef(m3)[2])
@@ -107,8 +97,6 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-
-
 #keep points for master plot
 r.sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
@@ -117,17 +105,14 @@ r.sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points
 
 
 
-
-
-
 # rarefied richness with IUCN cat
 
 fF <- c("IUCN_CAT") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
-
+# doesnt converge with the non linear confounding variables.  Test as linear.
 
 r.sp.best.random.IUCN <- compare_randoms(no.small, "Richness_rarefied",
 				fitFamily = "poisson",
@@ -143,7 +128,6 @@ r.sp.best.random.IUCN <- compare_randoms(no.small, "Richness_rarefied",
 
 r.sp.best.random.IUCN$best.random #
 
-
 r.sp.model.IUCN <- model_select(all.data  = no.small, 
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
@@ -154,62 +138,24 @@ r.sp.model.IUCN <- model_select(all.data  = no.small,
                        randomStruct = r.sp.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
-fF <- c("IUCN_CAT") 
-fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
-keepVars <- list()
-fI <- character(0)
-RS <-  c("IUCN_CAT")
-# doesnt converge with the non linear confounding variables.  Test as linear.
-
 r.sp.model.IUCN$stats 
 r.sp.model.IUCN$warnings
-data <- r.sp.model.IUCN.linear$data
-m5i <- glmer(Richness_rarefied ~ 1  + poly(ag_suit,1)+poly(log_elevation,1)+poly(log_slope,1)
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = data,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT + poly(ag_suit,1)+poly(log_elevation,1)+poly(log_slope,1)
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)),
-	family = "poisson", data = data)
-#convergence issues m6i
-
-m5i_ <- glmer(Richness_rarefied ~ 1  
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = data,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i_ <- glmer(Richness_rarefied ~ IUCN_CAT 	
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)),
-	family = "poisson", data = data)
-#convergence issues
-
-anova(m5i,m6i)
-anova(m5i_,m6i_)
-
-#just ag suit and elevation - after testing for poly on just linear terms
-#still convergence issues
-1.6807      3     0.6412
-
-# all three
-1.5274      3      0.676
-
-#none
-1.7624      3     0.6232
+r.sp.model.IUCN$final.call
+# "Richness_rarefied~poly(ag_suit,1)+poly(log_elevation,1)+(1+IUCN_CAT|SS)+(1|SSBS)"
+# warning is after dropping elevation, but IUCN_CAT is dropped from that round
+# and comparison for IUCN_CAT was estimated without problem
+# so can use stats results 
 
 
 # plot 
 
-
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
 
-levels.IUCN <- levels(no.small$IUCN_CAT)
+data <- r.sp.model.IUCN$data
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-no.small$IUCN_CAT <- relevel(no.small$IUCN_CAT, "0")
-
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB) + (1|SSBS), 
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT + log_elevation + ag_suit
+	+ (IUCN_CAT|SS) + (1|SSBS), 
 	family = "poisson", data = no.small,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
@@ -247,7 +193,6 @@ abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
 
-
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
 		upper = CI[,1], lower = CI[,2],
 		n.site = c(length(data$SSS[which(data$IUCN_CAT == "4.5")]), 
@@ -259,7 +204,6 @@ r.sp.plot2 <- rbind(r.sp.plot1, IUCN.plot)
 
 
 # simple species richness for Zone data
-
 
 sp.tropical <- subset(no.small, Zone == "Tropical")
 sp.temperate <- subset(no.small, Zone == "Temperate")
@@ -310,6 +254,7 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
                        randomStruct = r.sp.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+sp.model.trop$stats
 sp.model.trop$final.call
 #"Richness_rarefied~poly(ag_suit,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)"
 
@@ -323,34 +268,21 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
                        randomStruct = r.sp.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+sp.model.temp$stats
 sp.model.temp$final.call
 #"Richness_rarefied~poly(ag_suit,3)+(1|SS)+(1|SSB)"
 
+# run models for plots
+data.trop <- sp.model.trop$data
+data.temp <- sp.model.temp$data
 
-
-# run models
-data.trop <- sp.tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Richness_rarefied")] 
-data.trop <- na.omit(data.trop)
 m1ztr <- glmer(Richness_rarefied ~ Within_PA + poly(log_slope,3) + poly(ag_suit,1)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson",
 	 data = data.trop)
-m2ztr <- glmer(Richness_rarefied ~ 1 + poly(log_slope,3) + poly(ag_suit,1)
-	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
-	 data = data.trop)
-anova(m1ztr, m2ztr)
-# 2.1496      1     0.1426
 
-data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")] 
-data.temp <- na.omit(data.temp)
 m1zte <- glmer(Richness_rarefied ~ Within_PA  + poly(ag_suit,3)
 	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
 	 data = data.temp)
-m2zte <- glmer(Richness_rarefied ~ 1  + poly(ag_suit,3)
-	+ (1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), family = "poisson", 
-	 data = data.temp)
-anova(m1zte, m2zte)
-# 0.0924      1     0.7612
-
 
 #add results to master plot
 ztr.est <- exp(fixef(m1ztr)[2])*100
@@ -372,9 +304,6 @@ r.sp.plot3 <- rbind(r.sp.plot2, zone)
 
 
 
-
-
-
 #rar richness and taxon
 
 plants <- subset(no.small, taxon_of_interest == "Plants")
@@ -390,7 +319,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-
 
 best.random.p <- compare_randoms(plants, "Richness_rarefied",
 				fitFamily = "poisson",
@@ -432,9 +360,6 @@ best.random.v <- compare_randoms(verts, "Richness_rarefied",
 best.random.v$best.random #
 
 
-
-
-
 # get polynomial relationships
 model.p <- model_select(all.data  = plants, 
 				fitFamily = "poisson",
@@ -446,10 +371,9 @@ model.p <- model_select(all.data  = plants,
                        randomStruct =best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.p$stats
 model.p$final.call
 # "Richness_rarefied~poly(ag_suit,1)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)"
-
-
 
 model.i <- model_select(all.data  = inverts, 
 			     responseVar = "Richness_rarefied", 
@@ -461,9 +385,9 @@ model.i <- model_select(all.data  = inverts,
                        randomStruct =best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.i$stats
 model.i$final.call
 #"Richness_rarefied~poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
 
 model.v <- model_select(all.data  = verts, 
 			     responseVar = "Richness_rarefied", 
@@ -475,43 +399,26 @@ model.v <- model_select(all.data  = verts,
                        randomStruct =best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.v$stats
 model.v$final.call
 #"Richness_rarefied~1+(1+Within_PA|SS)+(1|SSBS)"
 
+# run models for plots
+data.p <- model.p$data
+data.i <- model.i$data
+data.v <- model.v$data
 
-# run models
-data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Richness_rarefied")]
-data.p <- na.omit(data.p)
 m1txp <- glmer(Richness_rarefied ~ Within_PA + poly(ag_suit,1)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), family = "poisson", 
 	 data = data.p)
-m2txp <- glmer(Richness_rarefied ~ 1+poly(ag_suit,1)+poly(log_elevation,3)
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.p)
-anova(m1txp , m2txp)
-# 0.8933      1     0.3446
 
-data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Richness_rarefied")]
-data.i <- na.omit(data.i)
 m1txi <- glmer(Richness_rarefied ~ Within_PA +poly(log_slope,3) 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
-m2txi<- glmer(Richness_rarefied ~ 1 +poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.i)
-anova(m1txi, m2txi)
-#0.0239      1      0.877
 
-data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")]
-data.v <- na.omit(data.v)
 m1txv <- glmer(Richness_rarefied ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
-m2txv <- glmer(Richness_rarefied ~ 1 
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.v)
-anova(m1txv, m2txv)
-#0.2681      1     0.6046
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -525,8 +432,6 @@ txi.lower <- exp(fixef(m1txi)[2] - 1.96* se.fixef(m1txi)[2])*100
 txv.est <- exp(fixef(m1txv)[2])*100
 txv.upper <- exp(fixef(m1txv)[2] + 1.96* se.fixef(m1txv)[2])*100
 txv.lower <- exp(fixef(m1txv)[2] - 1.96* se.fixef(m1txv)[2])*100
-
-
 
 tax <- data.frame(label = c("Plants", "Inverts", "Verts"),
 				est = c(txp.est, txi.est, txv.est), 
@@ -542,12 +447,7 @@ r.sp.plot <- rbind(r.sp.plot3, tax)
 
 # master plot
 
-
-#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich nosmall.RData")
-
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich NoSmall.tif",
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich NoSmall.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)

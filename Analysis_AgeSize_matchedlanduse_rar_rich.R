@@ -49,24 +49,17 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 }
 
 
-
-
-
-
-
-
-
 ### Size and Age analysis
 
 xyplot(Richness_rarefied ~ taxon_of_interest|AREA_DoP, multiple.taxa.matched.landuse)
 
-#run with no interactions first to see which variables have nonlinear relationships
 fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- character(0)
-fI <- character(0)
+fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
 RS <-  character(0)
-Richness_rarefied.best.random2 <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
+
+Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -80,32 +73,8 @@ Richness_rarefied.best.random2 <- compare_randoms(multiple.taxa.matched.landuse,
 
 Richness_rarefied.best.random2$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
-Richness_rarefied.poly <- model_select(all.data  = multiple.taxa.matched.landuse, 
-			     responseVar = "Richness_rarefied",
-			     fitFamily = "poisson",
-			     siteRandom = TRUE, 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       fixedInteractions=fI,
-                       randomStruct = Richness_rarefied.best.random2$best.random,
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
-Richness_rarefied.poly$final.call
-#Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Zone+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
-
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "AREA_DoP") 
-fT <- list()
-keepVars <- list("ag_suit" = "3",  "log_elevation" = "3")
-fI <- c("AREA_DoP:taxon_of_interest", "AREA_DoP:Zone")
-RS <-  character(0)
-
 # model select
-Richness_rarefied.model2 <- model_select(all.data  = multiple.taxa.matched.landuse, 
+Richness_rarefied.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
 			     responseVar = "Richness_rarefied",
 			     fitFamily = "poisson",
 			     siteRandom = TRUE, 
@@ -114,12 +83,13 @@ Richness_rarefied.model2 <- model_select(all.data  = multiple.taxa.matched.landu
                        fixedTerms= fT,
 			     keepVars = keepVars,
                        fixedInteractions=fI,
-                       randomStruct = Richness_rarefied.best.random2$best.random,
+                       randomStruct = Richness_rarefied.best.random$best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
-Richness_rarefied.model2$final.call
+Richness_rarefied.model$final.call
+Richness_rarefied.model$stats
 #Richness_rarefied~Zone+poly(ag_suit,3)+poly(log_elevation,3)+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
-write.csv(Richness_rarefied.model2$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/age size bins/rarrich.model.age.size.stats.20.03.2014.csv")
+save.image("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/RData files\\8 landuses\\age_size rar rich.RData")
 
-save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\age_size rar rich.RData")
+

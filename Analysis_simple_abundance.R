@@ -13,7 +13,8 @@ source("model_select.R")
 
 source("prep_PA_11_14_for_analysis.R")
 
-
+### load saved model objects
+#load("R:\\ecocon_d\\clg32\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - abundance.RData")
 
 
 ### model abundance
@@ -45,33 +46,29 @@ ab.model <- model_select(all.data  = PA_11_14,
                        fixedFactors= fF,
                        fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = "(Within_PA|SS) + (1|SSB)",
+                       randomStruct = abundance.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
+ab.model$stats
 ab.model$final.call
 #log_abundance~Within_PA+(Within_PA|SS)+(1|SSB)
 
-m1a <- lmer(log_abundance ~ Within_PA 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data =  PA_11_14)
-m2a <- lmer(log_abundance ~ 1
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data =  PA_11_14)
+
+data <- ab.model$data
+m1a <- lmer(log_abundance ~ Within_PA + (Within_PA|SS)+ (1|SSB), data =  data)
+m2a <- lmer(log_abundance ~ 1+ (Within_PA|SS)+ (1|SSB), data =  data)
 anova(m1a, m2a)
 
-fixef(m1a)
-fixef(m1a_)
-summary(m1a)
-exp(fixef(m1a)[2]) # 1.147
+# comparison I had previously
+m3a <- lmer(log_abundance ~ Within_PA + (Within_PA|SS)+ (1|SSB), data =  PA_11_14)
+m4a <- lmer(log_abundance ~ 1+ (Within_PA|SS)+ (1|SSB), data =  PA_11_14)
+anova(m3a, m4a)
+### omitting incomplete values does make a difference
 
-#no need to redo as no non-linear terms
-fixef(m1a)
 
 # plot
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
-
 
 labels <- c("Unprotected", "Protected")
 y <- as.numeric(fixef(m1a)[2])
@@ -139,88 +136,15 @@ ab.model.IUCN <- model_select(all.data  = PA_11_14,
                        fixedFactors= fF,
                        fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
+                       randomStruct = abundance.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
+ab.model.IUCN$stats
 ab.model.IUCN$final.call
+ab.model.IUCN$warnings
 #"log_abundance~1+(IUCN_CAT|SS)+(1|SSB)"
 
 
-#PA_11_14$IUCN_CAT <- relevel(PA_11_14$IUCN_CAT, "4.5")
-
-m3ai <- lmer(log_abundance ~ 1 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_14,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_14,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-
-
-#with ordinal - gives exactly the same results when compared ord vs not ordinal with other responses 
-#but coefficients v different
-m3ai <- lmer(log_abundance ~ 1 +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_14_ord)
-m4ai <- lmer(log_abundance ~ IUCN_CAT +log_slope + log_elevation + ag_suit
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = PA_11_14_ord)
-
-
-anova(m3ai, m4ai)
-#3.6585      3     0.3008
-summary(m4ai)
-
-
-# get p values for individual comparisons
-
-studies <- unique(PA_11_14$SS[which(PA_11_14$IUCN_CAT == "1.5")])
-o.pos <- which(PA_11_14$Within_PA == "no" & PA_11_14$SS %in% studies)
-i.pos <- which(PA_11_14$IUCN_CAT == "1.5")
-data1 <- droplevels(PA_11_14[c(o.pos, i.pos),])
-
-m3ai <- lmer(log_abundance ~ 1 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data1,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data1,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-anova(m3ai, m4ai)
-
-studies <- unique(PA_11_14$SS[which(PA_11_14$IUCN_CAT == "4.5")])
-o.pos <- which(PA_11_14$Within_PA == "no" & PA_11_14$SS %in% studies)
-i.pos <- which(PA_11_14$IUCN_CAT == "4.5")
-data1 <- droplevels(PA_11_14[c(o.pos, i.pos),])
-
-m3ai <- lmer(log_abundance ~ 1 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data1,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data1,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-anova(m3ai, m4ai)
-
-
-studies <- unique(PA_11_14$SS[which(PA_11_14$IUCN_CAT == "7")])
-o.pos <- which(PA_11_14$Within_PA == "no" & PA_11_14$SS %in% studies)
-i.pos <- which(PA_11_14$IUCN_CAT == "7")
-data1 <- droplevels(PA_11_14[c(o.pos, i.pos),])
-
-m3ai <- lmer(log_abundance ~ 1 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data1,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m4ai <- lmer(log_abundance ~ IUCN_CAT 
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data1,
-	control= lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-anova(m3ai, m4ai)
 
 
 
@@ -232,11 +156,10 @@ tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance IU
 
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
 
-PA_11_14$IUCN_CAT <- relevel(PA_11_14$IUCN_CAT, "0")
+data <-  ab.model.IUCN$data
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m4ai <- lmer(log_abundance ~ IUCN_CAT 
-	+ (IUCN_CAT|SS) + (1|SSB), 
-	 data = PA_11_14)
+m4ai <- lmer(log_abundance ~ IUCN_CAT + (IUCN_CAT|SS) + (1|SSB),  data)
 summary(m4ai)
 
 
@@ -332,6 +255,7 @@ ab.model.trop <- model_select(all.data  = tropical,
                        randomStruct =ab.best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.trop$stats
 #log_abundance~poly(ag_suit,1)+poly(log_elevation,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 ab.model.temp <- model_select(all.data  = temperate, 
@@ -343,31 +267,22 @@ ab.model.temp <- model_select(all.data  = temperate,
                        randomStruct = ab.best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.temp$stats
 #log_abundance~poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
 
 
 # run models
-data.trop <- tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.trop <- na.omit(data.trop)
+
+data.trop <- ab.model.trop$data
+data.temp <- ab.model.temp$data
+
 m1aztr <- lmer(log_abundance ~ Within_PA + poly(log_elevation,2)+ ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = tropical)
-m2aztr <- lmer(log_abundance ~ 1 + poly(log_elevation,2) + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = tropical)
-anova(m1aztr, m2aztr)
-#5.5455      1    0.01853
+	 data = data.trop)
 
-data.temp <- temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.temp <- na.omit(data.temp)
 m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) 
 	+ (Within_PA|SS)+ (1|SSB), 
-	 data = temperate)
-m2azte <- lmer(log_abundance ~ 1 +poly(log_slope,2) 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = temperate)
-anova(m1azte, m2azte)
-#0.2912      1     0.5895
+	 data = data.temp)
 
 
 #add results to master plot
@@ -455,6 +370,8 @@ ab.model.p <- model_select(all.data  = plants,
                        randomStruct =ab.best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.p$stats
+ab.model.p$final.call
 #log_abundance~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)+(1+Within_PA|SS)
 
 ab.model.i <- model_select(all.data  = inverts, 
@@ -466,6 +383,8 @@ ab.model.i <- model_select(all.data  = inverts,
                        randomStruct =ab.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model.i$stats
+ab.model.i$final.call
 #"log_abundance~poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
 
@@ -478,42 +397,27 @@ ab.model.v <- model_select(all.data  = verts,
                        randomStruct =ab.best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-#"log_abundance~poly(ag_suit,3)+poly(log_slope,1)+(1+Within_PA|SS)"
+ab.model.v$stats
+ab.model.v$final.call
+#log_abundance~poly(ag_suit,3)+poly(log_slope,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
+data.p <- ab.model.p$data
+data.i <- ab.model.i$data
+data.v <- ab.model.v$data
 
 # run models
-data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.p <- na.omit(data.p)
 m1txp <- lmer(log_abundance ~ Within_PA +poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
-m2txp <- lmer(log_abundance ~ 1+poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.p)
-anova(m1txp , m2txp)
-# 0.0539      1,13     0.8164
 
-data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.i <- na.omit(data.i)
 m1txi <- lmer(log_abundance ~ Within_PA +log_slope 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
-m2txi<- lmer(log_abundance ~ 1 +log_slope
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.i)
-anova(m1txi, m2txi)
-#2.1433      1     0.1432
 
-data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "log_abundance")]
-data.v <- na.omit(data.v)
-m1txv <- lmer(log_abundance ~ Within_PA +  poly(ag_suit,3)+poly(log_slope,1)
+m1txv <- lmer(log_abundance ~ Within_PA +  poly(ag_suit,3)+poly(log_slope,2)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
-m2txv <- lmer(log_abundance ~ 1 +  poly(ag_suit,3)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.v)
-anova(m1txv, m2txv)
-#5.1244      1    0.02359
+
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -542,10 +446,7 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 # master plot
 
-load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - abundance.RData")
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models abundance.tif",
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models abundance.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
@@ -584,7 +485,6 @@ dev.off()
 
 
 ### effectiveness estimates
-
 
 b.a <- exp(fixef(m1a)[2]) -1
 b.a.max <- exp(fixef(m1a)[2] + 1.96*se.fixef(m1a)[2])-1
@@ -628,7 +528,7 @@ b <- b.vals[1]
 for(b in vals$b.vals){
 
 benefit <- as.numeric(b)		# percentage increase in metric in PAs
-PA.pct <- 14.7 				# percentage of total land area in PAs
+PA.pct <- 14.6 				# percentage of total land area in PAs
 # global loss of biodiversity (from Newbold et al)
 global.loss <- NULL
 if(vals$metric[which(vals$b.vals == b)] == "sp.rich"){
@@ -667,6 +567,7 @@ vals$PA.abs[which(vals$b.vals == b)] <- PA.abs
 # get difference between PA.abs and NPA.abs as a percentage of NPA.abs
 #((1-NPA.abs)-(1-PA.abs))/(1-NPA.abs)
 
+
 est <- 1-(1-PA.abs)/(1-NPA.abs)
 vals$est[which(vals$b.vals == b)] <- est
 
@@ -677,14 +578,16 @@ vals$est[which(vals$b.vals == b)] <- est
 vals
 
 
-# need to work out, if all PAs were IUCN cat 1 and still 14.7%, instead of what we have
+### working out area needed to achieve similar level of global biodiversity to increasing all existing to cat I-II
+# method:
+# need to work out, if all PAs were IUCN cat 1 and still 14.6%, instead of what we have
 # what would global loss be
 # then how much area do we need to get this, given current benefit of PAs
 
 # NPA abs remains the same as in normal benefit scenario
 NPA.abs <- vals$NPA.abs[which(vals$name == "b.a")]
 # total area protected remains the same
-PA.pct <- 14.7
+PA.pct <- 14.6
 # NPA.rel becomes 1-benefit of protection in IUCN category
 pos <- which(names(fixef(m4ai))== "IUCN_CAT1.5")
 NPA.rel <- 1 - (exp(fixef(m4ai)[pos])-1)
@@ -696,7 +599,7 @@ global.int = (1 - PA.pct/100)*NPA.abs + (PA.pct/100)*(NPA.abs/NPA.rel)
 #now, given the normal benefit, how much additional PA area needed to get this
 # need area in terms of global.int and NPA abs. 
 #global.int = (1 - PA.pct/100)*NPA.abs + (PA.pct/100)*NPA.abs/NPA.rel
-#global.int == NPA.abs - (PA.pct/100)*NPA.abs  + (PA.pct/100)*NPA.abs/NPA.rel
+#global.int = NPA.abs - (PA.pct/100)*NPA.abs  + (PA.pct/100)*NPA.abs/NPA.rel
 #global.int = NPA.abs - (PA.pct/100)*(NPA.abs - NPA.abs/NPA.rel)
 #(PA.pct/100) = (NPA.abs - global.int)/(NPA.abs - NPA.abs/NPA.rel)
 
@@ -704,8 +607,68 @@ NPA.rel <- 1 - (exp(fixef(m1a)[2]) -1)
 100*(NPA.abs - global.int)/(NPA.abs - NPA.abs/NPA.rel)
 
 
+# what if all PAs are lower management restriction (i.e. new PAs only 3 - 6 and old PAs degraded)
+# ie NPA.rel is only that for III to VI
+
+pos <- which(names(fixef(m4ai))== "IUCN_CAT4.5")
+NPA.rel <- 1 - (exp(fixef(m4ai)[pos])-1)
+100*(NPA.abs - global.int)/(NPA.abs - NPA.abs/NPA.rel)
 
 
+
+### What if current/IUCN high/IUCN low level of protection and 17% of total area protected? 
+# what global state of biodiversity do we get if increase to 17%
+# taking absolute biodiversity within PAs as current 
+
+
+#given
+PA.abs <- vals[which(vals$name == "b.a"),"PA.abs"]
+NPA.rel <- 1 - (exp(fixef(m1a)[2])-1)
+PA.pct <- 17
+#global.int = (1 - PA.pct/100)*NPA.abs + (PA.pct/100)*PA.abs
+global.int.17current = (1 - PA.pct/100)*PA.abs*NPA.rel + (PA.pct/100)*PA.abs
+global.int.17current
+
+
+
+# to get intactness where IUCN 1 or 2 and 17%
+# change equ from before to be 17% instead of 14.6%
+# NPA abs remains the same as in normal benefit scenario
+NPA.abs <- vals$NPA.abs[which(vals$name == "b.a")]
+# total area protected remains the same
+PA.pct <- 17
+# NPA.rel becomes 1-benefit of protection in IUCN category
+pos <- which(names(fixef(m4ai))== "IUCN_CAT1.5")
+NPA.rel <- 1 - (exp(fixef(m4ai)[pos])-1)
+global.int = (1 - PA.pct/100)*NPA.abs + (PA.pct/100)*(NPA.abs/NPA.rel)
+global.int
+
+# to get intactness where IUCN 3 to 6 and 17%
+# NPA abs remains the same as in normal benefit scenario
+NPA.abs <- vals$NPA.abs[which(vals$name == "b.a")]
+# total area protected remains the same
+PA.pct <- 17
+# NPA.rel becomes 1-benefit of protection in IUCN category
+pos <- which(names(fixef(m4ai))== "IUCN_CAT4.5")
+NPA.rel <- 1 - (exp(fixef(m4ai)[pos])-1)
+global.int = (1 - PA.pct/100)*NPA.abs + (PA.pct/100)*(NPA.abs/NPA.rel)
+global.int
+
+# to get intactness where as current and 17% (check matches first method above)
+# NPA abs remains the same as in normal benefit scenario
+NPA.abs <- vals$NPA.abs[which(vals$name == "b.a")]
+# total area protected remains the same
+PA.pct <- 17
+# NPA.rel becomes 1-benefit of protection in IUCN category
+NPA.rel <- 1 - (exp(fixef(m1a)[2])-1)
+global.int = (1 - PA.pct/100)*NPA.abs + (PA.pct/100)*(NPA.abs/NPA.rel)
+global.int
+
+
+# how does this compare to the output of the nature paper models that we started with
+global.loss <- 0.107
+global.int <- 1-global.loss
+global.int
 
 
 

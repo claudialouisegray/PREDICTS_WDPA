@@ -55,13 +55,13 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 
 #check non linear relationships
 
+#first get best random effects structure
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- character(0)
 fI <- character(0)
 RS <-  c("Within_PA")
 
-#log_abundance~Predominant_habitat+taxon_of_interest+Zone+(Within_PA|SS)+(1|SSB)
 
 log_abundance.best.random <- compare_randoms(PA_11_14, "log_abundance",
 				fixedFactors=fF,
@@ -77,7 +77,8 @@ log_abundance.best.random <- compare_randoms(PA_11_14, "log_abundance",
 log_abundance.best.random$best.random #
  
 
-# model select
+# use model select to select best model
+# run gamm first to explore non linear relationships that might be expected
 
 m1 <- gamm4(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA + s(log_slope) + s(log_elevation) + ag_suit, random = ~(1+Within_PA|SS) +(1|SSB), data = data)
 plot(m1$gam)
@@ -94,17 +95,17 @@ log_abundance.poly <- model_select(all.data  = PA_11_14,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 log_abundance.poly$stats
+#log_abundance~Predominant_habitat+taxon_of_interest+Zone+(Within_PA|SS)+(1|SSB)
+
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
 fT <- character(0)
-keepVars <- list("ag_suit" = "1", "log_elevation" = "1", "log_slope" = "1") 
+keepVars <- character(0)
 fI <- ("Within_PA:Predominant_habitat")
 RS <-  c("Within_PA")
-#"log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA:Predominant_habitat+Within_PA+poly(ag_suit,1)+poly(log_elevation,1)+poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
-
- PA_11_14$Within_PA <- relevel( PA_11_14$Within_PA, "yes")
+PA_11_14$Within_PA <- relevel( PA_11_14$Within_PA, "yes")
 log_abundance.model <- model_select(all.data  = PA_11_14, 
 			     responseVar = "log_abundance",
 			     alpha = 0.05,
@@ -116,10 +117,11 @@ log_abundance.model <- model_select(all.data  = PA_11_14,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
 
+#"log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA:Predominant_habitat+Within_PA+(1+Within_PA|SS)+(1|SSB)"
+
+log_abundance.model$stats
 summary(log_abundance.model$model)
 validate(log_abundance.model$model) #ok
-
-write.csv(log_abundance.model$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/LUPA/log_abundance.model.LUPA.stats.02.02.2015.csv")
 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/LUPA_abundance.tif",
@@ -140,7 +142,7 @@ plotLU (responseVar = "Log abundance",
 dev.off()
 
 
-#looking at what to do if none significant
+#looking at what to do if none of the confounding variables are significant
 anova(m1, m0)
 anova(m2, m0)
 anova(m2, m1)
@@ -164,6 +166,55 @@ m1 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ p
 m2 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(ag_suit,2)+(1+Within_PA|SS)+(1|SSB), data)
 
 # so here, comparison to model without slope suggests to keep the same as lowest p value from table
+
+
+### get R2 values for increasingly complex models
+
+# LU + PA + LU:PA
+M1 <- lmer(log_abundance ~ Predominant_habitat+taxon_of_interest+Zone+Within_PA:Predominant_habitat+Within_PA+(1+Within_PA|SS)+(1|SSB),
+	data = log_abundance.model$data, REML = F)
+AIC(M1) #13222.46
+R2GLMER(M1)
+$conditional
+[1] 0.8861333
+
+$marginal
+[1] 0.1488977
+
+# LU + PA 
+M2<- lmer(log_abundance ~ Predominant_habitat+taxon_of_interest+Zone+Within_PA+(1+Within_PA|SS)+(1|SSB),
+	data = log_abundance.model$data, REML = F)
+AIC(M2) # 13233.17
+R2GLMER(M2)
+$conditional
+[1] 0.8834268
+
+$marginal
+[1] 0.1499332
+
+# LU
+M3 <- lmer(log_abundance ~ Predominant_habitat+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSB),
+	data = log_abundance.model$data, REML = F)
+AIC(M3) # 13232.67
+R2GLMER(M3)
+$conditional
+[1] 0.8830355
+
+$marginal
+[1] 0.1502319
+
+
+# PA 
+M4 <- lmer(log_abundance ~ taxon_of_interest+Zone+Within_PA+(1+Within_PA|SS)+(1|SSB),
+	data = log_abundance.model$data, REML = F)
+AIC(M4) #13319.66
+R2GLMER(M4)
+$conditional
+[1] 0.883403
+
+$marginal
+[1] 0.1384391
+
 
 ###combine secondary for land use estimate
 
@@ -295,17 +346,17 @@ length(fixef(log_abundance.model$model))
 
 
 
-crop.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/crop_WDPA.txt", header = T)
-pasture.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/pasture_WDPA.txt", header = T)
-primary.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/primary_WDPA.txt", header = T)
-secondary.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/secondary_WDPA.txt", header = T)
-urban.PAs <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/urban_WDPA.txt", header = T)
+crop.PAs <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/crop_WDPA.txt", header = T)
+pasture.PAs <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/pasture_WDPA.txt", header = T)
+primary.PAs <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/primary_WDPA.txt", header = T)
+secondary.PAs <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/secondary_WDPA.txt", header = T)
+urban.PAs <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/urban_WDPA.txt", header = T)
 
-crop.out <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/crop_outside.txt", header = T)
-pasture.out <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/pasture_outside.txt", header = T)
-primary.out <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/primary_outside.txt", header = T)
-secondary.out <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/secondary_outside.txt", header = T)
-urban.out <- read.csv("N:/Documents/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/urban_outside.txt", header = T)
+crop.out <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/crop_outside.txt", header = T)
+pasture.out <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/pasture_outside.txt", header = T)
+primary.out <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/primary_outside.txt", header = T)
+secondary.out <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/secondary_outside.txt", header = T)
+urban.out <- read.csv("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/effectiveness estimates/proportion land use/urban_outside.txt", header = T)
 
 
 
@@ -395,7 +446,7 @@ b.a <-  response_in/response_out -1
 
 
 benefit <- as.numeric(b.a)		# percentage increase in metric in PAs
-PA.pct <- 14.7 				# percentage of total land area in PAs
+PA.pct <- 14.6				# percentage of total land area in PAs
 # global loss of biodiversity (from Newbold et al)
 global.loss <- 0.107
 

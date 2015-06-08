@@ -9,35 +9,17 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
 
-
-# Load dataset 
-
 #load data
 source("prep_matched.landuse_for_analysis.R")
 
 
-
-#make ordinal datasets
-
-matched.landuse_ord <- matched.landuse
-matched.landuse_ord$IUCN_CAT <- factor(matched.landuse_ord$IUCN_CAT, ordered = T, 
-	levels = c("0", "4.5", "7", "1.5"))
-
-multiple.taxa.matched.landuse_ord <- multiple.taxa.matched.landuse
-multiple.taxa.matched.landuse_ord$IUCN_CAT <- factor(multiple.taxa.matched.landuse_ord$IUCN_CAT, ordered = T, 
-	levels = c("0", "4.5", "7", "1.5"))
-
-
-
-
-# rarefied richness
+# model rarefied richness
 
 fF <- c("Within_PA") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-
 
 
 r.sp.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rarefied",
@@ -54,7 +36,6 @@ r.sp.best.random <- compare_randoms(multiple.taxa.matched.landuse, "Richness_rar
 
 r.sp.best.random$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
-
 r.sp.model <- model_select(all.data  = multiple.taxa.matched.landuse, 
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
@@ -65,29 +46,18 @@ r.sp.model <- model_select(all.data  = multiple.taxa.matched.landuse,
                        randomStruct = "(Within_PA|SS) + (1|SSB) + (1|SSBS)",
 			     otherRandoms=character(0),
                        verbose=TRUE)
+r.sp.model$warnings
+r.sp.model$stats
 r.sp.model$final.call
 #Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(Within_PA|SS)+(1|SSB)+(1|SSBS)
 r.sp.model$stats # p <0.005
 
-data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "Richness_rarefied")]
-data <- na.omit(data)
+#model for plot
+data <- r.sp.model$data
 
-
-m3 <- glmer(Richness_rarefied ~ Within_PA + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
+m3 <- glmer(Richness_rarefied ~ Within_PA  + poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
-m4 <- glmer(Richness_rarefied ~ 1 + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
-	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
-	family = "poisson", data = data)
-anova(m3, m4)
-#0.0639      1     0.8004
-
-
-#no sig difference
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.landuse rar rich.tif",
-	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 
 labels <- c("Unprotected", "Protected")
@@ -115,8 +85,6 @@ axis(2, c(80,100,120,140), c(80,100,120,140))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
-
-dev.off()
 
 
 #keep points for master plot
@@ -163,39 +131,14 @@ r.sp.model.IUCN <- model_select(all.data  = multiple.taxa.matched.landuse,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 r.sp.model.IUCN$final.call
-r.sp.model.IUCN$stats # p <0.015
+r.sp.model.IUCN$warnings
+r.sp.model.IUCN$stats 
 #Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(IUCN_CAT|SS)+(1|SSB)+(1|SSBS)
-
-data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Richness_rarefied")]
-data <- na.omit(data)
-
-
-m5i <- glmer(Richness_rarefied ~1 + poly(ag_suit,3)+poly(log_elevation,3)
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = data,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT  + poly(ag_suit,3)+poly(log_elevation,3)
-	+ (IUCN_CAT|SS) + (1|SSB)+ (1|SSBS), 
-	family = "poisson", data = data,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-anova(m5i,m6i)
-#1.6735      3     0.6428
-
-
-
 
 # plot 
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model matched.landuse rar rich IUCN.tif",
-	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
-
-
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
-
-levels.IUCN <- levels(multiple.taxa.matched.landuse$IUCN_CAT)
-
-data <- multiple.taxa.matched.landuse[,c("ag_suit", "log_elevation", "log_slope", "IUCN_CAT", "SS", "SSB", "SSBS", "Richness_rarefied")]
-data <- na.omit(data)
+data <- r.sp.model.IUCN$data
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
 m4i <- glmer(Richness_rarefied ~ IUCN_CAT + log_slope + poly(ag_suit,3)+poly(log_elevation,3)
@@ -234,12 +177,9 @@ arrows(seq(2,length(points),1),CI[,1],
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
-dev.off()
-
 
 # use points to see percentages
 points
-
 
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
 		upper = CI[,1], lower = CI[,2],
@@ -250,9 +190,7 @@ r.sp.plot2 <- rbind(r.sp.plot1, IUCN.plot)
 
 
 
-
-
-# simple species richness for Zone data
+# Zone
 
 
 sp.tropical <- subset(multiple.taxa.matched.landuse, Zone == "Tropical")
@@ -303,6 +241,8 @@ model.trop <- model_select(all.data  = sp.tropical,
                        randomStruct = best.random.trop$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.trop$warnings
+model.trop$stats
 model.trop$final.call
 #"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,1)+poly(log_slope,2)+(1|SS)+(1|SSBS)"
 
@@ -317,33 +257,23 @@ model.temp <- model_select(all.data  = sp.temperate,
                        randomStruct = best.random.temp$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.temp$warnings
+model.temp$stats
 model.temp$final.call
 #"Richness_rarefied~1+(1|SS)+(1|SSB)"
 
 
-# run models
-data.trop <- sp.tropical[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Richness_rarefied")] 
-data.trop <- na.omit(data.trop)
+# run models for plots
+data.trop <- model.trop$data
+data.temp <- model.temp$data
+
 m1ztr <- glmer(Richness_rarefied ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,1)+poly(log_slope,2)
 	+ (1|SS)+ (1|SSBS), family = "poisson",
 	 data = data.trop)
-m2ztr <- glmer(Richness_rarefied ~ 1 + poly(ag_suit,3)+poly(log_elevation,1)+poly(log_slope,2)
-	+(1|SS)+  (1|SSBS), family = "poisson", 
-	 data = data.trop)
-anova(m1ztr, m2ztr)
-#0.0057      1,10       0.94
 
-data.temp <- sp.temperate[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")] 
-data.temp <- na.omit(data.temp)
 m1zte <- glmer(Richness_rarefied ~ Within_PA 
 	+ (1|SS)+  (1|SSB), family = "poisson", 
 	 data = data.temp)
-m2zte <- glmer(Richness_rarefied ~ 1 
-	+ (1|SS)+  (1|SSB), family = "poisson", 
-	 data = data.temp)
-anova(m1zte, m2zte)
-#1.1932      1     0.2747
-
 
 #add results to master plot
 ztr.est <- exp(fixef(m1ztr)[2])*100
@@ -364,11 +294,7 @@ r.sp.plot3 <- rbind(r.sp.plot2, a.zone)
 
 
 
-
-
-
-
-# species richness and taxon
+# taxon
 
 plants <- subset(multiple.taxa.matched.landuse, taxon_of_interest == "Plants")
 inverts <- subset(multiple.taxa.matched.landuse, taxon_of_interest == "Invertebrates")
@@ -424,10 +350,6 @@ best.random.v <- compare_randoms(verts, "Richness_rarefied",
 				verbose=TRUE)
 best.random.v$best.random # (1|SS)
 
-
-
-
-
 # get polynomial relationships
 model.p <- model_select(all.data  = plants, 
 				fitFamily = "poisson",
@@ -439,6 +361,8 @@ model.p <- model_select(all.data  = plants,
                        randomStruct =best.random.p$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.p$warnings
+model.p$stats
 model.p$final.call
 #"Richness_rarefied~poly(ag_suit,3)+poly(log_slope,1)+(1|SS)+(1|SSBS)"
 
@@ -452,6 +376,8 @@ model.i <- model_select(all.data  = inverts,
                        randomStruct =best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.i$warnings
+model.i$stats
 model.i$final.call
 #"Richness_rarefied~poly(log_slope,3)+(1|SS)+(1|SSBS)+(1|SSB)"
 
@@ -467,43 +393,28 @@ model.v <- model_select(all.data  = verts,
                        randomStruct =best.random.v$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+model.v$warnings
+model.v$stats
 model.v$final.call
 #"Richness_rarefied~1+(1|SS)"
 
 
-# run models
-data.p <- plants[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS", "Richness_rarefied")]
-data.p <- na.omit(data.p)
+# run models for plot
+data.p <- ab.model.p$data
+data.i <- ab.model.i$data
+data.v <- ab.model.v$data
+
 m1txp <- glmer(Richness_rarefied ~ Within_PA + poly(ag_suit,3)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), family = "poisson", 
 	 data = data.p)
-m2txp <- glmer(Richness_rarefied ~ 1+poly(ag_suit,3)+poly(log_slope,1)
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.p)
-anova(m1txp , m2txp)
-#0.0135      1     0.9075
 
-data.i <- inverts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB", "SSBS","Richness_rarefied")]
-data.i <- na.omit(data.i)
 m1txi <- glmer(Richness_rarefied ~ Within_PA +poly(log_slope,3)
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
-m2txi<- glmer(Richness_rarefied ~ 1 +poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.i)
-anova(m1txi, m2txi)
-#0.0466      1,12      0.829
 
-data.v <- verts[,c("Within_PA", "ag_suit", "log_elevation", "log_slope", "SS", "SSB","SSBS", "Richness_rarefied")]
-data.v <- na.omit(data.v)
 m1txv <- glmer(Richness_rarefied ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.v)
-m2txv <- glmer(Richness_rarefied ~ 1 
-	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
-	 data = data.v)
-anova(m1txv, m2txv)
-#0.5012      1      0.479
 
 #add results to master plot
 txp.est <- exp(fixef(m1txp)[2])*100
@@ -528,13 +439,9 @@ tax <- data.frame(label = c("Plants", "Inverts", "Verts"),
 r.sp.plot <- rbind(r.sp.plot3, tax)
 
 
-
-
 # master plot
 
-
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models matchedlanduse rar rich.tif",
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models matchedlanduse rar rich.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
@@ -569,4 +476,84 @@ axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 
 
 dev.off()
+
+
+
+# effectivness
+
+
+b.r <- exp(fixef(m3)[2]) -1
+b.r.max <- exp(fixef(m3)[2] + 1.96*se.fixef(m3)[2])-1
+b.r.min <- exp(fixef(m3)[2] - 1.96*se.fixef(m3)[2])-1
+
+
+b.vals <- c(b.r , b.r.max, b.r.min)
+
+
+vals <- data.frame(name =  c("b.r", "b.r.max", "b.r.min"),
+			b.vals = b.vals, 
+			metric = rep(c("rar.rich"), each = 3), 
+			NPA.abs = rep(NA,length(b.vals)),
+			PA.abs = rep(NA,length(b.vals)),
+			est = rep(NA,length(b.vals)))
+
+
+#By 2005, we estimate that human impacts had reduced local richness by an average of 13.6% (95% CI: 9.1 – 17.8%) and 
+#total abundance by 10.7% (95% CI: 3.8% gain – 23.7% reduction) compared with pre-impact times. 
+#Approximately 60% of the decline in richness was independent of effects on abundance: 
+#average rarefied richness has fallen by 8.1% (95% CI: 3.5 – 12.9%).
+			
+for(b in vals$b.vals){
+
+benefit <- as.numeric(b)		# percentage increase in metric in PAs
+PA.pct <- 13 				# percentage of total land area in PAs
+# global loss of biodiversity (from Newbold et al)
+if(vals$metric[which(vals$b.vals == b)] == "sp.rich"){
+	global.loss <- 0.136			
+	}else if (vals$metric[which(vals$b.vals == b)] == "abundance"){
+	global.loss <- 0.107
+	}else if (vals$metric[which(vals$b.vals == b)] == "rar.rich"){
+	global.loss <- 0.081
+	}
+
+NPA.rel <- 1-benefit			# relative biodiversity in unprotected sites
+PA.rel <- 1					# biodiversity in protected sites
+NPA.pct <- 100-PA.pct			# land area unprotected 
+global.int <- 1-global.loss		# overall status of biodiversity relative to pristine
+
+
+# we want NPA.abs and PA.abs - where these are the biodiv metrics in unprotected and protected relative to pristine
+# simultaneous equations are
+
+# global.int = NPA.pct/100*NPA.abs + PA.pct/100*PA.abs #overall loss is loss in PAs and nonPAs relative to pristine
+# NPA.abs = PA.abs*NPA.rel			     
+
+
+# so
+#global.int = (NPA.pct/100)*PA.abs*NPA.rel + (PA.pct/100)*PA.abs
+# which is the same as
+#global.int = PA.abs*(NPA.pct/100*(NPA.rel) + PA.pct/100)
+
+# then
+PA.abs <- global.int/(PA.pct/100 + (NPA.pct/100 * (NPA.rel)))
+NPA.abs <- PA.abs*NPA.rel
+vals$NPA.abs[which(vals$b.vals == b)] <- NPA.abs
+vals$PA.abs[which(vals$b.vals == b)] <- PA.abs
+
+# if pristine is 1, then where between 1 and NPA.abs does PA.abs fall?
+# get difference between PA.abs and NPA.abs as a percentage of NPA.abs
+#((1-NPA.abs)-(1-PA.abs))/(1-NPA.abs)
+
+est <- 1-(1-PA.abs)/(1-NPA.abs)
+vals$est[which(vals$b.vals == b)] <- est
+
+# ie
+#est <- ((1-NPA.abs)-(1-PA.abs))/(1-NPA.abs)
+}
+
+vals
+
+
+
+
 

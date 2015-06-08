@@ -5,15 +5,7 @@
 
 
 
-#access <- read.table("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis/matching data/bfer_1_25km_acc50k_07_14.txt", header = T, sep = ",")
-#hpd <- read.table("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis/matching data/bfer_1_25km_HPD_07_14.txt", header = T, sep = ",")
-#elevation <- read.table("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis/matching data/bfer_1_25km_mn30_elevation_07_14.txt", header = T, sep = ",")
-#slope <- read.table("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis/matching data/bfer_1_25km_mn30_slope_07_14.txt", header = T, sep = ",")
-
-
-
-
-setwd("N:/Documents/PREDICTS/WDPA analysis/matching data")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/matching data")
 
 
 access <- read.table("bfer_1km_acc50k_moll_11_14.txt", header = T, sep = ",")
@@ -52,9 +44,7 @@ slope.1 <- slope[,c("SSS", "MEAN")]
 
 
 
-setwd("N:/Documents/PREDICTS/WDPA analysis")
-
-
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
 
 
 
