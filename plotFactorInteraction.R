@@ -18,7 +18,12 @@ plotFactorInteraction <- function (model,responseVar, data,
 				ref.text = "unprotected",
 				xlab = "",
 				ylab = "",
-				ylab.axis = c(-50,0,50,100)){
+				ylim = c(-100,100),
+				ylab.axis = c(-50,0,50,100),
+				seperate.line = TRUE, 
+				cex = 1, 
+				cex.lab = 1,
+				mtext.line = 6){
 
 # reference level must be set to age and size of 0
 trop.col <- rgb(0.9,0,0)
@@ -120,7 +125,7 @@ if(length(grep(":", names(fixef(model)))) > 0){
 
 
 xlims <- c(0.5, (length(xvar.order)+1)*(length(intvar.order)+1)+0.5)
-ylims <- c(-80,100)
+ylims <- ylim
 
 #if(responseVar == "Endemicity"){
 #	ylims <- c(min(yplus)-10, max(yminus) + 10)
@@ -129,11 +134,10 @@ ylims <- c(-80,100)
 #	}
 
 
-par(mar = c(8,4,1,2), mgp = c(3,0.6,0))
 plot(-1, -1, xlim = xlims, bty = "l",
-		ylim = ylims, xlab = "", ylab = ylab, cex.lab = 1.2, axes = F)
+		ylim = ylims, xlab = "", ylab = ylab, cex.lab = cex.lab, axes = F)
 axis(2,ylab.axis, ylab.axis)
-mtext(side = 1, text = xlab, line =6, cex = 1.2)
+mtext(side = 1, text = xlab, line = mtext.line, cex = cex)
 abline(h = 0, lty = 2, col = 1)
 
 shapes <- NULL
@@ -202,7 +206,7 @@ for(L in c("reference",intvar.order)){
 	points(p,0,bg = "white", pch = shapes[which(yData$x == "reference" &yData$int == L)],
 		col = colours[which(yData$x == "reference" &yData$int == L)])
 	p <- p + length(y[which(yData$int == L )])
-	abline(v = p - 0.5, col = 8)
+	 if (seperate.line) {abline(v = p - 0.5, col = 8)}
 }
 
 

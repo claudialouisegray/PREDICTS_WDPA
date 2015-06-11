@@ -83,18 +83,24 @@ Species_richness.model$stats
 
 ### plot
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/sp rich vs size and age.tif",
-	width = 9, height = 15, units = "cm", pointsize = 12, res = 300)
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/sp rich vs size and age.tif",
+	width = 8.7, height = 11, units = "cm", pointsize = 12, res = 300)
+
+par(mar = c(7,3,0,0), mgp = c(2,0.5,0))
 
 plotFactorInteraction(model = Species_richness.model$model,
 responseVar = "Species_richness",
 data = Species_richness.model$data,
 xvar = "AREA_DoP",
 xvar.order = c("small_young", "small_old", "large_young", "large_old"), #this must be the levels of the factor in the order to be plotted, not including reference level
-xvar.labels = c("Small, Young", "Small, Old", "Large, Young", "Large, Old"),
+xvar.labels = c("small, young", "small, old", "large, young", "large, old"),
 logLink = "e",
 xlab = "PA size and age class",
-ylab = "Relative species richness %")
+ylab = "Relative species richness %", 
+ylim = c(-15,21),
+ylab.axis = c(-10,0,10,20),
+seperate.line = F,
+mtext.line = 6)
 
 #text(1,26, "Young = 0 - 20 yrs \nOld = 20 - 85 yrs \nSmall = 0 - 400 km2 \nLarge = 400 - 12000km2", 
 #	adj = 0, cex = 0.8)

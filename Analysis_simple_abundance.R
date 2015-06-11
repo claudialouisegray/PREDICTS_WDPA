@@ -443,11 +443,17 @@ a.tax <- data.frame(label = c("Plants", "Inverts", "Verts"),
 					nrow(data.v[which(data.v$Within_PA == "yes"),])))
 ab.plot <- rbind(ab.plot3, a.tax)
 
+ab.plot$truncated <- ab.plot$upper
+ab.plot$truncated[which(ab.plot$upper > 145)] <- 135
+ab.plot$dotlines <- rep(0,nrow(ab.plot))
+ab.plot$dotlines_end <- rep(0,nrow(ab.plot))
+ab.plot$dotlines[which(ab.plot$upper > 145)] <- 135
+ab.plot$dotlines_end[which(ab.plot$upper > 145)] <- 140
 
 # master plot
 
 tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models abundance.tif",
-	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
+	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
 temp.col <- rgb(0,0.1,0.7)
@@ -457,25 +463,30 @@ v.col <- rgb(0.9,0.5,0)
 
 par(mar = c(9,6,4,1))
 plot(1,1, 
-	ylim = c(65,190), xlim = c(0.5,nrow(ab.plot)+1),
+	ylim = c(70,145), xlim = c(0.5,nrow(ab.plot)+1),
 	bty = "l", 
 	axes = F,
 	ylab = "Abundance difference (%)",
 	cex.lab = 1.5,
 	xlab = "")
-arrows(1:nrow(ab.plot),ab.plot$upper,
+arrows(1:nrow(ab.plot),ab.plot$truncated,1:nrow(ab.plot),ab.plot$lower,
 	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
 	lwd = 2,
-	1:nrow(ab.plot),ab.plot$lower, code = 3, length = 0, angle = 90)
+	code = 3, length = 0, angle = 90)
+arrows(1:nrow(ab.plot),ab.plot$dotlines, 1:nrow(ab.plot),ab.plot$dotlines_end,
+	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
+	lwd = 2, lty = 3,
+	code = 3, length = 0, angle = 90)
 points(ab.plot$est ~ c(1:nrow(ab.plot)),
 	pch = c(21, rep(16,4), rep(15,2),rep(17,3)), 
-	lwd = 2,
+	lwd = 2, lty = 3,
 	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
 	bg = c("white"), 
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(ab.plot),65, ab.plot$n.site, srt = 180)
+text(1:nrow(ab.plot),72, ab.plot$n.site, srt = 90)
+text(which(ab.plot$upper > 145),143, round(ab.plot$upper[which(ab.plot$upper > 145)]), srt = 90)
 #axis(1, c(1:nrow(ab.plot)), ab.plot$label, cex.axis = 1.5, las = 2)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 

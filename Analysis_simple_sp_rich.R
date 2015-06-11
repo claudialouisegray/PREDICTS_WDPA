@@ -473,7 +473,7 @@ sp.plot <- rbind(sp.plot3, tax)
 
 
 tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models sp rich.tif",
-	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
+	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
 temp.col <- rgb(0,0.1,0.7)
@@ -483,7 +483,7 @@ v.col <- rgb(0.9,0.5,0)
 
 par(mar = c(9,6,4,1))
 plot(1,1, 
-	ylim = c(65,190), xlim = c(0.5,nrow(sp.plot)+1),
+	ylim = c(70,145), xlim = c(0.5,nrow(sp.plot)),
 	bty = "l", 
 	axes = F,
 	ylab = "Species richness difference (%)",
@@ -501,7 +501,7 @@ points(sp.plot$est ~ c(1:nrow(sp.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(sp.plot),65, sp.plot$n.site, srt = 180)
+text(1:nrow(sp.plot),72, sp.plot$n.site, srt = 90, cex = 1)
 axis(1, c(1:nrow(sp.plot)), sp.plot$label, cex.axis = 1.5, las = 2, tick = 0)
 axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
 

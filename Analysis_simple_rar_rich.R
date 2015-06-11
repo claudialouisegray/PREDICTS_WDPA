@@ -481,15 +481,20 @@ tax <- data.frame(label = c("Plants", "Inverts", "Verts"),
 					nrow(data.v[which(data.v$Within_PA == "yes"),])))
 r.sp.plot <- rbind(r.sp.plot3, tax)
 
-
+r.sp.plot$truncated <- r.sp.plot$upper
+r.sp.plot$truncated[which(r.sp.plot$upper > 145)] <- 135
+r.sp.plot$dotlines <- rep(0,nrow(r.sp.plot))
+r.sp.plot$dotlines_end <- rep(0,nrow(r.sp.plot))
+r.sp.plot$dotlines[which(r.sp.plot$upper > 145)] <- 135
+r.sp.plot$dotlines_end[which(r.sp.plot$upper > 145)] <- 140
 
 
 # master plot
 
 load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich.RData")
 
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich.tif",
-	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich.tif",
+	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
 temp.col <- rgb(0,0.1,0.7)
@@ -499,16 +504,20 @@ v.col <- rgb(0.9,0.5,0)
 
 par(mar = c(9,6,4,1))
 plot(1,1, 
-	ylim = c(65,190), xlim = c(0.5,nrow(r.sp.plot)+1),
+	ylim = c(70,145), xlim = c(0.5,nrow(r.sp.plot)),
 	bty = "l", 
 	axes = F,
 	ylab = "Rarefied richness difference (%)",
 	cex.lab = 1.5,
 	xlab = "")
-arrows(1:nrow(r.sp.plot),r.sp.plot$upper,
+arrows(1:nrow(r.sp.plot),r.sp.plot$truncated,
 	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
 	lwd = 2,
 	1:nrow(r.sp.plot),r.sp.plot$lower, code = 3, length = 0, angle = 90)
+arrows(1:nrow(r.sp.plot),r.sp.plot$dotlines, 1:nrow(r.sp.plot),r.sp.plot$dotlines_end,
+	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
+	lwd = 2, lty = 3,
+	code = 3, length = 0, angle = 90)
 points(r.sp.plot$est ~ c(1:nrow(r.sp.plot)),
 	pch = c(21, rep(16,4), rep(15,2),rep(17,3)), 
 	lwd = 2,
@@ -517,9 +526,10 @@ points(r.sp.plot$est ~ c(1:nrow(r.sp.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(r.sp.plot),65, r.sp.plot$n.site, srt = 180)
+text(1:nrow(r.sp.plot),72, r.sp.plot$n.site, srt = 180)
+text(which(r.sp.plot$upper > 145),143, round(r.sp.plot$upper[which(r.sp.plot$upper > 145)]), srt = 90)
 #axis(1, c(1:nrow(r.sp.plot)), r.sp.plot$label, cex.axis = 1.5, las = 2)
-axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
+axis(2, c(80,100,120,140), c(80,100,120,140))
 
 
 dev.off()

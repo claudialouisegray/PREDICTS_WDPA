@@ -1,9 +1,4 @@
 
-# describing data 
-
-
-setwd("N:/Documents/PREDICTS/WDPA analysis")
-
 rm(list=ls()) 
 
 library(yarg)
@@ -92,7 +87,7 @@ spdf <- SpatialPointsDataFrame(spatial,additional)
 #points_additional <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "additional_moll")
 #lines <- readOGR("C:/GIS/Data/world_borders", "equator_tropics_moll")
 
-
+# equal plot
 countries <- readOGR(dsn = "C:/GIS/Data/world_borders", "BORDERS_without_antarctica_equl")
 points_ML <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse_equl")
 points_additional <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "additional_equl")
@@ -101,10 +96,13 @@ PAs_all <- readOGR(dsn = "C:/GIS/Data/WDPA/WDPAmollmergeJULY", "WDPAmollmergeJUL
 
 
 
-tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 map 2.tif",
-	width = 25, height =20, units = "cm", pointsize = 12, res = 300)
-par(mfrow = c(1,1))
-par(mar=c(0.2,0.1,1.5,0.2))
+tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/PA_11_14 map equal.tif",
+	width = 25, height =21, units = "cm", pointsize = 12, res = 300)
+par(mfrow = c(1,1),mar = c(0,0,0,0), oma=c(0, 0, 0, 0),
+    pty = "m",
+    xpd = NA)
+
+
 
 PA.col <- rgb(0.9,0.9,0.1)
 
@@ -112,7 +110,8 @@ plot(countries, lty = NULL, border = "grey", col = "grey")
 plot(PAs_all, lty = NULL, border = PA.col, col = PA.col, add = T, lwd = 0.01)
 plot(lines, add = T, lty = 2)
 #plot(points_LUPA, pch = 21, col = rgb(0.1,0.1,0.1,0.5), bg = rgb(0.9,0.9,0.9,0.5), add = T, cex = 1)
-plot(points_additional, pch = 21, col = rgb(0.1,0.1,0.1,0.5), bg = rgb(0.9,0.9,0.9,0.5), add = T, cex = 1)
+#plot(points_additional, pch = 21, col = rgb(0.1,0.1,0.1,0.5), bg = rgb(0.9,0.9,0.9,0.5), add = T, cex = 1)
+plot(points_additional, pch = 16, col = rgb(0.1,0.1,0.1,0.5), add = T, cex = 1)
 plot(points_ML, pch = 16, col = rgb(0.1,0.1,0.1,0.5), add = T, cex = 1)
 
 dev.off()
@@ -127,8 +126,6 @@ legend(0.75,1, cex = 1,
 
 dev.off()
 
-### make border thickness less
-
 
 
 # histogram of points
@@ -140,47 +137,66 @@ taxa <- c("Plants", "Invertebrates", "Vertebrates")
 
 n.breaks <- 30
 
-ML_verts_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Vertebrates")], n.breaks)
-ML_inverts_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Invertebrates")], n.breaks)
-ML_plants_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Plants")], n.breaks)
+min(matched.landuse$Latitud)
+max(matched.landuse$Latitud)
 
+#want breaks that fall between 0 and 23.5 neatly
+step <- 23.5/4
+breaks <- seq(-8*step, 12*step, step)
 
-ML_verts_cut$breaks
-ML_inverts_cut$breaks
-ML_plants_cut$breaks
+ML_verts_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Vertebrates")], breaks)
+ML_inverts_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Invertebrates")], breaks)
+ML_plants_cut <- hist(matched.landuse$Latitud[which(matched.landuse$taxon_of_interest == "Plants")], breaks)
 
-LUPA_verts_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Vertebrates")], n.breaks)
-LUPA_inverts_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Invertebrates")], n.breaks)
-LUPA_plants_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Plants")], n.breaks)
-
-LUPA_verts_cut$breaks
-LUPA_inverts_cut$breaks
-LUPA_plants_cut$breaks
+LUPA_verts_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Vertebrates")], breaks)
+LUPA_inverts_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Invertebrates")], breaks)
+LUPA_plants_cut <- hist(PA_11_14$Latitud[which(PA_11_14$taxon_of_interest == "Plants")], breaks)
 
 LUPA_verts_cut$mids
 
 
 tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/latitudinal bar plot.tif",
-	width = 15, height =20, units = "cm", pointsize = 12, res = 300)
+	width = 18, height =20, units = "cm", pointsize = 12, res = 300)
 
 par(mfrow = c(1,2))
 #add the zeros at the ends where breaks not made
-LUPA_cut <- rbind(LUPA_verts_cut$counts, c(0,LUPA_inverts_cut$counts,0), c(0,LUPA_plants_cut$counts,0,0))
-ML_cut <- rbind(c(0,ML_verts_cut$counts), c(0,ML_inverts_cut$counts,0), c(0,ML_plants_cut$counts,0,0))
+LUPA_cut <- rbind(LUPA_verts_cut$counts, c(LUPA_inverts_cut$counts), c(LUPA_plants_cut$counts))
+ML_cut <- rbind(c(ML_verts_cut$counts), c(ML_inverts_cut$counts), c(ML_plants_cut$counts))
 
 colSums(LUPA_cut)
-par(mar = c(6,4,2,0))
+par(mar = c(6,4,2,0), oma = c(1,1,1,1))
 barplot(LUPA_cut, beside = F, horiz = T, space = 0, col = rev(taxa.cols), border = NA,
 	#main = "all sites", cex.main = 1.2,
-	ylim = c(-1,26), xlim = c(1350,0), cex.axis = 2, las = 2)
-#all breaks = c(seq(-75,-55,5), LUPA_verts_cut$breaks), at -5:25
+	ylim = c(0,20), 
+	xlim = c(1450,0), cex.axis = 2, las = 2)
+abline(h = (0 - c)/step, col = 1, lty = 2)
+abline(h = (23.5 - c)/step, col = 1, lty = 2)
+abline(h = (-23.5 - c)/step, col = 1, lty = 2)
 
-axis(2, seq(-1,26,2), seq(-50,80,10), cex.axis = 2, las = 2)
+# get axis positions for integer values
+# intercept is lowest break, gradient = step
+c <- -8*step
+x <- seq(0,20,1)
+#check this gives original breaks
+y = step*x + c
+y == breaks
+
+# reverse formula
+#(y - c)/step = x
+# so if
+y <- seq(-50,80,10)
+new.x <- (y - c)/step
+
+axis(2, new.x, y, cex.axis = 2, las = 2)
+
 par(mar = c(6,0,2,4))
 barplot(ML_cut, beside = F, horiz = T, space = 0, col = rev(taxa.cols), border = NA,
 	#main = "sites matched \n by landuse",  cex.main = 1.2, 
-	ylim = c(-1,26), xlim = c(0,1350), cex.axis = 2, las = 2)
-#axis(2, -6:23, c(seq(-75,-50,5) ML_verts_cut$breaks))
+	ylim = c(0,20), xlim = c(0,1450), cex.axis = 2, las = 2)
+abline(h = (0 - c)/step, col = 1, lty = 2)
+abline(h = (23.5 - c)/step, col = 1, lty = 2)
+abline(h = (-23.5 - c)/step, col = 1, lty = 2)
+
 abline(v = 0, col = 1)
 
 dev.off()

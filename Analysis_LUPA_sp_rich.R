@@ -54,11 +54,9 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 
 
 # Species richness
-
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
-keepVars <- character(0)
-fI <- character(0)
+fT <-list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "3")
+fI <- c("Within_PA:Predominant_habitat")
 RS <-  c("Within_PA")
 
 Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species_richness",
@@ -66,21 +64,16 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Species
 				siteRandom = TRUE,
 				fixedFactors=fF,
                         fixedTerms=fT,
-			     	keepVars = keepVars,
                        	fixedInteractions=fI,
                         otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
-
 Species_richness.best.random$best.random #"(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
- 
 best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
 
-# model select
-
 Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
 			     responseVar = "Species_richness",
 			     fitFamily = "poisson",
@@ -88,52 +81,14 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14,
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
-			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-
-# "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <-character(0)
-keepVars <- list("ag_suit" = "1", "log_elevation" = "2", "log_slope" = "1")
-fI <- c("Within_PA:Predominant_habitat")
-RS <-  c("Within_PA")
-#Species_richness~Predominant_habitat+taxon_of_interest+Within_PA+Zone+Within_PA:Predominant_habitat+poly(ag_suit,1)+poly(log_elevation,2)+poly(log_slope,1)+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
-#other ints I could add
-#fI <- c("Within_PA:poly(ag_suit,2)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,1)",
-#	"Within_PA:taxon_of_interest", "Within_PA:Zone")
-
-
-Species_richness.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
-			     responseVar = "Species_richness",
-			     fitFamily = "poisson",
-			     siteRandom = TRUE, 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       fixedInteractions=fI,
-                       randomStruct = best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
-
-
-
-
-
-validate(Species_richness.model$model) #ok
-res <- data.frame(est = fixef(Species_richness.model$model), se = se.fixef(Species_richness.model$model))
-write.csv(res, "Species_richness.model.LUPA.estimates.02.02.2015.csv")
-
-write.csv(Species_richness.model$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/LUPA/Species_richness.model.LUPA.stats.30.01.2015.csv")
-
+Species_richness.model$final.call
+#"Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+Predominant_habitat+taxon_of_interest+Within_PA+Zone+Within_PA:Predominant_habitat+(Within_PA|SS)+(1|SSBS)+(1|SSB)"
+validate(Species_richness.model$model)
+results <- data.frame(est = fixef(Species_richness.model$model), se = se.fixef(Species_richness.model$model))
 
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/LUPA_sp_rich.tif",
@@ -161,38 +116,47 @@ PlotErrBar(model = Species_richness.model$model, data = multiple.taxa.PA_11_14, 
 
 
 
-# try with Within_PA as random slope
+### get AIC &R2 values for increasingly complex models
 
-multiple.taxa.PA_11_14$Predominant_habitat <- relevel(multiple.taxa.PA_11_14$Predominant_habitat, "Primary Vegetation")
-multiple.taxa.PA_11_14$Within_PA <- relevel(multiple.taxa.PA_11_14$Within_PA, "no")
+# LU + PA + LU:PA
+M1 <- lmer(Species_richness ~ Predominant_habitat+Within_PA:Predominant_habitat+Within_PA
+	+ taxon_of_interest + Zone
+	+poly(ag_suit,1)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSBS)+(1|SSB),
+	data = Species_richness.model$data, family = "poisson")
 
+# LU + PA 
+M2<- lmer(Species_richness ~ Predominant_habitat+Within_PA + taxon_of_interest + Zone
+	+poly(ag_suit,1)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSBS)+(1|SSB),
+	data = Species_richness.model$data, family = "poisson")
 
-data <- multiple.taxa.PA_11_14[,c("Species_richness", "Within_PA", "Predominant_habitat", "log_slope", "log_elevation", "ag_suit",
-	"Zone", "taxon_of_interest", "SS", "SSB", "SSBS")]
-data <- na.omit(data)
+# LU
+M3 <- lmer(Species_richness ~ Predominant_habitat+ taxon_of_interest + Zone+
+	+poly(ag_suit,1)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSBS)+(1|SSB),
+	data = Species_richness.model$data, family = "poisson")
 
-m1 <- glmer(Species_richness ~ Within_PA + Predominant_habitat +
-	Within_PA:Predominant_habitat + poly(log_slope,1) + poly(log_elevation,2) + poly(ag_suit,2)
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-#	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000),
-	data = data)
-#no convergence warnings when no poly specified at all
-#Model failed to converge with max|grad| = 0.00148691 (tol = 0.001, component 15)
+# PA 
+M4 <- lmer(Species_richness ~ Within_PA+ taxon_of_interest + Zone
+	+poly(ag_suit,1)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSBS)+(1|SSB),
+	data = Species_richness.model$data, family = "poisson")
 
+# No land use or PA
+M5 <- lmer(Species_richness ~ + taxon_of_interest + Zone
+	+poly(ag_suit,1)+poly(log_elevation,2)+(Within_PA|SS)+(1|SSBS)+(1|SSB),
+	data = Species_richness.model$data, family = "poisson")
 
-m2 <- glmer(Species_richness ~ Within_PA + Predominant_habitat +
-	poly(log_slope,1) + poly(log_elevation,2) + poly(ag_suit,2)
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-#	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000),
-	data = data)
+res <- data.frame(models  =  c("LU + PA + LU:PA", "LU + PA", "LU", "PA", "1"),
+		AIC = c(AIC(M1), AIC(M2), AIC(M3), AIC(M4), AIC(M5)),
+		r2_conditional = c(R2GLMER(M1)$conditional, R2GLMER(M2)$conditional, R2GLMER(M3)$conditional, R2GLMER(M4)$conditional, R2GLMER(M5)$conditional),
+		r2_marginal = c(R2GLMER(M1)$marginal, R2GLMER(M2)$marginal, R2GLMER(M3)$marginal, R2GLMER(M1)$marginal, R2GLMER(M2)$marginal))
+res$dAIC = res$AIC - AIC(M5)
+res 
 
-anova(m1,m2)
+# what percentage of total explanatory power is due to having land use in model only
+res$dAIC[3]/res$dAIC[1]
 
-res <- data.frame(estimate = fixef(m1), se = se.fixef(m1))
-write.csv(res, "Species_richness.LUPA.CLG.30.01.2015.withpolylinear.csv")
-
+# what percentage of total explanatory power is added when going from model with land use to model 
+# with between and within land use differences in protection
+(res$AIC[1] - res$AIC[3])/res$dAIC[1]
 
 
 

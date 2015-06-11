@@ -535,7 +535,7 @@ r.plot <- rbind(r.plot3, tax)
 # master plot
 
 tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models endemicity.tif",
-	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
+	width = 8.7, height = 5, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
 temp.col <- rgb(0,0.1,0.7)
@@ -545,7 +545,7 @@ v.col <- rgb(0.9,0.5,0)
 
 par(mar = c(9,6,4,1))
 plot(1,1, 
-	ylim = c(65,190), xlim = c(0.5,nrow(r.plot)+1),
+	ylim = c(70,145), xlim = c(0.5,nrow(r.plot)),
 	bty = "l", 
 	axes = F,
 	ylab = "Endemicity difference (%)",
@@ -563,9 +563,9 @@ points(r.plot$est ~ c(1:nrow(r.plot)),
 	cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
-text(1:nrow(r.plot),65, r.plot$n.site, srt = 180)
+text(1:nrow(r.plot),72, r.plot$n.site, srt = 90)
 #axis(1, c(1:nrow(r.plot)), r.plot$label, cex.axis = 1.5, las = 2)
-axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
+axis(2, c(80,100,120,140), c(80,100,120,140))
 
 
 dev.off()

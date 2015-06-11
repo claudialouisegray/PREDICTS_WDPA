@@ -19,16 +19,13 @@ library(gamm4)
 library(scatterplot3d)
 library(rgl)
 
-
 #setwd("C:/Users/Claudia/Documents/PREDICTS/WDPA analysis")
-
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 
 # load functions
-
 source("compare_randoms.R")
 source("model_select.R")
-
+source("plotLUPA.R")
 
 #load data
 source("prep_PA_11_14_for_analysis.R")
@@ -40,25 +37,18 @@ validate <- function(x) {
   par(mfrow = c(1,1))
 }
 
-
-
 construct_call<-function(responseVar,fixedStruct,randomStruct){
   return(paste(responseVar,"~",fixedStruct,"+",randomStruct,sep=""))
 }
 
 
-load("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - traits.RData")
-> 
-
+#load("R:/ecocon_d/clg32/PREDICTS/WDPA analysis\\RData files\\8 landuses\\simple models - traits.RData")
 
 names(PA_11_14)
 
 plants <- subset(PA_11_14, taxon_of_interest == "Plants and Fungi")
 inverts.data <- subset(PA_11_14, taxon_of_interest == "Invertebrates")
 verts.data <- subset(PA_11_14, taxon_of_interest == "Vertebrates")
-
-
-
 
 
 
@@ -187,7 +177,8 @@ veg_LUPA <- lmer(veg ~ LUPA +
 
 summary(veg_LUPA)
 
-tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/LUPA veg.tif",
+
+tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/LUPA veg.tif",
 	width = 15, height = 10, units = "cm", pointsize = 12, res = 300)
 
 plotLUPA(model = veg_LUPA,
@@ -203,18 +194,18 @@ plotLUPA(model = veg_LUPA,
 			"IN Young secondary vegetation",
 			"OUT Plantation forest",
 			"IN Plantation forest",
-			"IN Cropland",
 			"OUT Cropland",
-			"IN Pasture",
-			"OUT Pasture")
+			"IN Cropland",
+			"OUT Pasture",
+			"IN Pasture"
 			#"OUT Urban",
 			#"IN Urban"
-			,
+			),
 		col.key = NULL,
 		logLink = "n",
 		seMultiplier=1.96,
 		forPaper = T,
-		ylims = c(-1.2,1.2))
+		ylims = c(-0.7,0.7))
 
 dev.off()
 
@@ -355,7 +346,7 @@ inverts.vol_LUPA <- lmer(vol ~ LUPA +
 
 summary(inverts.vol_LUPA)
 
-tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/LUPA inverts vol.tif",
+tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/LUPA inverts vol.tif",
 	width = 15, height = 10, units = "cm", pointsize = 12, res = 300)
 
 plotLUPA(model = inverts.vol_LUPA,
@@ -371,10 +362,10 @@ plotLUPA(model = inverts.vol_LUPA,
 			"IN Young secondary vegetation",
 			#"OUT Plantation forest",
 			#"IN Plantation forest",
-			"IN Cropland",
 			"OUT Cropland",
-			"IN Pasture",
+			"IN Cropland",
 			"OUT Pasture",
+			"IN Pasture",
 			"OUT Urban",
 			"IN Urban")
 			,
@@ -398,7 +389,7 @@ dev.off()
 MASS
 #########
 
-(just mammals and birds and reptiles)
+(mammals and birds and reptiles)
 
 hist(PA_11_14$mass)
 hist(log(PA_11_14$mass+1)) 
@@ -516,7 +507,7 @@ mass_LUPA <- lmer(mass ~ LUPA +
 	(1+Within_PA|SS)+(1|SSB), data = mass.data2)
 summary(mass_LUPA)
 
-tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/LUPA mass.tif",
+tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/LUPA mass.tif",
 	width = 15, height = 10, units = "cm", pointsize = 12, res = 300)
 
 plotLUPA(model = mass_LUPA,
@@ -532,10 +523,10 @@ plotLUPA(model = mass_LUPA,
 			"IN Young secondary vegetation",
 			"OUT Plantation forest",
 			"IN Plantation forest",
-			"IN Cropland",
 			"OUT Cropland",
-			"IN Pasture",
+			"IN Cropland",
 			"OUT Pasture",
+			"IN Pasture",
 			"OUT Urban",
 			"IN Urban"),
 		col.key = NULL,
@@ -552,6 +543,7 @@ dev.off()
 
 
 ### try just mammals and birds data
+### this is what Sam did
 
 names(PA_11_14)
 
@@ -602,15 +594,12 @@ anova(mass_ab1, mass_ab2)
 
 mass_ab1 <- lmer(CWM_Adult_wet_mass_log10_g ~ Within_PA + Predominant_habitat +  Within_PA:Predominant_habitat + 
 	poly(log_elevation,3)+poly(log_slope,3)+
-	(1+Within_PA|SS)+(1|SSB), data = mass1.data)
-mass_ab1 <- lmer(CWM_Adult_wet_mass_log10_g ~ LUPA + 
-	poly(log_elevation,3)+poly(log_slope,3)+
-	(1+Within_PA|SS)+(1|SSB), data = mass1.data)
+	(1+Within_PA|SS)+(1|SSB), data = mass1.data, REML = T,optimizer="bobyqa")
 mass_ab2 <- lmer(CWM_Adult_wet_mass_log10_g~  Within_PA + Predominant_habitat + 
 	poly(log_elevation,3)+poly(log_slope,3)+
 	(1+Within_PA|SS)+(1|SSB), data = mass1.data)
-
 anova(mass_ab1, mass_ab2)
+
 
 #for plotting
 mass.data2 <- PA_11_14[,c("LUPA", "CWM_Adult_wet_mass_log10_g", "log_elevation", "log_slope", "SS", "SSB", 
@@ -619,10 +608,21 @@ mass.data2 <- na.omit(mass.data2)
 mass_ab_LUPA <- lmer(CWM_Adult_wet_mass_log10_g ~ LUPA +
 	poly(log_elevation,3)+poly(log_slope,3)+
 	(1+Within_PA|SS)+(1|SSB), data = mass.data2)
-
 summary(mass_ab_LUPA)
 
-tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/LUPA mass birds and mammals.tif",
+# check comparison to LUPA is the same
+mass_ab2 <- lmer(CWM_Adult_wet_mass_log10_g~  Within_PA + Predominant_habitat + 
+	poly(log_elevation,3)+poly(log_slope,3)+
+	(1+Within_PA|SS)+(1|SSB), data = mass.data2)
+anova(mass_ab_LUPA, mass_ab2)
+
+# is the difference between mine and Sams due to using all the data?
+# no
+mass_ab_LUPA <- lmer(CWM_Adult_wet_mass_log10_g ~ LUPA +
+	poly(log_elevation,3)+poly(log_slope,3)+
+	(1+Within_PA|SS)+(1|SSB), data = PA_11_14)
+
+tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/LUPA mass birds and mammals.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 plotLUPA(model = mass_ab_LUPA,
@@ -638,10 +638,10 @@ plotLUPA(model = mass_ab_LUPA,
 			"IN Young secondary vegetation",
 			"OUT Plantation forest",
 			"IN Plantation forest",
-			"IN Cropland",
 			"OUT Cropland",
-			"IN Pasture",
+			"IN Cropland",
 			"OUT Pasture",
+			"IN Pasture",
 			"OUT Urban",
 			"IN Urban"),
 		col.key = NULL,
@@ -652,6 +652,15 @@ plotLUPA(model = mass_ab_LUPA,
 
 dev.off()
 
+### sams version
+mass_sam <- FixedModel(all.data=PA_11_14,responseVar="CWM_Adult_wet_mass_log10_g",fitFamily="gaussian", 
+	fixedStruct="Within_PA+Predominant_habitat+poly(log_elevation,3)+poly(log_slope,3)+Predominant_habitat:Within_PA", 
+	randomStruct="(1+Within_PA|SS)+(1|SSB)",REML=T,optimizer="bobyqa")
+fixef(mass_sam$model)
+
+as.numeric(fixef(mass_sam$model)) == as.numeric(fixef(mass_ab1))
+names(fixef(mass_sam$model)) == names(fixef(mass_ab1))
+# yes they match
 
 
 #####
@@ -711,7 +720,7 @@ anova(verts.vol1, verts.vol2)
 
 
 
-tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/simple models verts vol.tif",
+tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models verts vol.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
@@ -774,7 +783,7 @@ verts.vol_LUPA <- lmer(vol ~ LUPA +
 
 summary(verts.vol_LUPA)
 
-tiff("N:/Documents/PREDICTS/WDPA analysis/plots/02_15/LUPA verts vol.tif",
+tiff("R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/LUPA verts vol.tif",
 	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 plotLUPA(model = verts.vol_LUPA,
@@ -790,10 +799,10 @@ plotLUPA(model = verts.vol_LUPA,
 			#"IN Young secondary vegetation",
 			"OUT Plantation forest",
 			"IN Plantation forest",
-			#"IN Cropland",
 			#"OUT Cropland",
-			"IN Pasture",
-			"OUT Pasture"),
+			#"IN Cropland",
+			"OUT Pasture",
+			"IN Pasture")
 			#"OUT Urban",
 			#"IN Urban")
 			,
@@ -806,6 +815,7 @@ plotLUPA(model = verts.vol_LUPA,
 		seMultiplier=1.96,
 		forPaper = T,
 		ylims = c(-1.2,1.2))
+
 
 dev.off()
 

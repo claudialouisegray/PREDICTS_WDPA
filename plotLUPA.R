@@ -8,9 +8,10 @@ plotLUPA <- function (model,responseVar, data,
 				logLink = "n",
 				seMultiplier=1.96,
 				forPaper = FALSE,
-				cex.txt = 0.5,
+				cex.txt = 0.8,
 				offSet = 0,
-				ylims = c(0,200)){
+				ylims = c(0,200),
+				gap = 0, gap2 = 0.1){
 
 # reference level must be set to Primary Vegetation in data, and as model intercept too
 # col.key is the dataframe of colours to use, the first 
@@ -130,13 +131,12 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
                   max(grep("Primary", labels)) + 0.5, ylims[2], 
                   col = "#66A61E33", border = NA)
             }
-            text(mean(grep("Primary", labels)), ylims[1] +  # get the position as the mean between all points where "Primary" is found in labels
-                0.05 * predRange, "Primary", col = "black", cex = cex.txt)
+            text(mean(grep("Primary", labels)), ylims[1] + gap, "Primary", col = "black", cex = cex.txt)
             text(min(grep("Primary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Primary Vegetation" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Primary Vegetation" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Primary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Primary Vegetation" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Primary Vegetation" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 
@@ -145,14 +145,12 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
 				max(grep("Mature secondary", labels)) + 0.5, ylims[2], 	
 				col = "#14765933", border = NA)
                 }
-                text(mean(grep("Mature secondary", labels)), 
-                  ylims[1] + 0.05 * predRange, "MSV", col = "black", 
-                  cex = cex.txt)
+                text(mean(grep("Mature secondary", labels)), ylims[1] + gap, "MSV", col = "black", cex = cex.txt)
             text(min(grep("Mature secondary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Mature secondary vegetation" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Mature secondary vegetation" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Mature secondary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Mature secondary vegetation" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Mature secondary vegetation" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 	if (!forPaper) {
@@ -160,14 +158,13 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
 				max(grep("Intermediate secondary", labels)) + 0.5, ylims[2], 
 				col = "#1B9E7733", border = NA)
                 }
-                text(mean(grep("Intermediate secondary", labels)), 
-                  ylims[1] + 0.05 * predRange, "ISV", col = "black", 
+                text(mean(grep("Intermediate secondary", labels)), ylims[1] + gap, "ISV", col = "black", 
                   cex = cex.txt)
             text(min(grep("Intermediate secondary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Intermediate secondary vegetation" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Intermediate secondary vegetation" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Intermediate secondary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Intermediate secondary vegetation" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Intermediate secondary vegetation" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 	if (!forPaper) {
@@ -175,13 +172,12 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
 				max(grep("Young secondary", labels)) + 0.5, ylims[2], 
 				col = "#8ecfbc33", border = NA)
                 }
-                text(mean(grep("Young secondary", labels)), ylims[1] + 
-                  0.05 * predRange, "YSV", col = "black", cex = cex.txt)
+                text(mean(grep("Young secondary", labels)),	ylims[1] + gap, "YSV", col = "black", cex = cex.txt)
             text(min(grep("Young secondary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Young secondary vegetation" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Young secondary vegetation" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Young secondary", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Young secondary vegetation" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Young secondary vegetation" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 	if (!forPaper) {
@@ -189,13 +185,12 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
                   max(grep("Plantation", labels)) + 0.5, ylims[2], 
                   col = "#7570B333", border = NA)
             }
-            text(mean(grep("Plantation", labels)), ylims[1] + 
-                0.05 * predRange, "Plantation", col = "black", cex = cex.txt)
+            text(mean(grep("Plantation", labels)), ylims[1] + gap, "Plantation", col = "black", cex = cex.txt)
             text(min(grep("Plantation", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Plantation forest" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Plantation forest" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Plantation", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Plantation forest" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Plantation forest" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 	if (!forPaper) {
@@ -203,13 +198,12 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
                   max(grep("Cropland", labels)) + 0.5, ylims[2], 
                   col = "#F7EBD0", border = NA)
             }
-            text(mean(grep("Cropland", labels)), ylims[1] + 
-                0.05 * predRange, "Cropland", col = "black", cex = cex.txt)
+            text(mean(grep("Cropland", labels)), ylims[1] + gap, "Cropland", col = "black", cex = cex.txt)
             text(min(grep("Cropland", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Cropland" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Cropland" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Cropland", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Cropland" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Cropland" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 	if (!forPaper) {
@@ -217,13 +211,12 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
                   max(grep("Pasture", labels)) + 0.5, ylims[2], 
                   col = "#D95F0233", border = NA)
             }
-            text(mean(grep("Pasture", labels)), ylims[1] + 
-                0.05 * predRange, "Pasture", col = "black", cex = cex.txt)
+            text(mean(grep("Pasture", labels)), ylims[1] + gap, "Pasture", col = "black", cex = cex.txt)
             text(min(grep("Pasture", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Pasture" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Pasture" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Pasture", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Pasture" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Pasture" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 	if (!forPaper) {
@@ -231,13 +224,12 @@ plot(-1, -1, xlim = c(0,length(xvar.order)+1), bty = "n",
                   max(grep("Urban", labels)) + 0.5, ylims[2], 
                   col = "#E7298A33", border = NA)
             }
-            text(mean(grep("Urban", labels)), ylims[1] + 0.05 * 
-                predRange, "Urban", col = "black", cex = cex.txt)
+            text(mean(grep("Urban", labels)), ylims[1] + gap, "Urban", col = "black", cex = cex.txt)
             text(min(grep("Urban", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Urban" & data$Within_PA == "no"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Urban" & data$Within_PA == "no"),])), 
 			col = "black", cex = cex.txt)		
             text(max(grep("Urban", labels)), ylims[1] + 
-                0.1 * predRange, paste(nrow(data[which(data$Predominant_habitat == "Urban" & data$Within_PA == "yes"),])), 
+                gap2, paste(nrow(data[which(data$Predominant_habitat == "Urban" & data$Within_PA == "yes"),])), 
 			col = "black", cex = cex.txt)	
 
 

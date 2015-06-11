@@ -52,21 +52,15 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 
 
 
-
-#check non linear relationships
-
 #first get best random effects structure
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
-keepVars <- character(0)
-fI <- character(0)
+fT <-list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "3")
+fI <- ("Within_PA:Predominant_habitat")
 RS <-  c("Within_PA")
-
 
 log_abundance.best.random <- compare_randoms(PA_11_14, "log_abundance",
 				fixedFactors=fF,
                         fixedTerms=fT,
-			     	keepVars = keepVars,
                        	fixedInteractions=fI,
                         otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
@@ -76,34 +70,11 @@ log_abundance.best.random <- compare_randoms(PA_11_14, "log_abundance",
 
 log_abundance.best.random$best.random #
  
-
 # use model select to select best model
 # run gamm first to explore non linear relationships that might be expected
-
 m1 <- gamm4(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA + s(log_slope) + s(log_elevation) + ag_suit, random = ~(1+Within_PA|SS) +(1|SSB), data = data)
 plot(m1$gam)
 anova(m1$gam)
-
-log_abundance.poly <- model_select(all.data  = PA_11_14, 
-			     responseVar = "log_abundance",
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       fixedInteractions=fI,
-                       randomStruct = log_abundance.best.random$best.random,
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
-log_abundance.poly$stats
-#log_abundance~Predominant_habitat+taxon_of_interest+Zone+(Within_PA|SS)+(1|SSB)
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <- character(0)
-keepVars <- character(0)
-fI <- ("Within_PA:Predominant_habitat")
-RS <-  c("Within_PA")
 
 PA_11_14$Within_PA <- relevel( PA_11_14$Within_PA, "yes")
 log_abundance.model <- model_select(all.data  = PA_11_14, 
@@ -111,12 +82,12 @@ log_abundance.model <- model_select(all.data  = PA_11_14,
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
-			     keepVars = keepVars,
                        fixedInteractions=fI,
                        randomStruct = log_abundance.best.random$best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
-
+log_abundance.model$final.call
+log_abundance.model$stats
 #"log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA:Predominant_habitat+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 log_abundance.model$stats
@@ -142,78 +113,43 @@ plotLU (responseVar = "Log abundance",
 dev.off()
 
 
-#looking at what to do if none of the confounding variables are significant
-anova(m1, m0)
-anova(m2, m0)
-anova(m2, m1)
-
-data <- log_abundance.model$data
-
-m0 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ (1+Within_PA|SS)+(1|SSB), data)
-m1 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB), data)
-m2 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA + poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB), data)
-
-
-summary(m0)
-summary(m1)
-
-m0 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+(1+Within_PA|SS)+(1|SSB), data)
-m1 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSB),data)
-m2 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA + poly(log_elevation,2)+(1+Within_PA|SS)+(1|SSB), data)
-
-m0 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+(1+Within_PA|SS)+(1|SSB), data)
-m1 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(ag_suit,1)+(1+Within_PA|SS)+(1|SSB),data)
-m2 <- lmer(log_abundance~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(ag_suit,2)+(1+Within_PA|SS)+(1|SSB), data)
-
-# so here, comparison to model without slope suggests to keep the same as lowest p value from table
-
-
 ### get R2 values for increasingly complex models
-
 # LU + PA + LU:PA
-M1 <- lmer(log_abundance ~ Predominant_habitat+taxon_of_interest+Zone+Within_PA:Predominant_habitat+Within_PA+(1+Within_PA|SS)+(1|SSB),
+M1 <- lmer(log_abundance ~ Predominant_habitat+Within_PA:Predominant_habitat+Within_PA
+	+ taxon_of_interest + Zone
+	+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
-AIC(M1) #13222.46
-R2GLMER(M1)
-$conditional
-[1] 0.8861333
-
-$marginal
-[1] 0.1488977
 
 # LU + PA 
-M2<- lmer(log_abundance ~ Predominant_habitat+taxon_of_interest+Zone+Within_PA+(1+Within_PA|SS)+(1|SSB),
+M2<- lmer(log_abundance ~ Predominant_habitat+Within_PA + taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
-AIC(M2) # 13233.17
-R2GLMER(M2)
-$conditional
-[1] 0.8834268
-
-$marginal
-[1] 0.1499332
 
 # LU
-M3 <- lmer(log_abundance ~ Predominant_habitat+taxon_of_interest+Zone+(1+Within_PA|SS)+(1|SSB),
+M3 <- lmer(log_abundance ~ Predominant_habitat+ taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
-AIC(M3) # 13232.67
-R2GLMER(M3)
-$conditional
-[1] 0.8830355
-
-$marginal
-[1] 0.1502319
-
 
 # PA 
-M4 <- lmer(log_abundance ~ taxon_of_interest+Zone+Within_PA+(1+Within_PA|SS)+(1|SSB),
+M4 <- lmer(log_abundance ~ Within_PA+ taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
-AIC(M4) #13319.66
-R2GLMER(M4)
-$conditional
-[1] 0.883403
 
-$marginal
-[1] 0.1384391
+# No land use or PA
+M5 <- lmer(log_abundance ~ + taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
+	data = log_abundance.model$data, REML = F)
+
+res <- data.frame(models  =  c("LU + PA + LU:PA", "LU + PA", "LU", "PA", "1"),
+		AIC = c(AIC(M1), AIC(M2), AIC(M3), AIC(M4), AIC(M5)),
+		r2_conditional = c(R2GLMER(M1)$conditional, R2GLMER(M2)$conditional, R2GLMER(M3)$conditional, R2GLMER(M4)$conditional, R2GLMER(M5)$conditional),
+		r2_marginal = c(R2GLMER(M1)$marginal, R2GLMER(M2)$marginal, R2GLMER(M3)$marginal, R2GLMER(M1)$marginal, R2GLMER(M2)$marginal))
+res$dAIC = res$AIC - AIC(M5)
+res 
+
+# what percentage of total explanatory power is due to having land use in model only
+res$dAIC[3]/res$dAIC[1]
+
+# what percentage of total explanatory power is added when going from model with land use to model 
+# with between and within land use differences in protection
+(res$AIC[1] - res$AIC[3])/res$dAIC[1]
+
 
 
 ###combine secondary for land use estimate
