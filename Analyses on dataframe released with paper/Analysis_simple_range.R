@@ -1,22 +1,15 @@
+rm(list=ls()) 
 
-rm(list=ls())
-
-library(lme4)
 library(yarg)
 library(roquefort)
-library(influence.ME)
+library(gamm4)
 
-# load functions
+
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
-
-
-
-source("prep_PA_11_14_for_analysis.R")
-
-
-
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PA_11_14 <- read.csv("PREDICTS_WDPA.csv")
 
 ### model range
 
@@ -28,12 +21,12 @@ RS <-  c("Within_PA")
 
 r.best.random <- compare_randoms(PA_11_14, "range",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
@@ -41,12 +34,12 @@ r.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 r.model <- model_select(all.data  = PA_11_14, 
 			     responseVar = "range", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = r.best.random$best.random ,
+           randomStruct = r.best.random$best.random ,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.model$stats
 r.model$final.call
 # range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(Within_PA|SS)+(1|SSB)"
@@ -162,12 +155,12 @@ RS <-  c("IUCN_CAT")
 
 r.best.random.IUCN <- compare_randoms(PA_11_14, "range",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
@@ -176,12 +169,12 @@ r.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
 r.model.IUCN <- model_select(all.data  = PA_11_14, 
 			     responseVar = "range", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = r.best.random.IUCN$best.random,
+           randomStruct = r.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.model.IUCN$final.call
 r.model.IUCN$stats
 r.model.IUCN$warnings
@@ -269,24 +262,24 @@ RS <-  c("Within_PA")
 
 r.best.random.trop <- compare_randoms(tropical, "range",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.best.random.trop$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 
 r.best.random.temp <- compare_randoms(temperate, "range",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSB)"
@@ -295,12 +288,12 @@ r.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 r.model.trop <- model_select(all.data  = tropical, 
 			     responseVar = "range", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =r.best.random.trop$best.random,
+           randomStruct =r.best.random.trop$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.model.trop$final.call
 r.model.trop$stats
 #range~poly(ag_suit,1)+poly(log_elevation,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)
@@ -308,12 +301,12 @@ r.model.trop$stats
 r.model.temp <- model_select(all.data  = temperate, 
 			     responseVar = "range", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = r.best.random.temp$best.random,
+           randomStruct = r.best.random.temp$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.model.temp$final.call
 r.model.temp$stats
 #range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+Within_PA+(1+Within_PA|SS)+(1|SSB)
@@ -390,34 +383,34 @@ RS <-  c("Within_PA")
 
 r.best.random.p <- compare_randoms(plants, "range",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 r.best.random.p$best.random # "(1+Within_PA|SS)+ (1|SSB)"
 
 r.best.random.i <- compare_randoms(inverts, "range",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 r.best.random.i$best.random # "(1+Within_PA|SS)+ (1|SSB)"
 
 r.best.random.v <- compare_randoms(verts, "range",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 r.best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 
@@ -429,12 +422,12 @@ r.best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 r.model.p <- model_select(all.data  = plants, 
 			     responseVar = "range", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =r.best.random.p$best.random,
+           randomStruct =r.best.random.p$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.model.p$stats
 r.model.p$final.call
 #"range~poly(log_elevation,3)+(1+Within_PA|SS)"
@@ -442,12 +435,12 @@ r.model.p$final.call
 r.model.i <- model_select(all.data  = inverts, 
 			     responseVar = "range", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =r.best.random.i$best.random,
+           randomStruct =r.best.random.i$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.model.i$stats
 r.model.i$final.call
 #"range~poly(log_elevation,1)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
@@ -456,12 +449,12 @@ r.model.i$final.call
 r.model.v <- model_select(all.data  = verts, 
 			     responseVar = "range", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =r.best.random.v$best.random,
+           randomStruct =r.best.random.v$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.model.v$stats
 #"range~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
@@ -534,7 +527,7 @@ r.plot <- rbind(r.plot3, tax)
 
 # master plot
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models endemicity.tif",
+tiff( "simple models endemicity.tif",
 	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
@@ -574,7 +567,7 @@ dev.off()
 #new plot after text editing
 
 r.plot2 <- r.plot[1:5,]
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/06_15/simple models endemicity.tif",
+tiff( "simple models endemicity.tif",
 	width = 8, height = 15, units = "cm", pointsize = 12, res = 300)
 
 par(mar = c(9,6,4,2))
@@ -604,7 +597,5 @@ axis(2, c(90,100,110,120,130,140), c(-10,0,10,20,30,40))
 dev.off()
 
 
-
-save.image("N:\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - range.RData")
 
 

@@ -1,21 +1,15 @@
+rm(list=ls()) 
 
-rm(list=ls())
-
-library(lme4)
 library(yarg)
 library(roquefort)
-library(influence.ME)
+library(gamm4)
 
-# load functions
+
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
-
-source("prep_PA_11_14_for_analysis.R")
-
-### load saved model objects
-#load("R:\\ecocon_d\\clg32\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - abundance.RData")
-
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PA_11_14 <- read.csv("PREDICTS_WDPA.csv")
 
 ### model abundance
 
@@ -29,12 +23,12 @@ RS <-  c("Within_PA")
 
 abundance.best.random <- compare_randoms(PA_11_14, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 abundance.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
@@ -43,12 +37,12 @@ abundance.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 ab.model <- model_select(all.data  = PA_11_14, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = abundance.best.random$best.random,
+           randomStruct = abundance.best.random$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 ab.model$stats
 ab.model$final.call
 #log_abundance~Within_PA+(Within_PA|SS)+(1|SSB)
@@ -67,8 +61,6 @@ anova(m3a, m4a)
 
 
 # plot
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance.tif",
-	width = 10, height = 10, units = "cm", pointsize = 12, res = 300)
 
 labels <- c("Unprotected", "Protected")
 y <- as.numeric(fixef(m1a)[2])
@@ -104,11 +96,6 @@ ab.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points,
 		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
 
 
-dev.off()
-
-
-
-
 
 # model abundance and IUCN_category
 fF <- c("IUCN_CAT") 
@@ -120,12 +107,12 @@ RS <-  c("IUCN_CAT")
 
 abundance.best.random.IUCN <- compare_randoms(PA_11_14, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 abundance.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
@@ -133,12 +120,12 @@ abundance.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
 ab.model.IUCN <- model_select(all.data  = PA_11_14, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = abundance.best.random.IUCN$best.random,
+           randomStruct = abundance.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 ab.model.IUCN$stats
 ab.model.IUCN$final.call
 ab.model.IUCN$warnings
@@ -149,9 +136,6 @@ ab.model.IUCN$warnings
 
 
 # plot 
-
-tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/simple model abundance IUCN.tif",
-	width = 15, height = 12, units = "cm", pointsize = 12, res = 300)
 
 
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
@@ -202,9 +186,6 @@ IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4],
 			length(data$SSS[which(data$IUCN_CAT == "7")]),
 			length(data$SSS[which(data$IUCN_CAT == "1.5")])))
 ab.plot2 <- rbind(ab.plot1, IUCN.plot)
-
-
-dev.off()
 
 
 
@@ -668,10 +649,6 @@ NPA.rel <- 1 - (exp(fixef(m1a)[2]-2*se.fixef(m1a)[2]) -1)
 pos <- which(names(fixef(m4ai))== "IUCN_CAT4.5")
 NPA.rel <- 1 - (exp(fixef(m4ai)[pos])-1)
  100*(NPA.abs - global.int)/(NPA.abs - NPA.abs/NPA.rel)
-
-
-
-
 
 
 

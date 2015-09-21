@@ -1,17 +1,16 @@
+rm(list=ls()) 
 
-rm(list=ls())
-
-library(lme4)
 library(yarg)
 library(roquefort)
-library(influence.ME)
+library(gamm4)
 
-# load functions
+
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PA_11_14 <- read.csv("PREDICTS_WDPA.csv")
 
-source("prep_PA_11_14_for_analysis.R")
 
 size <- aggregate(SSS ~ SS, PA_11_14, length)
 hist(size$SSS, breaks = 50, col = 8) # break after 5
@@ -32,34 +31,34 @@ fI <- character(0)
 RS <-  c("Within_PA")
 
 r.best.random <- compare_randoms(no.small, "range",
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
+                                 fixedFactors=fF,
+                                 fixedTerms=fT,
+                                 keepVars = keepVars,
+                                 fixedInteractions=fI,
+                                 otherRandoms=character(0),
+                                 fixed_RandomSlopes = RS,
+                                 fitInteractions=FALSE,
+                                 verbose=TRUE)
 
 r.best.random$best.random 
 
 r.model <- model_select(all.data  = no.small, 
-			     responseVar = "range", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct = r.best.random$best.random ,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+                        responseVar = "range", 
+                        alpha = 0.05,
+                        fixedFactors= fF,
+                        fixedTerms= fT,
+                        keepVars = keepVars,
+                        randomStruct = r.best.random$best.random ,
+                        otherRandoms=character(0),
+                        verbose=TRUE)
 r.model$stats
 #"range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
 data <- r.model$data
 
 m1r <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data)
+            + (Within_PA|SS)+ (1|SSB), 
+            data = data)
 
 # convert to normal range first, then get percentage
 
@@ -89,11 +88,11 @@ points <- c(100, e.relative)
 CI <- c(e.relative.plus, e.relative.minus)
 
 plot(points ~ c(1,2), ylim = c(70,130), xlim = c(0.5,2.5), 
-	bty = "l", pch = 16, col = c(1,3), cex = 1.5,
-	yaxt = "n", xaxt = "n",
-	ylab = "Endemicity difference (% ± 95%CI)",
-	xlab = "",
-	main = "including only points where \n >80% of individuals with known range")
+     bty = "l", pch = 16, col = c(1,3), cex = 1.5,
+     yaxt = "n", xaxt = "n",
+     ylab = "Endemicity difference (% ± 95%CI)",
+     xlab = "",
+     main = "including only points where \n >80% of individuals with known range")
 axis(1, c(1,2), labels)
 axis(2, c(90,100,110,120), c(90,100,110,120))
 arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
@@ -107,8 +106,8 @@ text(1,70, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = "
 
 #get details for master plot
 r.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
-		upper = c(100, CI[1]), lower = c(100,CI[2]),
-		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
+                      upper = c(100, CI[1]), lower = c(100,CI[2]),
+                      n.site = c(length(data$SSS[which(data$Within_PA == "no")]), length(data$SSS[which(data$Within_PA == "yes")])))
 
 
 
@@ -123,26 +122,26 @@ fI <- character(0)
 RS <-  c("IUCN_CAT")
 
 r.best.random.IUCN <- compare_randoms(no.small, "range",
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
+                                      fixedFactors=fF,
+                                      fixedTerms=fT,
+                                      keepVars = keepVars,
+                                      fixedInteractions=fI,
+                                      otherRandoms=character(0),
+                                      fixed_RandomSlopes = RS,
+                                      fitInteractions=FALSE,
+                                      verbose=TRUE)
 
 r.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
 
 r.model.IUCN <- model_select(all.data  = no.small, 
-			     responseVar = "range", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+                             responseVar = "range", 
+                             alpha = 0.05,
+                             fixedFactors= fF,
+                             fixedTerms= fT,
+                             keepVars = keepVars,
+                             randomStruct = "(IUCN_CAT|SS) + (1|SSB)",
+                             otherRandoms=character(0),
+                             verbose=TRUE)
 r.model.IUCN$warnings
 r.model.IUCN$stats
 r.model.IUCN$final.call
@@ -158,8 +157,8 @@ data <- r.model.IUCN$data
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
 m4ri <- lmer(range ~ IUCN_CAT + poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
-	+ (IUCN_CAT|SS)+ (1|SSB), 
-	 data = data)
+             + (IUCN_CAT|SS)+ (1|SSB), 
+             data = data)
 
 y1 <- 10 ^(as.numeric(fixef(m4ri)[1]))
 e.y1 <- 1/y1
@@ -183,10 +182,10 @@ points <- c(100, e.relative)
 CI <- cbind(e.relative.plus, e.relative.minus)
 
 plot(points ~ c(1,2,3,4), ylim = c(90,130), xlim = c(0.5,4.5), 
-	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
-	yaxt = "n", xaxt = "n",
-	ylab = "Endemicity difference (% ± 95%CI)",
-	xlab = "")
+     bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
+     yaxt = "n", xaxt = "n",
+     ylab = "Endemicity difference (% ± 95%CI)",
+     xlab = "")
 axis(1, c(1,2,3,4), labels)
 axis(2, c(90,100,110,120), c(90,100,110,120))
 arrows(c(2,3,4),CI[,1],c(2,3,4),CI[,2], code = 3, length = 0.03, angle = 90)
@@ -199,10 +198,10 @@ text(3, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = "
 text(4, 90, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
 
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
-		upper = CI[,1], lower = CI[,2],
-		n.site = c(length(data$SS[which(data$IUCN_CAT == "1.5")]), 
-			length(data$SS[which(data$IUCN_CAT == "4.5")]),
-			length(data$SS[which(data$IUCN_CAT == "7")])))
+                        upper = CI[,1], lower = CI[,2],
+                        n.site = c(length(data$SS[which(data$IUCN_CAT == "1.5")]), 
+                                   length(data$SS[which(data$IUCN_CAT == "4.5")]),
+                                   length(data$SS[which(data$IUCN_CAT == "7")])))
 r.plot2 <- rbind(r.plot1, IUCN.plot)
 
 
@@ -221,52 +220,52 @@ fI <- character(0)
 RS <-  c("Within_PA")
 
 r.best.random.trop <- compare_randoms(tropical, "range",
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
+                                      fixedFactors=fF,
+                                      fixedTerms=fT,
+                                      keepVars = keepVars,
+                                      fixedInteractions=fI,
+                                      otherRandoms=character(0),
+                                      fixed_RandomSlopes = RS,
+                                      fitInteractions=FALSE,
+                                      verbose=TRUE)
 
 r.best.random.trop$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 
 r.best.random.temp <- compare_randoms(temperate, "range",
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
+                                      fixedFactors=fF,
+                                      fixedTerms=fT,
+                                      keepVars = keepVars,
+                                      fixedInteractions=fI,
+                                      otherRandoms=character(0),
+                                      fixed_RandomSlopes = RS,
+                                      fitInteractions=FALSE,
+                                      verbose=TRUE)
 
 r.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 
 # get polynomial relationships
 r.model.trop <- model_select(all.data  = tropical, 
-			     responseVar = "range", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =r.best.random.trop$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+                             responseVar = "range", 
+                             alpha = 0.05,
+                             fixedFactors= fF,
+                             fixedTerms= fT,
+                             keepVars = keepVars,
+                             randomStruct =r.best.random.trop$best.random,
+                             otherRandoms=character(0),
+                             verbose=TRUE)
 r.model.trop$stats
 #"range~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
 
 
 r.model.temp <- model_select(all.data  = temperate, 
-			     responseVar = "range", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct = r.best.random.temp$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+                             responseVar = "range", 
+                             alpha = 0.05,
+                             fixedFactors= fF,
+                             fixedTerms= fT,
+                             keepVars = keepVars,
+                             randomStruct = r.best.random.temp$best.random,
+                             otherRandoms=character(0),
+                             verbose=TRUE)
 r.model.temp$stats
 #range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
@@ -276,12 +275,12 @@ data.trop <- r.model.trop$data
 data.temp <- r.model.temp$data
 
 m1aztr <- lmer(range ~ Within_PA + poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,2)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.trop)
+               + (Within_PA|SS)+ (1|SSB), 
+               data = data.trop)
 
 m1azte <- lmer(range ~ Within_PA +poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.temp )
+               + (Within_PA|SS)+ (1|SSB), 
+               data = data.temp )
 
 #add results to master plot
 y1 <- 10^(fixef(m1aztr)[1])
@@ -313,11 +312,11 @@ e.y.lower <- 1/y.lower
 azte.lower <- e.y.lower/e.y1*100
 
 a.zone <- data.frame(label = c("Tropical", "Temperate"),
-				est = c(aztr.est, azte.est), 
-				upper = c(aztr.upper, azte.upper), 
-				lower = c(aztr.lower, azte.lower), 
-				n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]), 
-					nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
+                     est = c(aztr.est, azte.est), 
+                     upper = c(aztr.upper, azte.upper), 
+                     lower = c(aztr.lower, azte.lower), 
+                     n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]), 
+                                nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
 r.plot3 <- rbind(r.plot2, a.zone)
 
 
@@ -341,73 +340,73 @@ fI <- character(0)
 RS <-  c("Within_PA")
 
 r.best.random.p <- compare_randoms(plants, "range",
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
+                                   fixedFactors=fF,
+                                   fixedTerms=fT,
+                                   keepVars = keepVars,
+                                   fixedInteractions=fI,
+                                   otherRandoms=character(0),
+                                   fixed_RandomSlopes = RS,
+                                   fitInteractions=FALSE,
+                                   verbose=TRUE)
 r.best.random.p$best.random 
 
 r.best.random.i <- compare_randoms(inverts, "range",
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
+                                   fixedFactors=fF,
+                                   fixedTerms=fT,
+                                   keepVars = keepVars,
+                                   fixedInteractions=fI,
+                                   otherRandoms=character(0),
+                                   fixed_RandomSlopes = RS,
+                                   fitInteractions=FALSE,
+                                   verbose=TRUE)
 r.best.random.i$best.random 
 
 r.best.random.v <- compare_randoms(verts, "range",
-				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
-				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
-				verbose=TRUE)
+                                   fixedFactors=fF,
+                                   fixedTerms=fT,
+                                   keepVars = keepVars,
+                                   fixedInteractions=fI,
+                                   otherRandoms=character(0),
+                                   fixed_RandomSlopes = RS,
+                                   fitInteractions=FALSE,
+                                   verbose=TRUE)
 r.best.random.v$best.random 
 
 # get polynomial relationships
 r.model.p <- model_select(all.data  = plants, 
-			     responseVar = "range", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =r.best.random.p$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+                          responseVar = "range", 
+                          alpha = 0.05,
+                          fixedFactors= fF,
+                          fixedTerms= fT,
+                          keepVars = keepVars,
+                          randomStruct =r.best.random.p$best.random,
+                          otherRandoms=character(0),
+                          verbose=TRUE)
 r.model.p$stats
 #"range~poly(log_elevation,3)+(1+Within_PA|SS)"
 
 r.model.i <- model_select(all.data  = inverts, 
-			     responseVar = "range", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =r.best.random.i$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+                          responseVar = "range", 
+                          alpha = 0.05,
+                          fixedFactors= fF,
+                          fixedTerms= fT,
+                          keepVars = keepVars,
+                          randomStruct =r.best.random.i$best.random,
+                          otherRandoms=character(0),
+                          verbose=TRUE)
 r.model.i$stats
 # range~Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 
 r.model.v <- model_select(all.data  = verts, 
-			     responseVar = "range", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =r.best.random.v$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+                          responseVar = "range", 
+                          alpha = 0.05,
+                          fixedFactors= fF,
+                          fixedTerms= fT,
+                          keepVars = keepVars,
+                          randomStruct =r.best.random.v$best.random,
+                          otherRandoms=character(0),
+                          verbose=TRUE)
 r.model.v$stats
 # "range~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
 
@@ -417,16 +416,16 @@ data.i <- r.model.i$data
 data.v <- r.model.v$data
 
 m1txp <- lmer(range ~ Within_PA +poly(log_elevation,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.p)
+              + (Within_PA|SS)+ (1|SSB), 
+              data = data.p)
 
 m1txi <- lmer(range ~ Within_PA 
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.i)
+              + (Within_PA|SS)+ (1|SSB), 
+              data = data.i)
 
 m1txv <- lmer(range ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data.v)
+              + (Within_PA|SS)+ (1|SSB), 
+              data = data.v)
 
 #add results to master plot
 y1 <- 10^(fixef(m1txp)[1])
@@ -469,19 +468,19 @@ e.y.lower <- 1/y.lower
 txv.lower <- e.y.lower/e.y1*100
 
 tax <- data.frame(label = c("Plants", "Invertebrates", "Vertebrates"),
-				est = c(txp.est, txi.est, txv.est), 
-				upper = c(txp.upper, txi.upper, txv.upper), 
-				lower = c(txp.lower, txi.lower, txv.lower), 
-				n.site = c(nrow(data.p[which(data.p$Within_PA == "yes"),]), 
-					nrow(data.i[which(data.i$Within_PA == "yes"),]), 
-					nrow(data.v[which(data.v$Within_PA == "yes"),])))
+                  est = c(txp.est, txi.est, txv.est), 
+                  upper = c(txp.upper, txi.upper, txv.upper), 
+                  lower = c(txp.lower, txi.lower, txv.lower), 
+                  n.site = c(nrow(data.p[which(data.p$Within_PA == "yes"),]), 
+                             nrow(data.i[which(data.i$Within_PA == "yes"),]), 
+                             nrow(data.v[which(data.v$Within_PA == "yes"),])))
 r.plot <- rbind(r.plot3, tax)
 
 
 # master plot
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models endemicity NoSmall.tif",
-	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
+tiff( "simple models endemicity NoSmall.tif",
+      width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
 temp.col <- rgb(0,0.1,0.7)
@@ -491,22 +490,22 @@ v.col <- rgb(0.9,0.5,0)
 
 par(mar = c(9,6,4,1))
 plot(1,1, 
-	ylim = c(65,140), xlim = c(0.5,nrow(r.plot)+1),
-	bty = "l", 
-	axes = F,
-	ylab = "Endemicity difference (%)",
-	cex.lab = 1.5,
-	xlab = "")
+     ylim = c(65,140), xlim = c(0.5,nrow(r.plot)+1),
+     bty = "l", 
+     axes = F,
+     ylab = "Endemicity difference (%)",
+     cex.lab = 1.5,
+     xlab = "")
 arrows(1:nrow(r.plot),r.plot$upper,
-	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
-	lwd = 2,
-	1:nrow(r.plot),r.plot$lower, code = 3, length = 0, angle = 90)
+       col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
+       lwd = 2,
+       1:nrow(r.plot),r.plot$lower, code = 3, length = 0, angle = 90)
 points(r.plot$est ~ c(1:nrow(r.plot)),
-	pch = c(21, rep(16,4), rep(15,2),rep(17,3)), 
-	lwd = 2,
-	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
-	bg ="white", 
-	cex = 1.5)
+       pch = c(21, rep(16,4), rep(15,2),rep(17,3)), 
+       lwd = 2,
+       col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
+       bg ="white", 
+       cex = 1.5)
 abline(v = c(2.5,5.5,7.5), col = 8)
 abline(h= 100, lty = 2)
 text(1:nrow(r.plot),65, r.plot$n.site, srt = 180)

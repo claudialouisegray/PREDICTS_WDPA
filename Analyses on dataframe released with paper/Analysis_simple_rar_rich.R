@@ -1,17 +1,16 @@
+rm(list=ls()) 
 
-rm(list=ls())
-
-library(lme4)
 library(yarg)
 library(roquefort)
-library(influence.ME)
+library(gamm4)
 
-# load functions
+
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
-
-source("prep_PA_11_14_for_analysis.R")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PA_11_14 <- read.csv("PREDICTS_WDPA.csv")
+multiple.taxa.matched.landuse <- subset(PA_11_14, multiple_taxa == "yes")
 
 
 # test effect of protection status
@@ -27,12 +26,12 @@ r.sp.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.sp.best.random$best.random #  
@@ -41,10 +40,10 @@ r.sp.model <- model_select(all.data  = multiple.taxa.PA_11_14,
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = r.sp.best.random$best.random,
+           randomStruct = r.sp.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 r.sp.model$stats
@@ -106,12 +105,12 @@ r.sp.best.random.IUCN <- compare_randoms(multiple.taxa.PA_11_14, "Richness_raref
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.sp.best.random.IUCN$best.random #
@@ -121,12 +120,12 @@ r.sp.model.IUCN <- model_select(all.data  = multiple.taxa.PA_11_14,
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = r.sp.best.random.IUCN$best.random,
+           randomStruct = r.sp.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 r.sp.model.IUCN$stats
 r.sp.model.IUCN$final.call
 r.sp.model.IUCN$warnings
@@ -242,12 +241,12 @@ r.sp.best.random.trop <- compare_randoms(sp.tropical, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.sp.best.random.trop$best.random #
@@ -256,12 +255,12 @@ r.sp.best.random.temp <- compare_randoms(sp.temperate, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 r.sp.best.random.temp$best.random #
@@ -271,12 +270,12 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = r.sp.best.random.trop$best.random,
+           randomStruct = r.sp.best.random.trop$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 sp.model.trop$stats
 sp.model.trop$final.call
 #Richness_rarefied~poly(ag_suit,1)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)"
@@ -285,12 +284,12 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = r.sp.best.random.temp$best.random,
+           randomStruct = r.sp.best.random.temp$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 sp.model.temp$stats
 sp.model.temp$final.call
 #"Richness_rarefied~poly(ag_suit,3)+(1|SS)+(1|SSB)"
@@ -353,12 +352,12 @@ best.random.p <- compare_randoms(plants, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 best.random.p$best.random # 
 
@@ -366,12 +365,12 @@ best.random.i <- compare_randoms(inverts, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 best.random.i$best.random # 
 
@@ -379,12 +378,12 @@ best.random.v <- compare_randoms(verts, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 best.random.v$best.random #
 
@@ -395,43 +394,43 @@ best.random.v$best.random #
 # get polynomial relationships
 model.p <- model_select(all.data  = plants, 
 				fitFamily = "poisson",
-			     responseVar = "Richness_rarefied", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =best.random.p$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+        responseVar = "Richness_rarefied", 
+        alpha = 0.05,
+        fixedFactors= fF,
+        fixedTerms= fT,
+        keepVars = keepVars,
+        randomStruct =best.random.p$best.random,
+        otherRandoms=character(0),
+        verbose=TRUE)
 model.p$stats
 model.p$final.call
 #"Richness_rarefied~poly(ag_suit,1)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)"
 
 model.i <- model_select(all.data  = inverts, 
-			     responseVar = "Richness_rarefied", 
-				fitFamily = "poisson",
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =best.random.i$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+			  responseVar = "Richness_rarefied",
+        fitFamily = "poisson",
+        alpha = 0.05,
+        fixedFactors= fF,
+        fixedTerms= fT,
+        keepVars = keepVars,
+        randomStruct =best.random.i$best.random,
+        otherRandoms=character(0),
+        verbose=TRUE)
 model.i$stats
 model.i$final.call
 #"Richness_rarefied~1+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 
 model.v <- model_select(all.data  = verts, 
-			     responseVar = "Richness_rarefied", 
+			  responseVar = "Richness_rarefied", 
 				fitFamily = "poisson",
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =best.random.v$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+        alpha = 0.05,
+        fixedFactors= fF,
+        fixedTerms= fT,
+        keepVars = keepVars,
+        randomStruct =best.random.v$best.random,
+        otherRandoms=character(0),
+        verbose=TRUE)
 model.v$stats
 model.v$final.call
 #"Richness_rarefied~1+(1+Within_PA|SS)+(1|SSBS)"
@@ -486,9 +485,8 @@ r.sp.plot$dotlines_end[which(r.sp.plot$upper > 145)] <- 140
 
 # master plot
 
-load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich.RData")
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich.tif",
+tiff( "simple models rar rich.tif",
 	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
@@ -534,7 +532,7 @@ dev.off()
 #new plot after text editing
 
 r.sp.plot2 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/06_15/simple models rar rich.tif",
+tiff( "simple models rar rich.tif",
 	width = 8, height = 15, units = "cm", pointsize = 12, res = 300)
 
 par(mar = c(9,6,4,2))
@@ -563,5 +561,4 @@ axis(2, c(90,100,110,120,130,140), c(-10,0,10,20,30,40))
 
 dev.off()
 
- save.image("R:\\ecocon_d\\clg32\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich.RData")
 
