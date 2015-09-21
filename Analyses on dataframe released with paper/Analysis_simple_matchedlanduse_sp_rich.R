@@ -1,16 +1,25 @@
-rm(list=ls())
+rm(list=ls()) 
 
-library(lme4)
 library(yarg)
 library(roquefort)
+library(gamm4)
 
-# load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PREDICTS_WDPA <- read.csv("PREDICTS_WDPA.csv")
 
-#load data
-source("prep_matched.landuse_for_analysis.R")
+validate <- function(x) {
+  par(mfrow = c(1,2))
+  plot(resid(x)~ fitted(x))
+  hist(resid(x))
+  par(mfrow = c(1,1))
+}
+
+matched.landuse <- subset(PREDICTS_WDPA, matched.landuse == "yes")
+multiple.taxa.matched.landuse <- subset(matched.landuse, multiple_taxa == "yes")
+nrow(matched.landuse) #5015
 
 
 ### model species richness
@@ -26,12 +35,12 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 Species_richness.best.random$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
@@ -41,12 +50,12 @@ s.model <- model_select(all.data  = multiple.taxa.matched.landuse,
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = Species_richness.best.random$best.random,
+           randomStruct = Species_richness.best.random$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 s.model$warnings
 s.model$stats
 s.model$final.call
@@ -87,7 +96,6 @@ abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
 
-
 #keep points for master plot
 sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
@@ -98,7 +106,6 @@ sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points,
 
 
 #simple species richness with IUCN cat 
-
 
 fF <- c("IUCN_CAT") 
 fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
@@ -112,12 +119,12 @@ Species_richness.best.random.IUCN <- compare_randoms(multiple.taxa.matched.landu
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 Species_richness.best.random.IUCN$best.random # "(1+IUCN_CAT|SS)+ (1|SSBS)+ (1|SSB)"
@@ -126,12 +133,12 @@ s.model.IUCN <- model_select(all.data  = multiple.taxa.matched.landuse,
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = Species_richness.best.random.IUCN$best.random,
+           randomStruct = Species_richness.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 s.model.IUCN$warnings
 #convergence issues dropping IUCN cat
 
@@ -232,12 +239,12 @@ Sp.best.random.trop <- compare_randoms(sp.tropical, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 Sp.best.random.trop$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
@@ -246,12 +253,12 @@ Sp.best.random.temp <- compare_randoms(sp.temperate, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 Sp.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
@@ -261,12 +268,12 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = Sp.best.random.trop$best.random,
+           randomStruct = Sp.best.random.trop$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 sp.model.trop$warnings
 sp.model.trop$stats
 sp.model.trop$final.call
@@ -278,12 +285,12 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
 			     responseVar = "Species_richness", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = Sp.best.random.temp$best.random,
+           randomStruct = Sp.best.random.temp$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 sp.model.temp$warnings
 sp.model.temp$stats
 sp.model.temp$final.call
@@ -342,12 +349,12 @@ best.random.p <- compare_randoms(plants, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 best.random.p$best.random # "(1+Within_PA|SS)+ (1|SSBS)"
 
@@ -355,12 +362,12 @@ best.random.i <- compare_randoms(inverts, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 best.random.i$best.random # "(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
@@ -368,45 +375,42 @@ best.random.v <- compare_randoms(verts, "Species_richness",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
-
-
-
 
 
 # get polynomial relationships
 model.p <- model_select(all.data  = plants, 
 				fitFamily = "poisson",
-			     responseVar = "Species_richness", 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =best.random.p$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+        responseVar = "Species_richness", 
+        alpha = 0.05,
+        fixedFactors= fF,
+        fixedTerms= fT,
+        keepVars = keepVars,
+        randomStruct =best.random.p$best.random,
+        otherRandoms=character(0),
+        verbose=TRUE)
 model.p$stats
 model.p$warnings
 model.p$final.call
 # "Species_richness~poly(ag_suit,1)+poly(log_elevation,2)+(1+Within_PA|SS)+(1|SSBS)"
 
 model.i <- model_select(all.data  = inverts, 
-			     responseVar = "Species_richness", 
+        responseVar = "Species_richness", 
 				fitFamily = "poisson",
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =best.random.i$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+        alpha = 0.05,
+        fixedFactors= fF,
+        fixedTerms= fT,
+        keepVars = keepVars,
+        randomStruct =best.random.i$best.random,
+        otherRandoms=character(0),
+        verbose=TRUE)
 model.i$stats
 model.i$warnings
 model.i$final.call
@@ -414,15 +418,15 @@ model.i$final.call
 
 
 model.v <- model_select(all.data  = verts, 
-			     responseVar = "Species_richness", 
+			  responseVar = "Species_richness", 
 				fitFamily = "poisson",
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       randomStruct =best.random.v$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
+        alpha = 0.05,
+        fixedFactors= fF,
+        fixedTerms= fT,
+        keepVars = keepVars,
+        randomStruct =best.random.v$best.random,
+        otherRandoms=character(0),
+        verbose=TRUE)
 model.v$stats
 model.v$warnings
 model.v$final.call

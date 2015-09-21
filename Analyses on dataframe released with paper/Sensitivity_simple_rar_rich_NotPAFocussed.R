@@ -11,22 +11,28 @@ setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
 
-#load data
 source("prep_PA_11_14_for_analysis.R")
 
-size <- aggregate(SSS ~ SS, PA_11_14, length)
-hist(size$SSS, breaks = 50, col = 8) # break after 5
-length(which(size$SSS <= 5)) # 19 out of 167
-length(which(size$SSS <= 10)) # 41 out of 167
-length(which(size$SSS <= 25)) # 89 out of 167
+to.drop <- c("AR1_2005__Davis",
+	"DI1_2004__Naidoo",
+	"DI1_2011__Neuschulz",
+	"DI1_2012__Muchane",
+	"HW1_2007__Chapman",
+	"HW1_2012__Jonsell",
+	"SC1_2012__Schuepp",
+	"SC2_2012__Numa",
+	"TN1_2007__Bouyer",
+	"SC1_2004__Hylander",
+	"SE2_2010__McCarthy")
 
-to.keep <- size$SS[which(size$SSS > 10)]
-no.small <- subset(multiple.taxa.PA_11_14, SS %in% to.keep)
-nrow(no.small)
+pos <- which (multiple.taxa.PA_11_14$Source_ID %in% to.drop== F)
+no.PA.focussed <- multiple.taxa.PA_11_14[pos,]
+nrow(multiple.taxa.PA_11_14)
+nrow(no.PA.focussed)
 
 
 
-### model rarefied richness
+# rarefied richness
 
 # check polynomials for confounding variables
 fF <- c("Within_PA") 
@@ -34,9 +40,9 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
+#"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)"
 
-
-r.sp.best.random <- compare_randoms(no.small, "Richness_rarefied",
+r.sp.best.random <- compare_randoms(no.PA.focussed, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -50,7 +56,7 @@ r.sp.best.random <- compare_randoms(no.small, "Richness_rarefied",
 
 r.sp.best.random$best.random #  
 
-r.sp.model <- model_select(all.data  = no.small, 
+r.sp.model <- model_select(all.data  = no.PA.focussed, 
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
@@ -61,17 +67,17 @@ r.sp.model <- model_select(all.data  = no.small,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 r.sp.model$warnings
-r.sp.model$stats  
+r.sp.model$stats
 r.sp.model$final.call
-#"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,1)+(1+Within_PA|SS)+(1|SSBS)"
+#"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)"
 
 data <- r.sp.model$data
-m3 <- glmer(Richness_rarefied ~ Within_PA  + poly(ag_suit,3)+poly(log_elevation,1)
+
+m3 <- glmer(Richness_rarefied ~ Within_PA +  poly(ag_suit,3)+poly(log_elevation,3)
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), 
 	family = "poisson", data = data)
 
 #plot
-
 labels <- c("Unprotected", "Protected")
 y <- as.numeric(fixef(m3)[2])
 se <- as.numeric(se.fixef(m3)[2])
@@ -105,16 +111,18 @@ r.sp.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points
 
 
 
+
+
+
 # rarefied richness with IUCN cat
 
 fF <- c("IUCN_CAT") 
-fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
+fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
-# doesnt converge with the non linear confounding variables.  Test as linear.
 
-r.sp.best.random.IUCN <- compare_randoms(no.small, "Richness_rarefied",
+r.sp.best.random.IUCN <- compare_randoms(no.PA.focussed, "Richness_rarefied",
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
@@ -128,7 +136,7 @@ r.sp.best.random.IUCN <- compare_randoms(no.small, "Richness_rarefied",
 
 r.sp.best.random.IUCN$best.random #
 
-r.sp.model.IUCN <- model_select(all.data  = no.small, 
+r.sp.model.IUCN <- model_select(all.data  = no.PA.focussed, 
 			     responseVar = "Richness_rarefied", 
 			     fitFamily = "poisson", 
 			     alpha = 0.05,
@@ -138,22 +146,10 @@ r.sp.model.IUCN <- model_select(all.data  = no.small,
                        randomStruct = r.sp.best.random.IUCN$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
-r.sp.model.IUCN$stats 
-r.sp.model.IUCN$warnings
 r.sp.model.IUCN$final.call
-# many convergence issues even with linear confounding variables
-# check estimates of model without confounding variables
-
-data <- r.sp.model.IUCN$data
-#better
-m5i <- glmer(Richness_rarefied ~ IUCN_CAT + poly(log_slope,1) + poly(ag_suit,1) + poly(log_elevation,1)
-	+ (IUCN_CAT|SS) + (1|SSBS), 
-	family = "poisson", data = data,
-	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
-
-fixef(m5i)
-fixef(r.sp.model.IUCN$model)
-#similar estimates so trust model select
+r.sp.model.IUCN$warnings
+r.sp.model.IUCN$stats 
+#"Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+(1+IUCN_CAT|SS)+(1|SSBS)"
 
 # plot 
 
@@ -162,9 +158,9 @@ labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
 data <- r.sp.model.IUCN$data
 data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m6i <- glmer(Richness_rarefied ~ IUCN_CAT 
+m6i <- glmer(Richness_rarefied ~ IUCN_CAT +poly(ag_suit,3)+poly(log_elevation,3)
 	+ (IUCN_CAT|SS) + (1|SSBS), 
-	family = "poisson", data = no.small,
+	family = "poisson", data = data,
 	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000)))
 
 pos <- c(grep("4.5", names(fixef(m6i))),grep("7", names(fixef(m6i))),grep("1.5", names(fixef(m6i))))
@@ -187,9 +183,6 @@ plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
 axis(1,seq(1,length(points),1), labels)
 axis(2, c(80,100,120,140), c(80,100,120,140))
 
-data <- no.small[,c("ag_suit", "log_elevation", "log_slope", "Within_PA", "SS", "SSB", "SSBS", "SSS",
-		 "Richness_rarefied", "Source_ID", "IUCN_CAT", "Zone", "taxon_of_interest")]
-data <- na.omit(data)
 text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
 text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
 text(3, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
@@ -200,21 +193,20 @@ arrows(seq(2,length(points),1),CI[,1],
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
-
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
 		upper = CI[,1], lower = CI[,2],
-		n.site = c(length(data$SSS[which(data$IUCN_CAT == "4.5")]), 
-			length(data$SSS[which(data$IUCN_CAT == "7")]),
-			length(data$SSS[which(data$IUCN_CAT == "1.5")])))
+		n.site = c(length(data$SS[which(data$IUCN_CAT == "4.5")]), 
+			length(data$SS[which(data$IUCN_CAT == "7")]),
+			length(data$SS[which(data$IUCN_CAT == "1.5")])))
 r.sp.plot2 <- rbind(r.sp.plot1, IUCN.plot)
 
 
 
 
-# simple species richness for Zone data
+# zone
 
-sp.tropical <- subset(no.small, Zone == "Tropical")
-sp.temperate <- subset(no.small, Zone == "Temperate")
+sp.tropical <- subset(no.PA.focussed, Zone == "Tropical")
+sp.temperate <- subset(no.PA.focussed, Zone == "Temperate")
 
 # check polynomials for confounding variables
 fF <- c("Within_PA" ) 
@@ -264,7 +256,7 @@ sp.model.trop <- model_select(all.data  = sp.tropical,
                        verbose=TRUE)
 sp.model.trop$stats
 sp.model.trop$final.call
-#"Richness_rarefied~poly(ag_suit,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)"
+#"Richness_rarefied~poly(ag_suit,1)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)"
 
 sp.model.temp <- model_select(all.data  = sp.temperate, 
 			     responseVar = "Richness_rarefied", 
@@ -278,7 +270,7 @@ sp.model.temp <- model_select(all.data  = sp.temperate,
                        verbose=TRUE)
 sp.model.temp$stats
 sp.model.temp$final.call
-#"Richness_rarefied~poly(ag_suit,3)+(1|SS)+(1|SSB)"
+# "Richness_rarefied~poly(ag_suit,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 # run models for plots
 data.trop <- sp.model.trop$data
@@ -311,12 +303,11 @@ r.sp.plot3 <- rbind(r.sp.plot2, zone)
 
 
 
+# taxon
 
-#rar richness and taxon
-
-plants <- subset(no.small, taxon_of_interest == "Plants")
-inverts <- subset(no.small, taxon_of_interest == "Invertebrates")
-verts <- subset(no.small, taxon_of_interest == "Vertebrates")
+plants <- subset(no.PA.focussed, taxon_of_interest == "Plants")
+inverts <- subset(no.PA.focussed, taxon_of_interest == "Invertebrates")
+verts <- subset(no.PA.focussed, taxon_of_interest == "Vertebrates")
 nrow(plants)
 nrow(inverts)
 nrow(verts)
@@ -367,7 +358,6 @@ best.random.v <- compare_randoms(verts, "Richness_rarefied",
 				verbose=TRUE)
 best.random.v$best.random #
 
-
 # get polynomial relationships
 model.p <- model_select(all.data  = plants, 
 				fitFamily = "poisson",
@@ -381,7 +371,7 @@ model.p <- model_select(all.data  = plants,
                        verbose=TRUE)
 model.p$stats
 model.p$final.call
-# "Richness_rarefied~poly(ag_suit,1)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)"
+#  "Richness_rarefied~poly(ag_suit,1)+poly(log_elevation,3)+(1+Within_PA|SS)+(1|SSBS)"
 
 model.i <- model_select(all.data  = inverts, 
 			     responseVar = "Richness_rarefied", 
@@ -395,7 +385,7 @@ model.i <- model_select(all.data  = inverts,
                        verbose=TRUE)
 model.i$stats
 model.i$final.call
-#"Richness_rarefied~poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
+#"Richness_rarefied~1+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
 
 model.v <- model_select(all.data  = verts, 
 			     responseVar = "Richness_rarefied", 
@@ -411,7 +401,8 @@ model.v$stats
 model.v$final.call
 #"Richness_rarefied~1+(1+Within_PA|SS)+(1|SSBS)"
 
-# run models for plots
+
+# run models for plot
 data.p <- model.p$data
 data.i <- model.i$data
 data.v <- model.v$data
@@ -420,7 +411,7 @@ m1txp <- glmer(Richness_rarefied ~ Within_PA + poly(ag_suit,1)+poly(log_elevatio
 	+ (Within_PA|SS)+ (1|SSB) + (1|SSBS), family = "poisson", 
 	 data = data.p)
 
-m1txi <- glmer(Richness_rarefied ~ Within_PA +poly(log_slope,3) 
+m1txi <- glmer(Richness_rarefied ~ Within_PA 
 	+ (Within_PA|SS)+ (1|SSB)+ (1|SSBS), family = "poisson", 
 	 data = data.i)
 
@@ -455,7 +446,11 @@ r.sp.plot <- rbind(r.sp.plot3, tax)
 
 # master plot
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich NoSmall.tif",
+
+#load("\\\\smbhome.uscs.susx.ac.uk\\clg32\\Documents\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - rar rich noPAfocussed.RData")
+
+
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models rar rich noPAfocussed.tif",
 	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)

@@ -45,40 +45,22 @@ validate <- function(x) {
 }
 
 
-
 construct_call<-function(responseVar,fixedStruct,randomStruct){
   return(paste(responseVar,"~",fixedStruct,"+",randomStruct,sep=""))
 }
 
 
 
-
-#check non linear relationships
-
+# first get best random
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- character(0)
-fI <- character(0)
-RS <-  c("Within_PA")
-
-#"range~poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+Predominant_habitat+taxon_of_interest+Zone+(Within_PA|SS)+(1|SSB)"
-
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <- character(0)
-keepVars <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "3") 
 fI <- c("Within_PA:Predominant_habitat")
 RS <- c("Within_PA")
 #"range~Predominant_habitat+taxon_of_interest+Zone+Within_PA:Predominant_habitat+Within_PA+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)+(Within_PA|SS)+(1|SSB)"
 
-
-
-
-
 range.best.random <- compare_randoms(PA_11_14, "range",
-				siteRandom = TRUE,
+				siteRandom = FALSE,
 				fixedFactors=fF,
                         fixedTerms=fT,
 			     	keepVars = keepVars,
@@ -89,13 +71,9 @@ range.best.random <- compare_randoms(PA_11_14, "range",
 				verbose=TRUE)
 
 
-range.best.random$best.random #
- 
-best.random <- "(Within_PA|SS)+(1|SSB)"
-
+range.best.random$best.random 
 
 # model select
-
 range.model <- model_select(all.data  = PA_11_14, 
 			     responseVar = "range",
 			     siteRandom = TRUE, 
@@ -104,15 +82,12 @@ range.model <- model_select(all.data  = PA_11_14,
                        fixedTerms= fT,
 			     keepVars = keepVars,
                        fixedInteractions=fI,
-                       randomStruct = best.random,
+                       randomStruct = range.best.random$best.random,
 			     otherRandoms=c("Predominant_habitat"),
                        verbose=TRUE)
-
+range.model$final.call
 
 validate(range.model$model) #ok
-
-write.csv(range.model$stats, "N:/Documents/PREDICTS/WDPA analysis/stats tables all/LUPA/range.model.LUPA.stats.02.02.2015.csv")
-
 
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/LUPA_range.tif",
 	width = 20, height = 12, units = "cm", pointsize = 12, res = 300)
@@ -146,67 +121,50 @@ plotLU (responseVar = "Range",
 
 
 
-multiple.taxa.PA_11_14$Predominant_habitat <- relevel(multiple.taxa.PA_11_14$Predominant_habitat, "Primary Vegetation")
-multiple.taxa.PA_11_14$Within_PA <- relevel(multiple.taxa.PA_11_14$Within_PA, "yes")
+### get R2 values for increasingly complex models
+# LU + PA + LU:PA
+M1 <- lmer(range ~ Predominant_habitat+Within_PA:Predominant_habitat+Within_PA
+	#+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+		+(1+Within_PA|SS)+(1|SSB),
+	data = range.model$data, REML = F)
 
-m1 <- glmer(range ~ Within_PA + Predominant_habitat +
-	Within_PA:Predominant_habitat + log_slope + log_elevation + ag_suit
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-#	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000),
-	data = multiple.taxa.PA_11_14)
+# LU + PA 
+M2<- lmer(range ~ Predominant_habitat+Within_PA 
+	#+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+	 +(1+Within_PA|SS)+(1|SSB),
+	data = range.model$data, REML = F)
 
-m1 <- glmer(range ~ Within_PA + Predominant_habitat +
-	Within_PA:Predominant_habitat + log_slope + log_elevation + ag_suit
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-#	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000),
-	data = multiple.taxa.PA_11_14)
+# LU
+M3 <- lmer(range ~ Predominant_habitat+ 
+	#+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+	+(1+Within_PA|SS)+(1|SSB),
+	data = range.model$data, REML = F)
 
-#no convergence warnings when cropland is reference though
-res <- data.frame(estimate = fixef(m1), se = se.fixef(m1))
-write.csv(res, "range.LUPA.CLG.30.01.2015.csv")
+# PA 
+M4 <- lmer(range ~ Within_PA+ 
+	#+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+	+(1+Within_PA|SS)+(1|SSB),
+	data = range.model$data, REML = F)
 
-m <- glmer(range ~ Within_PA + Predominant_habitat +
-	Within_PA:Predominant_habitat + log_slope + log_elevation + ag_suit
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-	matched.landuse)
-m <- glmer(range ~ Within_PA + Predominant_habitat +
-	Within_PA:Predominant_habitat + log_slope + log_elevation + ag_suit
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-	matched.landuse)
-
+# No land use or PA
+M5 <- lmer(range ~ 1
+	#+poly(ag_suit,3)+poly(log_elevation,2)+poly(log_slope,3)
+	+(1+Within_PA|SS)+(1|SSB),
+	data = range.model$data, REML = F)
 
 
+res <- data.frame(models  =  c("LU + PA + LU:PA", "LU + PA", "LU", "PA", "1"),
+		AIC = c(AIC(M1), AIC(M2), AIC(M3), AIC(M4), AIC(M5)),
+		r2_conditional = c(R2GLMER(M1)$conditional, R2GLMER(M2)$conditional, R2GLMER(M3)$conditional, R2GLMER(M4)$conditional, R2GLMER(M5)$conditional),
+		r2_marginal = c(R2GLMER(M1)$marginal, R2GLMER(M2)$marginal, R2GLMER(M3)$marginal, R2GLMER(M4)$marginal, R2GLMER(M5)$marginal))
+res$dAIC = res$AIC - AIC(M5)
+res$d_r2_conditional = res$r2_conditional - res$r2_conditional[which(res$models == 1)]
+res$d_r2_marginal = res$r2_marginal - res$r2_marginal[which(res$models == 1)]
+res <- res[,c(1,2,5,3,6,4,7)]
+res
 
-
-#try with other interactions
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "LU_3") 
-fT <- character(0)
-keepVars <- list("ag_suit" = "3", "log_elevation" = "2", "log_slope" = "3") 
-fI <- c("Within_PA:LU_3", "Within_PA:LU_3", "Within_PA:Zone",
-	"Within_PA:LU_3:taxon_of_interest", "Within_PA:LU_3:Zone")
-RS <- c("Within_PA")
-#
-
-
-
-range.model <- model_select(all.data  = PA_11_14, 
-			     responseVar = "range",
-			     siteRandom = TRUE, 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       fixedInteractions=fI,
-                       randomStruct = best.random,
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
+# what percentage of total explanatory power is due to having land use in model only
+res$d_r2_marginal[3]/res$d_r2_marginal[1]
 
 
 

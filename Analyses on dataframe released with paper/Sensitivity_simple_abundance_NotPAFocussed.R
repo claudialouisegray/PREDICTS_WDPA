@@ -1,63 +1,80 @@
 
-
 rm(list=ls())
 
 library(lme4)
 library(yarg)
 library(roquefort)
+library(influence.ME)
 
 # load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
 
+source("prep_PA_11_14_for_analysis.R")
 
-# Load dataset 
 
-#load data
-source("prep_matched.landuse_for_analysis.R")
-nrow(matched.landuse)
+to.drop <- c("AR1_2005__Davis",
+	"DI1_2004__Naidoo",
+	"DI1_2011__Neuschulz",
+	"DI1_2012__Muchane",
+	"HW1_2007__Chapman",
+	"HW1_2012__Jonsell",
+	"SC1_2012__Schuepp",
+	"SC2_2012__Numa",
+	"TN1_2007__Bouyer",
+	"SC1_2004__Hylander",
+	"SE2_2010__McCarthy")
+
+pos <- which(PA_11_14$Source_ID %in% to.drop == F)
+no.PA.focussed <- PA_11_14[pos,]
+nrow(no.PA.focussed)
+
+nrow(PA_11_14)
+
+
+load("R:\\ecocon_d\\clg32\\PREDICTS\\WDPA analysis\\RData files\\8 landuses\\simple models - abundance noPAfocussed.RData")
 
 
 
 ### model abundance
+
+# check polynomials
 
 fF <- c("Within_PA") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
+#log_abundance~Within_PA+(Within_PA|SS)+(1|SSB)
 
-abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
+abundance.best.random <- compare_randoms(no.PA.focussed, "log_abundance",
 				fixedFactors=fF,
                         fixedTerms=fT,
 			     	keepVars = keepVars,
                        	fixedInteractions=fI,
-                        otherRandoms=c("Predominant_habitat"),
+                        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
 abundance.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 
-ab.model <- model_select(all.data  = matched.landuse, 
+ab.model <- model_select(all.data  = no.PA.focussed, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
 			     keepVars = keepVars,
                        randomStruct = abundance.best.random$best.random,
-			     otherRandoms=c("Predominant_habitat"),
+			     otherRandoms=character(0),
                        verbose=TRUE)
+ab.model$stats
 ab.model$final.call
-ab.model$stats 
+#"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
 
-data <- ab.model$data
-
-# model for plot
-m1a <- lmer(log_abundance ~ Within_PA + log_elevation + ag_suit
-	+ (Within_PA|SS)+ (1|SSB), 
-	 data = data)
+m1a <- lmer(log_abundance ~ Within_PA + (Within_PA|SS)+ (1|SSB), 
+	 data =  ab.model$data)
 
 
 # plot
@@ -85,71 +102,65 @@ arrows(2,CI[1],2,CI[2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2), pch = 16, col = c(1,3), cex = 1.5)
 
-
-text(2,80, paste("n =", length(data$SS[which(data$Within_PA == "yes")]), sep = " "))
-text(1,80, paste("n =", length(data$SS[which(data$Within_PA == "no")]), sep = " "))
-
-
+data <- no.PA.focussed[,c("Within_PA", "SSS", "log_abundance", "log_slope", "log_elevation", "ag_suit")]
+data <- na.omit(data)
+text(2,80, paste("n =", length(data$SSS[which(data$Within_PA == "yes")]), sep = " "))
+text(1,80, paste("n =", length(data$SSS[which(data$Within_PA == "no")]), sep = " "))
 
 #get details for master plot
 ab.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
-		n.site = c(length(data$SS[which(data$Within_PA == "no")]), 
-			length(data$SS[which(data$Within_PA == "yes")])))
+		n.site = c(length(data$SSS[which(data$Within_PA == "no")]), 
+			length(data$SSS[which(data$Within_PA == "yes")])))
 
 
 
 
 # model abundance and IUCN_category
-
-
-
 fF <- c("IUCN_CAT") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
+fT <- list("ag_suit" = "1", "log_slope" = "1", "log_elevation" = "1")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("IUCN_CAT")
 
-
-abundance.best.random.IUCN <- compare_randoms(matched.landuse, "log_abundance",
+abundance.best.random.IUCN <- compare_randoms(no.PA.focussed, "log_abundance",
 				fixedFactors=fF,
                         fixedTerms=fT,
 			     	keepVars = keepVars,
                        	fixedInteractions=fI,
-                        otherRandoms=c("Predominant_habitat"),
+                        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
 abundance.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
 
-
-
-ab.model.IUCN <- model_select(all.data  = matched.landuse, 
+ab.model.IUCN <- model_select(all.data  = no.PA.focussed, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
                        fixedFactors= fF,
                        fixedTerms= fT,
 			     keepVars = keepVars,
                        randomStruct = abundance.best.random.IUCN$best.random,
-			     otherRandoms=c("Predominant_habitat"),
+			     otherRandoms=character(0),
                        verbose=TRUE)
-ab.model.IUCN$stats # p <0.015
+#convergence issues with non linear confounding variables
 ab.model.IUCN$warnings
+ab.model.IUCN$stats
 ab.model.IUCN$final.call
-#"log_abundance~poly(ag_suit,1)+(IUCN_CAT|SS)+(1|SSB)"
+#"log_abundance~1+(1+IUCN_CAT|SS)+(1|SSB)"
 
-data <- ab.model.IUCN$data
 
 # plot 
 
 labels <- c("Unprotected", "IUCN III  - VI", "unknown", "IUCN I & II")
 
-matched.landuse$IUCN_CAT <- relevel(matched.landuse$IUCN_CAT, "0")
+data <- ab.model.IUCN$data
+data$IUCN_CAT <- relevel(data$IUCN_CAT, "0")
 
-m4ai <- lmer(log_abundance ~ IUCN_CAT + ag_suit
-	+ (IUCN_CAT|SS) + (1|SSB), 
-	 data = data)
+m4ai <- lmer(log_abundance ~ IUCN_CAT + (IUCN_CAT|SS) + (1|SSB), 
+	 data = no.PA.focussed)
+summary(m4ai)
 
 pos <- c(grep("4.5", names(fixef(m4ai))),grep("7", names(fixef(m4ai))),grep("1.5", names(fixef(m4ai))))
 y <- as.numeric(fixef(m4ai)[pos])
@@ -163,33 +174,32 @@ yminus<-(exp(yminus)*100)
 points <- c(100, y)
 CI <- cbind(yplus, yminus)
 
-plot(points ~ c(1,2,3,4), ylim = c(80,150), xlim = c(0.5,4.5),
+plot(points ~ c(1,2,3,4), ylim = c(80,180), xlim = c(0.5,4.5),
 	bty = "l", pch = 16, col = c(1,3,3,3), cex = 1.5,
 	yaxt = "n", xaxt = "n",
 	ylab = "Abundance difference (% ± 95%CI)",
 	xlab = "")
 axis(1,seq(1,length(points),1), labels)
-axis(2, c(80,100,120,140), c(80,100,120,140))
+axis(2, c(80,100,120,140,160), c(80,100,120,140,160))
 arrows(seq(2,length(points),1),CI[,1],
 	seq(2,length(points),1),CI[,2], code = 3, length = 0.03, angle = 90)
 abline(h = 100, lty = 2)
 points(points ~ c(1,2,3,4), pch = 16, col = c(1,3,3,3), cex = 1.5)
 
-
-text(1, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "0")]), sep = " "))
-text(2, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "4.5")]), sep = " "))
-text(3, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "7")]), sep = " "))
-text(4, 80, paste("n =", length(data$SS[which(data$IUCN_CAT == "1.5")]), sep = " "))
-
-
+data <- no.PA.focussed[,c("IUCN_CAT", "SSS", "log_abundance", "log_slope", "log_elevation", "ag_suit")]
+data <- na.omit(data)
+text(1, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "0")]), sep = " "))
+text(2, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "4.5")]), sep = " "))
+text(3, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "7")]), sep = " "))
+text(4, 80, paste("n =", length(data$SSS[which(data$IUCN_CAT == "1.5")]), sep = " "))
 
 #add to master plot details
 
 IUCN.plot <- data.frame(label = labels[2:4], est = points[2:4], 
 		upper = CI[,1], lower = CI[,2],
-		n.site = c(length(data$SS[which(data$IUCN_CAT == "4.5")]), 
-			length(data$SS[which(data$IUCN_CAT == "7")]),
-			length(data$SS[which(data$IUCN_CAT == "1.5")])))
+		n.site = c(length(data$SSS[which(data$IUCN_CAT == "4.5")]), 
+			length(data$SSS[which(data$IUCN_CAT == "7")]),
+			length(data$SSS[which(data$IUCN_CAT == "1.5")])))
 ab.plot2 <- rbind(ab.plot1, IUCN.plot)
 
 
@@ -197,8 +207,8 @@ ab.plot2 <- rbind(ab.plot1, IUCN.plot)
 
 # abundance and zone
 
-tropical <- subset(matched.landuse, Zone == "Tropical")
-temperate <- subset(matched.landuse, Zone == "Temperate")
+tropical <- subset(no.PA.focussed, Zone == "Tropical")
+temperate <- subset(no.PA.focussed, Zone == "Temperate")
 
 # check polynomials for confounding variables
 fF <- c("Within_PA" ) 
@@ -206,7 +216,6 @@ fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
 keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
-
 
 ab.best.random.trop <- compare_randoms(tropical, "log_abundance",
 				fixedFactors=fF,
@@ -218,7 +227,7 @@ ab.best.random.trop <- compare_randoms(tropical, "log_abundance",
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
-ab.best.random.trop$best.random #"(1+Within_PA|SS)+ (1|SSB)"
+ab.best.random.trop$best.random 
 
 ab.best.random.temp <- compare_randoms(temperate, "log_abundance",
 				fixedFactors=fF,
@@ -230,7 +239,7 @@ ab.best.random.temp <- compare_randoms(temperate, "log_abundance",
                         fitInteractions=FALSE,
 				verbose=TRUE)
 
-ab.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSB)"
+ab.best.random.temp$best.random 
 
 # get polynomial relationships
 ab.model.trop <- model_select(all.data  = tropical, 
@@ -243,8 +252,8 @@ ab.model.trop <- model_select(all.data  = tropical,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.trop$stats
-ab.model.trop$final.call
-#"log_abundance~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
+# "log_abundance~poly(ag_suit,1)+poly(log_elevation,2)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
+
 
 ab.model.temp <- model_select(all.data  = temperate, 
 			     responseVar = "log_abundance", 
@@ -256,20 +265,18 @@ ab.model.temp <- model_select(all.data  = temperate,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.temp$stats
-ab.model.temp$final.call
-#"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
+#"log_abundance~poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
 
 
-# run models
-
+# run models for plots
 data.trop <- ab.model.trop$data
 data.temp <- ab.model.temp$data
 
-m1aztr <- lmer(log_abundance ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)
+m1aztr <- lmer(log_abundance ~ Within_PA  + poly(log_elevation,2)+ ag_suit
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.trop)
 
-m1azte <- lmer(log_abundance ~ Within_PA 
+m1azte <- lmer(log_abundance ~ Within_PA +poly(log_slope,2) 
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = temperate)
 
@@ -286,19 +293,18 @@ a.zone <- data.frame(label = c("Tropical", "Temperate"),
 				est = c(aztr.est, azte.est), 
 				upper = c(aztr.upper, azte.upper), 
 				lower = c(aztr.lower, azte.lower), 
-				n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]), 
-					nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
+				n.site = c(nrow(data.trop[which(data.trop$Within_PA == "yes"),]),
+					 nrow(data.temp[which(data.temp$Within_PA == "yes"),])))
 ab.plot3 <- rbind(ab.plot2, a.zone)
-
 
 
 
 
 # abundance and taxon
 
-plants <- subset(matched.landuse, taxon_of_interest == "Plants")
-inverts <- subset(matched.landuse, taxon_of_interest == "Invertebrates")
-verts <- subset(matched.landuse, taxon_of_interest == "Vertebrates")
+plants <- subset(no.PA.focussed, taxon_of_interest == "Plants")
+inverts <- subset(no.PA.focussed, taxon_of_interest == "Invertebrates")
+verts <- subset(no.PA.focussed, taxon_of_interest == "Vertebrates")
 nrow(plants)
 nrow(inverts)
 nrow(verts)
@@ -310,7 +316,6 @@ keepVars <- list()
 fI <- character(0)
 RS <-  c("Within_PA")
 
-
 ab.best.random.p <- compare_randoms(plants, "log_abundance",
 				fixedFactors=fF,
                         fixedTerms=fT,
@@ -320,7 +325,7 @@ ab.best.random.p <- compare_randoms(plants, "log_abundance",
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
-ab.best.random.p$best.random # "(1+Within_PA|SS)+ (1|SSB)"
+ab.best.random.p$best.random # 
 
 ab.best.random.i <- compare_randoms(inverts, "log_abundance",
 				fixedFactors=fF,
@@ -331,7 +336,7 @@ ab.best.random.i <- compare_randoms(inverts, "log_abundance",
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
-ab.best.random.i$best.random # "(1+Within_PA|SS)+ (1|SSB)"
+ab.best.random.i$best.random # 
 
 ab.best.random.v <- compare_randoms(verts, "log_abundance",
 				fixedFactors=fF,
@@ -342,11 +347,7 @@ ab.best.random.v <- compare_randoms(verts, "log_abundance",
 				fixed_RandomSlopes = RS,
                         fitInteractions=FALSE,
 				verbose=TRUE)
-ab.best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
-
-
-
-
+ab.best.random.v$best.random #
 
 # get polynomial relationships
 ab.model.p <- model_select(all.data  = plants, 
@@ -359,7 +360,8 @@ ab.model.p <- model_select(all.data  = plants,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.p$stats
-#log_abundance~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)+(1+Within_PA|SS)
+ab.model.p$final.call
+# "log_abundance~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)+(1+Within_PA|SS)"
 
 
 ab.model.i <- model_select(all.data  = inverts, 
@@ -372,8 +374,8 @@ ab.model.i <- model_select(all.data  = inverts,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.i$stats
-#"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
-
+ab.model.i$final.call
+#"log_abundance~poly(log_slope,1)+(1+Within_PA|SS)+(1|SSB)"
 
 ab.model.v <- model_select(all.data  = verts, 
 			     responseVar = "log_abundance", 
@@ -385,11 +387,11 @@ ab.model.v <- model_select(all.data  = verts,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.v$stats
-#"log_abundance~poly(ag_suit,3)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
+ab.model.v$final.call
+#"log_abundance~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)+Within_PA+(1+Within_PA|SS)+(1|SSB)"
 
 
-
-# run models
+# run models for plots
 data.p <- ab.model.p$data
 data.i <- ab.model.i$data
 data.v <- ab.model.v$data
@@ -398,11 +400,11 @@ m1txp <- lmer(log_abundance ~ Within_PA +poly(ag_suit,2)+poly(log_elevation,1)+p
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.p)
 
-m1txi <- lmer(log_abundance ~ Within_PA 
+m1txi <- lmer(log_abundance ~ Within_PA +log_slope
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.i)
 
-m1txv <- lmer(log_abundance ~ Within_PA +  poly(ag_suit,3)+poly(log_slope,2)
+m1txv <- lmer(log_abundance ~ Within_PA + poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)
 	+ (Within_PA|SS)+ (1|SSB), 
 	 data = data.v)
 
@@ -419,8 +421,6 @@ txv.est <- exp(fixef(m1txv)[2])*100
 txv.upper <- exp(fixef(m1txv)[2] + 1.96* se.fixef(m1txv)[2])*100
 txv.lower <- exp(fixef(m1txv)[2] - 1.96* se.fixef(m1txv)[2])*100
 
-
-
 a.tax <- data.frame(label = c("Plants", "Inverts", "Verts"),
 				est = c(txp.est, txi.est, txv.est), 
 				upper = c(txp.upper, txi.upper, txv.upper), 
@@ -433,8 +433,8 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 # master plot
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/06_15/simple models matchedlanduse abundance.tif",
-	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models abundance noPAfocussed.tif",
+	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
 temp.col <- rgb(0,0.1,0.7)
@@ -444,32 +444,30 @@ v.col <- rgb(0.9,0.5,0)
 
 par(mar = c(9,6,4,1))
 plot(1,1, 
-	ylim = c(60,145), xlim = c(0.5,nrow(ab.plot)),
+	ylim = c(65,190), xlim = c(0.5,nrow(ab.plot)+1),
 	bty = "l", 
 	axes = F,
 	ylab = "Abundance difference (%)",
 	cex.lab = 1.5,
 	xlab = "")
-abline(v = c(2.5,5.5,7.5), lty = 2)
-abline(h= 100, col = 8)
 arrows(1:nrow(ab.plot),ab.plot$upper,
 	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
 	lwd = 2,
 	1:nrow(ab.plot),ab.plot$lower, code = 3, length = 0, angle = 90)
 points(ab.plot$est ~ c(1:nrow(ab.plot)),
 	pch = c(21, rep(16,4), rep(15,2),rep(17,3)), 
-	lwd = 2, lty = 3,
+	lwd = 2,
 	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
 	bg = c("white"), 
 	cex = 1.5)
-text(1:nrow(ab.plot),62, ab.plot$n.site, srt = 90)
-
+abline(v = c(2.5,5.5,7.5), col = 8)
+abline(h= 100, lty = 2)
+text(1:nrow(ab.plot),65, ab.plot$n.site, srt = 180)
 #axis(1, c(1:nrow(ab.plot)), ab.plot$label, cex.axis = 1.5, las = 2)
-axis(2, c(80,100,120,140), c(-20,0,20,40))
+axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
+
 
 dev.off()
-
-
 
 
 

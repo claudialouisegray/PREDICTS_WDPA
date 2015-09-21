@@ -509,8 +509,8 @@ r.plot <- rbind(r.plot3, tax)
 
 # master plot
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/02_15/simple models matchedlanduse endemicity.tif",
-	width = 23, height = 16, units = "cm", pointsize = 12, res = 300)
+tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/06_15/simple models matchedlanduse endemicity.tif",
+	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)
 temp.col <- rgb(0,0.1,0.7)
@@ -520,12 +520,14 @@ v.col <- rgb(0.9,0.5,0)
 
 par(mar = c(9,6,4,1))
 plot(1,1, 
-	ylim = c(65,190), xlim = c(0.5,nrow(r.plot)+1),
+	ylim = c(60,145), xlim = c(0.5,nrow(r.plot)),
 	bty = "l", 
 	axes = F,
 	ylab = "Endemicity difference (%)",
 	cex.lab = 1.5,
 	xlab = "")
+abline(v = c(2.5,5.5,7.5), lty = 2)
+abline(h= 100, col = 8)
 arrows(1:nrow(r.plot),r.plot$upper,
 	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
 	lwd = 2,
@@ -536,11 +538,9 @@ points(r.plot$est ~ c(1:nrow(r.plot)),
 	col = c(1,1,rep(rgb(0.5, 0.5, 0.5), 3), c(trop.col, temp.col, p.col, i.col, v.col)),
 	bg ="white", 
 	cex = 1.5)
-abline(v = c(2.5,5.5,7.5), col = 8)
-abline(h= 100, lty = 2)
-text(1:nrow(r.plot),65, r.plot$n.site)
+text(1:nrow(r.plot),62, r.plot$n.site, srt = 90)
 #axis(1, c(1:nrow(r.plot)), r.plot$label, cex.axis = 1.5, las = 2)
-axis(2, c(80,100,120,140,160,180), c(80,100,120,140,160,180))
+axis(2, c(80,100,120,140), c(-20,0,20,40))
 
 
 dev.off()

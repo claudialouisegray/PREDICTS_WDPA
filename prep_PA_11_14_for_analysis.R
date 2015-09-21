@@ -171,47 +171,7 @@ multiple.taxa.PA_11_14 <- droplevels(multiple.taxa.PA_11_14)
 
 
 
-
-
-
-### prep the data for the proportion threatened analysis
-### Load dataset on matched landuse for amphibian, mammal and bird data only
-
-PA_11_14_amp_mam_bir <- read.csv("PA_11_2014_amph_mamm_bird.csv")
-
-# group primary landuses and remove secondary indeterminate
-PA_11_14_amp_mam_bir$Predominant_habitat <- gsub("Primary forest", "Primary Vegetation", PA_11_14_amp_mam_bir$Predominant_habitat)
-PA_11_14_amp_mam_bir$Predominant_habitat <- gsub("Primary non-forest", "Primary Vegetation", PA_11_14_amp_mam_bir$Predominant_habitat)
-PA_11_14_amp_mam_bir <- subset(PA_11_14_amp_mam_bir, Predominant_habitat != "Secondary vegetation (indeterminate age)")
-PA_11_14_amp_mam_bir$Predominant_habitat <- factor(PA_11_14_amp_mam_bir$Predominant_habitat)
-nrow(PA_11_14_amp_mam_bir)#2617
-
-m <- merge(PA_11_14_amp_mam_bir, access.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "access"
-m <- merge(m, hpd.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "hpd"
-m <- merge(m, elevation.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "elevation"
-m <- merge(m, slope.1, "SSS")
-colnames(m)[which(colnames(m) == "MEAN")] <- "slope"
-m <- merge(m, ag.1, "SSS")
-
-nrow(m) # check still 2617
-PA_11_14_amp_mam_bir <- m
-
-# sort out explanatory variables
-
-PA_11_14_amp_mam_bir$IUCN_CAT_number <- factor(PA_11_14_amp_mam_bir$IUCN_CAT_number) # they arent really in an order
-PA_11_14_amp_mam_bir$log_slope <- log(PA_11_14_amp_mam_bir$slope +1)
-PA_11_14_amp_mam_bir$log_elevation <- log(PA_11_14_amp_mam_bir$elevation +1)
-PA_11_14_amp_mam_bir$log_hpd<- log(PA_11_14_amp_mam_bir$hpd +1)
-PA_11_14_amp_mam_bir$log_access <- log(PA_11_14_amp_mam_bir$access +1)
-PA_11_14_amp_mam_bir$log_GIS_AREA <- log(PA_11_14_amp_mam_bir$GIS_AREA+1)
-
-#make response variables
-PA_11_14_amp_mam_bir$log_abundance <- log(PA_11_14_amp_mam_bir$Total_abundance +1)
-
-
-
-
+#write.csv(PA_11_2014, "PA_11_14_for_references.csv")
+#sources <- unique(PA_11_14$Source_ID)
+#write.csv(sources, "PA_11_2014_source_IDs_for_references.csv")
 

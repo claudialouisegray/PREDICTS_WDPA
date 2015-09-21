@@ -1,23 +1,24 @@
+rm(list=ls()) 
 
-
-rm(list=ls())
-
-library(lme4)
 library(yarg)
 library(roquefort)
+library(gamm4)
 
-# load functions
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
 source("compare_randoms.R")
 source("model_select.R")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PREDICTS_WDPA <- read.csv("PREDICTS_WDPA.csv")
 
+validate <- function(x) {
+  par(mfrow = c(1,2))
+  plot(resid(x)~ fitted(x))
+  hist(resid(x))
+  par(mfrow = c(1,1))
+}
 
-# Load dataset 
-
-#load data
-source("prep_matched.landuse_for_analysis.R")
-nrow(matched.landuse)
-
+matched.landuse <- subset(PREDICTS_WDPA, matched.landuse == "yes")
+nrow(matched.landuse) #5015
 
 
 ### model abundance
@@ -30,12 +31,11 @@ RS <-  c("Within_PA")
 
 abundance.best.random <- compare_randoms(matched.landuse, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=c("Predominant_habitat"),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 abundance.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
@@ -43,12 +43,11 @@ abundance.best.random$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 ab.model <- model_select(all.data  = matched.landuse, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = abundance.best.random$best.random,
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
+           randomStruct = abundance.best.random$best.random,
+           verbose=TRUE)
 ab.model$final.call
 ab.model$stats 
 
@@ -95,14 +94,12 @@ text(1,80, paste("n =", length(data$SS[which(data$Within_PA == "no")]), sep = " 
 ab.plot1 <- data.frame(label = c("unprotected", "all protected"), est = points, 
 		upper = c(100, CI[1]), lower = c(100,CI[2]),
 		n.site = c(length(data$SS[which(data$Within_PA == "no")]), 
-			length(data$SS[which(data$Within_PA == "yes")])))
+		length(data$SS[which(data$Within_PA == "yes")])))
 
 
 
 
 # model abundance and IUCN_category
-
-
 
 fF <- c("IUCN_CAT") 
 fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
@@ -113,27 +110,23 @@ RS <-  c("IUCN_CAT")
 
 abundance.best.random.IUCN <- compare_randoms(matched.landuse, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=c("Predominant_habitat"),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 abundance.best.random.IUCN$best.random #"(1+IUCN_CAT|SS)+ (1|SSB)"
 
-
-
 ab.model.IUCN <- model_select(all.data  = matched.landuse, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = abundance.best.random.IUCN$best.random,
-			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
+           randomStruct = abundance.best.random.IUCN$best.random,
+           verbose=TRUE)
 ab.model.IUCN$stats # p <0.015
 ab.model.IUCN$warnings
 ab.model.IUCN$final.call
@@ -210,24 +203,24 @@ RS <-  c("Within_PA")
 
 ab.best.random.trop <- compare_randoms(tropical, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 ab.best.random.trop$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 
 ab.best.random.temp <- compare_randoms(temperate, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 ab.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSB)"
@@ -236,12 +229,12 @@ ab.best.random.temp$best.random #"(1+Within_PA|SS)+ (1|SSB)"
 ab.model.trop <- model_select(all.data  = tropical, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =ab.best.random.trop$best.random,
+           randomStruct =ab.best.random.trop$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 ab.model.trop$stats
 ab.model.trop$final.call
 #"log_abundance~poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,3)+(1+Within_PA|SS)+(1|SSB)"
@@ -249,12 +242,12 @@ ab.model.trop$final.call
 ab.model.temp <- model_select(all.data  = temperate, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct = ab.best.random.temp$best.random,
+           randomStruct = ab.best.random.temp$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 ab.model.temp$stats
 ab.model.temp$final.call
 #"log_abundance~1+(1+Within_PA|SS)+(1|SSB)"
@@ -292,8 +285,6 @@ ab.plot3 <- rbind(ab.plot2, a.zone)
 
 
 
-
-
 # abundance and taxon
 
 plants <- subset(matched.landuse, taxon_of_interest == "Plants")
@@ -313,34 +304,34 @@ RS <-  c("Within_PA")
 
 ab.best.random.p <- compare_randoms(plants, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+			  keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 ab.best.random.p$best.random # "(1+Within_PA|SS)+ (1|SSB)"
 
 ab.best.random.i <- compare_randoms(inverts, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 ab.best.random.i$best.random # "(1+Within_PA|SS)+ (1|SSB)"
 
 ab.best.random.v <- compare_randoms(verts, "log_abundance",
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=character(0),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=character(0),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 ab.best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
@@ -352,12 +343,12 @@ ab.best.random.v$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 ab.model.p <- model_select(all.data  = plants, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =ab.best.random.p$best.random,
+           randomStruct =ab.best.random.p$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 ab.model.p$stats
 #log_abundance~poly(ag_suit,2)+poly(log_elevation,1)+poly(log_slope,3)+(1+Within_PA|SS)
 
@@ -365,10 +356,10 @@ ab.model.p$stats
 ab.model.i <- model_select(all.data  = inverts, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =ab.best.random.i$best.random,
+           randomStruct =ab.best.random.i$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 ab.model.i$stats
@@ -378,12 +369,12 @@ ab.model.i$stats
 ab.model.v <- model_select(all.data  = verts, 
 			     responseVar = "log_abundance", 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       randomStruct =ab.best.random.v$best.random,
+           randomStruct =ab.best.random.v$best.random,
 			     otherRandoms=character(0),
-                       verbose=TRUE)
+           verbose=TRUE)
 ab.model.v$stats
 #"log_abundance~poly(ag_suit,3)+poly(log_slope,2)+(1+Within_PA|SS)+(1|SSB)"
 
@@ -433,7 +424,7 @@ ab.plot <- rbind(ab.plot3, a.tax)
 
 # master plot
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/06_15/simple models matchedlanduse abundance.tif",
+tiff( "simple models matchedlanduse abundance.tif",
 	width = 10, height = 15, units = "cm", pointsize = 12, res = 300)
 
 trop.col <- rgb(0.9,0,0)

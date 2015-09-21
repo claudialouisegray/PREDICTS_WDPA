@@ -3,30 +3,13 @@ rm(list=ls())
 
 library(yarg)
 library(roquefort)
-library(rgdal)
-library(sp)
-library(rgeos)
-library(maptools)
-library(gplots)
-library(ggplot2)
-library(scales)
-library(gridExtra)
-library(optimx)
-library(SDMTools)
-library(data.table)
 library(gamm4)
-library(scatterplot3d)
-library(rgl)
 
 setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-
-# load functions
 source("compare_randoms.R")
 source("model_select.R")
-source("plotFactorInteraction.R")
-
-#load data
-source("prep_matched.landuse_for_analysis.R")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PREDICTS_WDPA <- read.csv("PREDICTS_WDPA.csv")
 
 validate <- function(x) {
   par(mfrow = c(1,2))
@@ -34,9 +17,10 @@ validate <- function(x) {
   hist(resid(x))
   par(mfrow = c(1,1))
 }
-construct_call<-function(responseVar,fixedStruct,randomStruct){
-  return(paste(responseVar,"~",fixedStruct,"+",randomStruct,sep=""))
-}
+
+matched.landuse <- subset(PREDICTS_WDPA, matched.landuse == "yes")
+multiple.taxa.matched.landuse <- subset(matched.landuse, multiple_taxa == "yes")
+nrow(matched.landuse) #5015
 
 
 ### Size and Age analysis
@@ -52,12 +36,12 @@ Species_richness.best.random <- compare_randoms(multiple.taxa.matched.landuse, "
 				fitFamily = "poisson",
 				siteRandom = TRUE,
 				fixedFactors=fF,
-                        fixedTerms=fT,
-			     	keepVars = keepVars,
-                       	fixedInteractions=fI,
-                        otherRandoms=c("Predominant_habitat"),
+        fixedTerms=fT,
+        keepVars = keepVars,
+        fixedInteractions=fI,
+        otherRandoms=c("Predominant_habitat"),
 				fixed_RandomSlopes = RS,
-                        fitInteractions=FALSE,
+        fitInteractions=FALSE,
 				verbose=TRUE)
 
 Species_richness.best.random$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
@@ -67,13 +51,13 @@ Species_richness.model <- model_select(all.data  = multiple.taxa.matched.landuse
 			     fitFamily = "poisson",
 			     siteRandom = TRUE, 
 			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
+           fixedFactors= fF,
+           fixedTerms= fT,
 			     keepVars = keepVars,
-                       fixedInteractions=fI,
-                       randomStruct =Species_richness.best.random$best.random ,
+           fixedInteractions=fI,
+           randomStruct =Species_richness.best.random$best.random ,
 			     otherRandoms=c("Predominant_habitat"),
-                       verbose=TRUE)
+           verbose=TRUE)
 Species_richness.model$final.call
 #Species_richness~AREA_DoP+taxon_of_interest+Zone+poly(ag_suit,3)+poly(log_slope,1)+poly(log_elevation,2)+(1|SS)+(1|SSBS)+(1|SSB)+(1|Predominant_habitat)"
 
@@ -83,7 +67,7 @@ Species_richness.model$stats
 
 ### plot
 
-tiff( "R:/ecocon_d/clg32/PREDICTS/WDPA analysis/plots/06_15/sp rich vs size and age.tif",
+tiff( "sp rich vs size and age.tif",
 	width = 17.4, height = 7, units = "cm", pointsize = 12, res = 300)
 
 par(mar = c(4,4,0,0), mgp = c(2,0.5,0))

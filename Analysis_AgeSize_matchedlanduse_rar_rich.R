@@ -71,7 +71,7 @@ Richness_rarefied.best.random <- compare_randoms(multiple.taxa.matched.landuse, 
 				verbose=TRUE)
 
 
-Richness_rarefied.best.random2$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
+Richness_rarefied.best.random$best.random #"(1|SS)+ (1|SSBS)+ (1|SSB)+(1|Predominant_habitat)"
 
 # model select
 Richness_rarefied.model <- model_select(all.data  = multiple.taxa.matched.landuse, 

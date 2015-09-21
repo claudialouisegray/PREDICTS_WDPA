@@ -55,6 +55,7 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 #first get best random effects structure
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
 fT <-list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "3")
+#fT <- character(0) - this gave the 89%
 fI <- ("Within_PA:Predominant_habitat")
 RS <-  c("Within_PA")
 
@@ -116,39 +117,38 @@ dev.off()
 ### get R2 values for increasingly complex models
 # LU + PA + LU:PA
 M1 <- lmer(log_abundance ~ Predominant_habitat+Within_PA:Predominant_habitat+Within_PA
-	+ taxon_of_interest + Zone
 	+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
 
 # LU + PA 
-M2<- lmer(log_abundance ~ Predominant_habitat+Within_PA + taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
+M2<- lmer(log_abundance ~ Predominant_habitat+Within_PA +(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
 
 # LU
-M3 <- lmer(log_abundance ~ Predominant_habitat+ taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
+M3 <- lmer(log_abundance ~ Predominant_habitat+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
 
 # PA 
-M4 <- lmer(log_abundance ~ Within_PA+ taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
+M4 <- lmer(log_abundance ~ Within_PA+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
 
 # No land use or PA
-M5 <- lmer(log_abundance ~ + taxon_of_interest + Zone+(1+Within_PA|SS)+(1|SSB),
+M5 <- lmer(log_abundance ~ 1+(1+Within_PA|SS)+(1|SSB),
 	data = log_abundance.model$data, REML = F)
 
 res <- data.frame(models  =  c("LU + PA + LU:PA", "LU + PA", "LU", "PA", "1"),
 		AIC = c(AIC(M1), AIC(M2), AIC(M3), AIC(M4), AIC(M5)),
 		r2_conditional = c(R2GLMER(M1)$conditional, R2GLMER(M2)$conditional, R2GLMER(M3)$conditional, R2GLMER(M4)$conditional, R2GLMER(M5)$conditional),
-		r2_marginal = c(R2GLMER(M1)$marginal, R2GLMER(M2)$marginal, R2GLMER(M3)$marginal, R2GLMER(M1)$marginal, R2GLMER(M2)$marginal))
+		r2_marginal = c(R2GLMER(M1)$marginal, R2GLMER(M2)$marginal, R2GLMER(M3)$marginal, R2GLMER(M4)$marginal, R2GLMER(M5)$marginal))
 res$dAIC = res$AIC - AIC(M5)
-res 
+res$d_r2_conditional = res$r2_conditional - res$r2_conditional[which(res$models == 1)]
+#res$d_r2_marginal = res$r2_marginal - res$r2_marginal[which(res$models == 1)]
+res <- res[,c(1,2,5,3,6,4)]
+res
+#write.csv(res, "LUPA_abundance_AIC_R2.csv")
 
-# what percentage of total explanatory power is due to having land use in model only
-res$dAIC[3]/res$dAIC[1]
-
-# what percentage of total explanatory power is added when going from model with land use to model 
-# with between and within land use differences in protection
-(res$AIC[1] - res$AIC[3])/res$dAIC[1]
+# what percentage of total explanatory power of fixed effects is due to having land use in model only
+res$r2_marginal[3]/res$r2_marginal[1]
 
 
 
@@ -363,28 +363,124 @@ urb_in <- fixef(log_abundance.model.sec$model)[
 	fixef(log_abundance.model.sec$model)[
 	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatUrban:Within_PAyes")]
 
+var.cov <- vcov(log_abundance.model.sec$model)
 
+#max values for CI
+
+sec_out_max <- sec_out +
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatSecondary vegetation")]
+crop_out_max <- crop_out+
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatCropland")]
+pas_out_max <- pas_out+
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatPasture")]
+urb_out_max <- urb_out+
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatUrban")]
+
+pri_in_max <- pri_in+
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Within_PAyes")]
+
+	cov<-var.cov[which(row.names(var.cov)=="Within_PAyes"),
+             which(names(var.cov[1,])=="Predominant_habitatSecondary vegetation:Within_PAyes")]
+	se1<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Within_PAyes")]
+	se2<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatSecondary vegetation:Within_PAyes")]
+	se.sec_in<-sqrt(se1^2+se2^2+2*cov)
+sec_in_max <- sec_in + 2*se.sec_in
+	 
+	cov<-var.cov[which(row.names(var.cov)=="Within_PAyes"),
+             which(names(var.cov[1,])=="Predominant_habitatCropland:Within_PAyes")]
+	se1<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Within_PAyes")]
+	se2<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatCropland:Within_PAyes")]
+	se.crop_in<-sqrt(se1^2+se2^2+2*cov)
+crop_in_max <- crop_in + 2*se.crop_in
+
+	cov<-var.cov[which(row.names(var.cov)=="Within_PAyes"),
+             which(names(var.cov[1,])=="Predominant_habitatPasture:Within_PAyes")]
+	se1<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Within_PAyes")]
+	se2<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatPasture:Within_PAyes")]
+	se.pas_in<-sqrt(se1^2+se2^2+2*cov)
+pas_in_max <- pas_in + 2*se.pas_in
+
+	cov<-var.cov[which(row.names(var.cov)=="Within_PAyes"),
+             which(names(var.cov[1,])=="Predominant_habitatUrban:Within_PAyes")]
+	se1<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Within_PAyes")]
+	se2<-se.fixef(log_abundance.model.sec$model)[which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatUrban:Within_PAyes")]
+	se.urb_in<-sqrt(se1^2+se2^2+2*cov)
+urb_in_max <- urb_in + 2*se.urb_in
+
+
+
+
+# min vals for CI
+
+sec_out_min <- sec_out-
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatSecondary vegetation")]
+crop_out_min <- crop_out -
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatCropland")]
+pas_out_min <- pas_out -
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatPasture")]
+urb_out_min <- urb_out -
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Predominant_habitatUrban")]
+
+pri_in_min <- pri_in - 
+	2*se.fixef(log_abundance.model.sec$model)[
+	which(names(fixef(log_abundance.model.sec$model)) == "Within_PAyes")]
+sec_in_min <- sec_in - 2*se.sec_in
+crop_in_min <- crop_in - 2*se.crop_in
+pas_in_min <- pas_in - 2*se.pas_in
+urb_in_min <- urb_in - 2*se.urb_in
+
+
+#weight the biodiversity response by proportion of area outside and inside PAs in that land use
 response_out <- exp(0 + 
 	 	sec_out*LU.props[which(landuses == "Secondary"), which(names(LU.props) == "outside")] +
 		crop_out*LU.props[which(landuses == "Cropland"), which(names(LU.props) == "outside")] +
 		pas_out*LU.props[which(landuses == "Pasture"), which(names(LU.props) == "outside")]  + 
 		urb_out*LU.props[which(landuses == "Urban"), which(names(LU.props) == "outside")])
+response_out_max <- exp(0 + 
+	 	sec_out_max*LU.props[which(landuses == "Secondary"), which(names(LU.props) == "outside")] +
+		crop_out_max*LU.props[which(landuses == "Cropland"), which(names(LU.props) == "outside")] +
+		pas_out_max*LU.props[which(landuses == "Pasture"), which(names(LU.props) == "outside")]  + 
+		urb_out_max*LU.props[which(landuses == "Urban"), which(names(LU.props) == "outside")])
+response_out_min <- exp(0 + 
+	 	sec_out_min*LU.props[which(landuses == "Secondary"), which(names(LU.props) == "outside")] +
+		crop_out_min*LU.props[which(landuses == "Cropland"), which(names(LU.props) == "outside")] +
+		pas_out_min*LU.props[which(landuses == "Pasture"), which(names(LU.props) == "outside")]  + 
+		urb_out_min*LU.props[which(landuses == "Urban"), which(names(LU.props) == "outside")])
 
 response_in <- exp(pri_in*LU.props[which(landuses == "Primary"), which(names(LU.props) == "PAs")] + 
 	 	sec_in*LU.props[which(landuses == "Secondary"), which(names(LU.props) == "PAs")] +
 		crop_in*LU.props[which(landuses == "Cropland"), which(names(LU.props) == "PAs")] +
 		pas_in*LU.props[which(landuses == "Pasture"), which(names(LU.props) == "PAs")]  + 
 		urb_in*LU.props[which(landuses == "Urban"), which(names(LU.props) == "PAs")])
+response_in_max <- exp(pri_in_max*LU.props[which(landuses == "Primary"), which(names(LU.props) == "PAs")] + 
+	 	sec_in_max*LU.props[which(landuses == "Secondary"), which(names(LU.props) == "PAs")] +
+		crop_in_max*LU.props[which(landuses == "Cropland"), which(names(LU.props) == "PAs")] +
+		pas_in_max*LU.props[which(landuses == "Pasture"), which(names(LU.props) == "PAs")]  + 
+		urb_in_max*LU.props[which(landuses == "Urban"), which(names(LU.props) == "PAs")])
+response_in_min <- exp(pri_in_min*LU.props[which(landuses == "Primary"), which(names(LU.props) == "PAs")] + 
+	 	sec_in_min*LU.props[which(landuses == "Secondary"), which(names(LU.props) == "PAs")] +
+		crop_in_min*LU.props[which(landuses == "Cropland"), which(names(LU.props) == "PAs")] +
+		pas_in_min*LU.props[which(landuses == "Pasture"), which(names(LU.props) == "PAs")]  + 
+		urb_in_min*LU.props[which(landuses == "Urban"), which(names(LU.props) == "PAs")])
 
 
 b.a <-  response_in/response_out -1
+b.a_max <-  response_in_max/response_out_max -1
+b.a_min <-  response_in_min/response_out_min -1
 
-
-
-benefit <- as.numeric(b.a)		# percentage increase in metric in PAs
-PA.pct <- 14.6				# percentage of total land area in PAs
+benefit <- as.numeric(c(b.a, b.a_max, b.a_min))		# percentage increase in metric in PAs
+PA.pct <- 15.4				# percentage of total land area in PAs
 # global loss of biodiversity (from Newbold et al)
-global.loss <- 0.107
+global.loss <-  0.126 
 
 
 NPA.rel <- 1-benefit			# relative biodiversity in unprotected sites

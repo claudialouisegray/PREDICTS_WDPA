@@ -57,13 +57,9 @@ construct_call<-function(responseVar,fixedStruct,randomStruct){
 # test polynomials
 
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
-keepVars <- character(0)
-fI <- character(0)
+fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "1")
+fI <- c("Within_PA:Predominant_habitat")
 RS <-  c("Within_PA")
-
-# "Richness_rarefied~poly(ag_suit,3)+poly(log_elevation,3)+Predominant_habitat+Zone+(1+Within_PA|SS)+(1|SSBS)+(1|SSB)"
-
 
 Richness_rarefied.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Richness_rarefied",
 				fitFamily = "poisson",
@@ -85,46 +81,6 @@ best.random <- "(Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
 
 # model select
 
-Richness_rarefied.poly <- model_select(all.data  = multiple.taxa.PA_11_14, 
-			     responseVar = "Richness_rarefied",
-			     fitFamily = "poisson",
-			     siteRandom = TRUE, 
-			     alpha = 0.05,
-                       fixedFactors= fF,
-                       fixedTerms= fT,
-			     keepVars = keepVars,
-                       fixedInteractions=fI,
-                       randomStruct = Richness_rarefied.best.random$best.random,
-			     otherRandoms=character(0),
-                       verbose=TRUE)
-
-Richness_rarefied.poly$stats
-#sams approach would suggest cubic
-
-data <- Richness_rarefied.poly$data
-
-m0 <- glmer(Richness_rarefied~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ (1+Within_PA|SS)+(1|SSBS)+(1|SSB), data, family = "poisson")
-m1 <- glmer(Richness_rarefied~Predominant_habitat+taxon_of_interest+Zone+Within_PA+ poly(log_slope,1)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB), data, family = "poisson")
-m2 <- glmer(Richness_rarefied~Predominant_habitat+taxon_of_interest+Zone+Within_PA + poly(log_slope,2)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB), data, family = "poisson")
-m3 <- glmer(Richness_rarefied~Predominant_habitat+taxon_of_interest+Zone+Within_PA + poly(log_slope,3)+(1+Within_PA|SS)+(1|SSBS)+(1|SSB), data, family = "poisson")
-
-#looking at what to do if not significant
-anova(m1, m0)
-anova(m2, m0)
-anova(m3, m0)
-#this suggests quadratic
-
-
-
-# add interactions
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "Predominant_habitat") 
-fT <-character(0)
-keepVars <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "1")
-fI <- c("Within_PA:Predominant_habitat")
-RS <-  c("Within_PA")
-# Richness_rarefied~Predominant_habitat+Zone+poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)+(Within_PA|SS)+(1|SSBS)+(1|SSB)
-
-
 Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
 			     responseVar = "Richness_rarefied",
 			     fitFamily = "poisson",
@@ -138,12 +94,15 @@ Richness_rarefied.model <- model_select(all.data  = multiple.taxa.PA_11_14,
 			     otherRandoms=character(0),
                        verbose=TRUE)
 
+Richness_rarefied.poly$stats
+
+
+
 Richness_rarefied.model$final.call
 validate(Richness_rarefied.model$model) #ok
 res <- data.frame(est = fixef(Richness_rarefied.model$model), se = se.fixef(Richness_rarefied.model$model))
-write.csv(res, "Richness_rarefied.model.LUPA.estimates.30.01.2015.csv")
 
-write.csv(Richness_rarefied.model$stats, "Richness_rarefied.model.LUPA.stats.30.01.2015.csv")
+
 
 #Plots
 #PlotErrBar
@@ -153,8 +112,6 @@ PlotErrBar (responseVar = "Rarefied richness",
 			logLink = "n",
 			forPaper = F,
 			catEffects = "Predominant_habitat")
-
-
 
 #simpler plotting function derived from PlotErrBar
 tiff( "N:/Documents/PREDICTS/WDPA analysis/plots/01_15/LUPA_rar_rich.tif",
@@ -173,56 +130,16 @@ dev.off()
 
 
 
-
-
-### comparison to a model where all confounding variables are linear
-
-data <- multiple.taxa.PA_11_14[,c("Richness_rarefied", "Within_PA", "Predominant_habitat", "log_slope", "log_elevation", "ag_suit",
-	"Zone", "taxon_of_interest", "SS", "SSB", "SSBS")]
-data <- na.omit(data)
-
-m1 <- glmer(Richness_rarefied ~ Within_PA + Predominant_habitat +
-	Within_PA:Predominant_habitat + poly(log_slope,1) + poly(log_elevation,1) + poly(ag_suit,1)
-	+ Zone + taxon_of_interest + 
-	(Within_PA|SS) + (1|SSB) + (1|SSBS), family = "poisson", 
-#	control= glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=100000),
-	data = data)
-#no convergence warnings when no poly specified at all
-#Model failed to converge with max|grad| = 0.00148691 (tol = 0.001, component 15)
-
-
-res <- data.frame(estimate = fixef(m1), se = se.fixef(m1))
-write.csv(res, "Richness_rarefied.LUPA.CLG.30.01.2015.withpolylinear.csv")
-
-
-
-
-
 ### LUPA with 3 landuses
+### to compare to 8 land uses above
 
-
-#test best random and polynomials
-fF <- c("Zone", "taxon_of_interest", "Within_PA", "LU_3") 
-fT <- list("ag_suit" = "3", "log_slope" = "3", "log_elevation" = "3")
-keepVars <- character(0)
-fI <- character(0)
-RS <-  c("Within_PA")
-# 
 
 # add interactions
 fF <- c("Zone", "taxon_of_interest", "Within_PA", "LU_3") 
-fT <-character(0)
-keepVars <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "1")
+fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "1")
 fI <- c("Within_PA:Predominant_habitat")
 RS <-  c("Within_PA")
 # Richness_rarefied~Predominant_habitat+Zone+poly(ag_suit,3)+poly(log_elevation,3)+poly(log_slope,1)+(Within_PA|SS)+(1|SSBS)+(1|SSB)
-
-
-
-fI <- c("Within_PA:poly(ag_suit,2)", "Within_PA:poly(log_elevation,2)", "Within_PA:poly(log_slope,1)",
-	"Within_PA:taxon_of_interest", "Within_PA:Zone")
-
-
 
 Richness_rarefied.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Richness_rarefied",
 				fitFamily = "poisson",
@@ -251,6 +168,96 @@ Richness_rarefied.model.LU3 <- model_select(all.data  = multiple.taxa.PA_11_14,
                        randomStruct = Richness_rarefied.best.random$best.random,
 			     otherRandoms=character(0),
                        verbose=TRUE)
+
+
+# LUPA TAX
+
+
+
+
+fF <- c("taxon_of_interest", "Within_PA", "LU_3") 
+fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "3")
+fI <- c("Within_PA:LU_3", "taxon_of_interest:LU_3", "Within_PA:taxon_of_interest", "Within_PA:taxon_of_interest:LU_3")
+RS <-  c("Within_PA")
+
+
+Richness_rarefied.LUPAtax.best.random <- compare_randoms(multiple.taxa.PA_11_14, "Richness_rarefied",
+				fitFamily = "poisson",
+				siteRandom = TRUE,
+				fixedFactors=fF,
+                        fixedTerms=fT,			   
+                       	fixedInteractions=fI,
+                        otherRandoms=character(0),
+				fixed_RandomSlopes = RS,
+                        fitInteractions=FALSE,
+				verbose=TRUE)
+
+Richness_rarefied.LUPAtax.best.random$best.random #"(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB)"
+
+
+# model select
+Richness_rarefied.LUPAtax.model <- model_select(all.data  = multiple.taxa.PA_11_14, 
+			     responseVar = "Richness_rarefied",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+                       fixedInteractions=fI,
+                       randomStruct = Richness_rarefied.LUPAtax.best.random$best.random,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+Richness_rarefied.LUPAtax.model$warnings
+Richness_rarefied.LUPAtax.model$stats
+Richness_rarefied.LUPAtax.model$final.call
+# yes, the df = 0 is there
+
+
+
+
+fF <- c("taxon_of_interest", "LUPA") 
+fT <- list("ag_suit" = "3", "log_elevation" = "3", "log_slope" = "3")
+fI <- c("LUPA:taxon_of_interest")
+RS <-  c("Within_PA")
+
+Richness_rarefied.LUPAtax.model.LUPA <- model_select(all.data  = multiple.taxa.PA_11_14, 
+			     responseVar = "Richness_rarefied",
+			     fitFamily = "poisson",
+			     siteRandom = TRUE, 
+			     alpha = 0.05,
+                       fixedFactors= fF,
+                       fixedTerms= fT,
+                       fixedInteractions=fI,
+                       randomStruct = Richness_rarefied.LUPAtax.best.random$best.random,
+			     otherRandoms=character(0),
+                       verbose=TRUE)
+
+
+#try by hand, taking confounding vars from above
+multiple.taxa.PA_11_14$LUPA <- paste(multiple.taxa.PA_11_14$LU_3 , multiple.taxa.PA_11_14$Within_PA, sep = "")
+data <- multiple.taxa.PA_11_14[,c("LU_3", "Within_PA", "log_slope", "log_elevation", "ag_suit", "Richness_rarefied", 
+	"taxon_of_interest", "Zone", "SS", "SSB", "SSBS", "LUPA")]
+data <- na.omit(data)
+data$LU_3 <- factor(data$LU_3)
+xyplot(Richness_rarefied ~ LU_3|taxon_of_interest, data)
+
+M1 <- glmer(Richness_rarefied ~ LUPA + taxon_of_interest + LUPA:taxon_of_interest +Zone
+	+ poly(log_elevation,3) + poly(ag_suit,3)
+	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), data, family = "poisson")
+M2 <- glmer(Richness_rarefied ~ LUPA + taxon_of_interest +Zone
+	+ poly(log_elevation,3) + poly(ag_suit,3)
+	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), data, family = "poisson")
+
+M3 <- glmer(Richness_rarefied ~ taxon_of_interest +Zone
+	+ poly(log_elevation,3) + poly(ag_suit,3)
+	+(1+Within_PA|SS)+ (1|SSBS)+ (1|SSB), data, family = "poisson")
+anova(M2, M3)
+
+summary(M1)
+
+
+
+
 
 
 
