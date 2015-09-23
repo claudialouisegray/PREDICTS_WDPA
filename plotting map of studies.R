@@ -1,49 +1,19 @@
 
 rm(list=ls()) 
-
+library(rgdal)
 library(yarg)
 library(roquefort)
-library(rgdal)
-library(sp)
-library(rgeos)
-library(maptools)
-library(gplots)
-library(ggplot2)
-library(scales)
-library(gridExtra)
-library(optimx)
-library(SDMTools)
-library(data.table)
-library(MatchIt)
+library(gamm4)
 
-
-
-validate <- function(x) {
-  par(mfrow = c(1,2))
-  plot(resid(x)~ fitted(x))
-  hist(resid(x))
-  par(mfrow = c(1,1))
-}
-
-
-
-setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-
-
-# load functions
+setwd("")
 source("compare_randoms.R")
 source("model_select.R")
+setwd("R:/ecocon_d/clg32/PREDICTS/WDPA analysis")
+PREDICTS_WDPA <- read.csv("PREDICTS_WDPA.csv")
 
 
-#load data for matched studies
-setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-source("prep_matched.landuse_for_analysis.R")
-data <- matched.landuse
-
-# or if using LUPA data
-setwd("R:/ecocon_d/clg32/GitHub/PREDICTS_WDPA")
-source("prep_PA_11_14_for_analysis.R")
-data <- PA_11_14
+matched.landuse <- subset(PREDICTS_WDPA, matched.landuse == "yes")
+nrow(matched.landuse) #5015
 
 
 ### sending these to arc for isolating corresponding PAs
@@ -75,23 +45,15 @@ spatial <- SpatialPoints(long.lat)
 spdf <- SpatialPointsDataFrame(spatial,additional)
 #writeOGR(obj = spdf, dsn = "C:/GIS/PA_predicts_mapping", "additional", driver = "ESRI Shapefile")
 
-# map these
-#mollweide plot
-#countries <- readOGR(dsn = "C:/GIS/Data/world_borders", "BORDERS_without_antarctica_moll")
-#PAs_all <- readOGR(dsn = "C:/GIS/Data/WDPA/WDPAmollmergeJULY", "WDPAmollmergeJULY_terrestrial")
-##PAs_LUPA <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_PAs_moll")
-##PAs_ML <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse_PAs_moll")
-##points_LUPA <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "PA_11_2014_no_ind_sec_veg_moll")
-#points_ML <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse_moll")
-#points_additional <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "additional_moll")
-#lines <- readOGR("C:/GIS/Data/world_borders", "equator_tropics_moll")
 
 # equal plot
 countries <- readOGR(dsn = "C:/GIS/Data/world_borders", "BORDERS_without_antarctica_equl")
-points_ML <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse_equl")
-points_additional <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "additional_equl")
+#this is the publicly accessible data layer at http://thematicmapping.org/downloads/world_borders.php
+points_ML <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "matched.landuse")
+points_additional <- readOGR(dsn = "C:/GIS/PA_predicts_mapping", "additional")
 lines <- readOGR("C:/GIS/Data/world_borders", "equator_tropics_equl")
 PAs_all <- readOGR(dsn = "C:/GIS/Data/WDPA/WDPAmollmergeJULY", "WDPAmollmergeJULY_terrestrial_equl")
+#this is the publicly accessible world database on protected areas at http://www.protectedplanet.net/
 
 
 
@@ -107,8 +69,6 @@ PA.col <- rgb(0.66,0.86,0.6)
 plot(countries, lty = NULL, border = "grey", col = "grey")
 plot(PAs_all, lty = NULL, border = PA.col, col = PA.col, add = T, lwd = 0.01)
 plot(lines, add = T, lty = 2)
-#plot(points_LUPA, pch = 21, col = rgb(0.1,0.1,0.1,0.5), bg = rgb(0.9,0.9,0.9,0.5), add = T, cex = 1)
-#plot(points_additional, pch = 21, col = rgb(0.1,0.1,0.1,0.5), bg = rgb(0.9,0.9,0.9,0.5), add = T, cex = 1)
 plot(points_additional, pch = 16, col = rgb(0.1,0.1,0.1,0.5), add = T, cex = 1)
 plot(points_ML, pch = 16, col = rgb(0.1,0.1,0.1,0.5), add = T, cex = 1)
 
@@ -217,9 +177,4 @@ legend(0.75,1, cex = 1,
 	pch = c(15,15,15,15, 16, 21, 15, 15,15), bty = "n")
 
 dev.off()
-
-#for inkscape
-
-255 * c(0.9,0.9,0.1)
-
 
